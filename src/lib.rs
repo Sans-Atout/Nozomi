@@ -54,6 +54,22 @@ fn file_overwriting_random(_path : &str)-> io::Result<()> {
     Ok(())
 }
 
+fn file_overwriting_hexa(_path : &str, _char : u8)-> io::Result<()> {
+    // Declare important variable for this 
+    let mut _file = File::options().read(true).open(_path)?;
+    let mut reader = BufReader::new(_file);
+    let mut buffer = Vec::new();
+    let mut buffer_modified = Vec::new();
+    
+    reader.read_to_end(&mut buffer)?;
+    for _id in 0..buffer.len() { buffer_modified.push(_char);}
+
+     _file = File::options().write(true).open(_path)?;
+    _file.write_all(buffer_modified.as_slice())?;
+
+    Ok(())
+}
+
 fn gutmann_overwrite_file(_path : &str)-> io::Result<()> {
     file_overwriting_random(_path)?;
     file_overwriting_random(_path)?;
