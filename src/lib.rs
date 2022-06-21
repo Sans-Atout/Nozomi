@@ -1,4 +1,10 @@
 // Librairie use in this librairie
+use rand;
+use std::fs::File;
+use std::io::BufReader;
+use std::io::Write;
+use std::io::Read;
+use std::io;
 
 // Erase entity
 #[derive(Debug, Clone, Copy)]
@@ -29,3 +35,21 @@ fn file_overwriting(_path : &str, _char : [u8; 3])-> io::Result<()> {
     Ok(())
 }
 
+fn file_overwriting_random(_path : &str)-> io::Result<()> {
+    // Declare important variable for this 
+    let mut _file = File::options().read(true).open(_path)?;
+    let mut reader = BufReader::new(_file);
+    let mut buffer = Vec::new();
+    let mut buffer_modified = Vec::new();
+    
+    reader.read_to_end(&mut buffer)?;
+    for _id in 0..buffer.len() {
+        let mut _rand:u8 = rand::random(); 
+        buffer_modified.push(_rand);
+    }
+
+     _file = File::options().write(true).open(_path)?;
+    _file.write_all(buffer_modified.as_slice())?;
+
+    Ok(())
+}
