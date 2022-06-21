@@ -11,7 +11,7 @@ use std::io;
 pub enum EraserEntity {
     Dod522022MECE,
     Dod522022ME,
-    DoD522028MSTD,
+    Dod522028MSTD,
     UsArmyAr38019,
     Afssi5020,
     RcmpTssitOpsII,
