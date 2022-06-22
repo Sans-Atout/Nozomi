@@ -16,7 +16,8 @@ pub enum EraserEntity {
     Afssi5020,
     RcmpTssitOpsII,
     HmgiS5,
-    Gutmann
+    Gutmann,
+    PseudoRandom
 }
 
 fn file_overwriting(_path : &str, _char : [u8; 3])-> io::Result<()> {
@@ -133,3 +134,36 @@ fn hmgi_s5_overwrite_file(_path : &str)-> Result<bool, &'static str >{
     }
     return Ok(true)
 }
+
+fn rcmp_tssit_ops_ii_overwrite_file(_path : &str) -> Result<bool, &'static str >{
+    match file_overwriting_hexa(_path,0x00 as u8){
+        Ok(_) => true,
+        Err(_) => return Err("Error in the first pass")
+    };
+    match file_overwriting_hexa(_path,0xFF as u8){
+        Ok(_) => true,
+        Err(_) => return Err("Error in the second pass")
+    };
+    match file_overwriting_hexa(_path,0x00 as u8){
+        Ok(_) => true,
+        Err(_) => return Err("Error in the third pass")
+    };
+    match file_overwriting_hexa(_path,0xFF as u8){
+        Ok(_) => true,
+        Err(_) => return Err("Error in the fourth pass")
+    };
+    match file_overwriting_hexa(_path,0x00 as u8){
+        Ok(_) => true,
+        Err(_) => return Err("Error in the fifth pass")
+    };
+    match file_overwriting_hexa(_path,0xFF as u8){
+        Ok(_) => true,
+        Err(_) => return Err("Error in the sixth pass")
+    };
+    match file_overwriting_random(_path){
+        Ok(_) => true,
+        Err(why) => return Err(why)
+    }
+    Ok(true)
+}
+
