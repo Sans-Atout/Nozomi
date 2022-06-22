@@ -1,6 +1,7 @@
 # Nozomi
 
-A Rust librairy that wipe all data 
+A Rust librairy that wipe all file or folder. \
+This library includes most of the secure deletion methods of the [Eraser](https://eraser.heidi.ie) for Windows software.
 
 # Add to your project
 
