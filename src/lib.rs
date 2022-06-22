@@ -20,6 +20,29 @@ pub enum EraserEntity {
     PseudoRandom
 }
 
+pub fn erase_folder(_path : &str, erase_method : EraserEntity) -> Result<bool, io::Result<()>>{
+    let _p = Path::new(_path);
+    if ! (_p.exists() && _p.is_dir()){
+        return Ok(false)
+    }
+
+    let paths = fs::read_dir(_path).unwrap();
+    for path in paths {
+        let p = path.unwrap().path();
+        let _file_name = match p.to_str(){
+            Some(file) => file,
+            None => return Ok(false)
+        };
+        match erase_file(_file_name,erase_method){
+            Ok(_) => true,
+            Err(_) => return Ok(false)
+        };
+
+    }
+
+    Ok(true)
+}
+
 /// Erase one file wirh a giver erase method from EraserEntity
 pub fn erase_file(_path : &str, erase_method : EraserEntity) -> Result<bool, io::Result<()>>{
     let _p = Path::new(_path);
