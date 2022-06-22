@@ -1,23 +1,87 @@
 // Librairie use in this librairie
 use rand;
+use std::fs;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::Write;
 use std::io::Read;
 use std::io;
+use std::path::Path;
 
 // Erase entity
 #[derive(Debug, Clone, Copy)]
 pub enum EraserEntity {
     Dod522022MECE,
     Dod522022ME,
-    Dod522028MSTD,
     Afssi5020,
     RcmpTssitOpsII,
     HmgiS5,
     Gutmann,
     PseudoRandom
 }
+
+/// Erase one file wirh a giver erase method from EraserEntity
+pub fn erase_file(_path : &str, erase_method : EraserEntity) -> Result<bool, io::Result<()>>
+{
+    let _p = Path::new(_path);
+    if ! (_p.exists() && _p.is_file()){
+        return Ok(false)
+    }
+    match erase_method{
+        EraserEntity::Gutmann => {
+            match gutmann_overwrite_file(_path) {
+                Ok(_) => (),
+                Err(_error) => return Ok(false)
+            };
+        },
+        EraserEntity::HmgiS5 => {
+            match hmgi_s5_overwrite_file(_path){
+                Ok(_) => (),
+                Err(_error) => return Ok(false)
+            };
+        },
+        EraserEntity::RcmpTssitOpsII =>{
+            match rcmp_tssit_ops_ii_overwrite_file(_path){
+                Ok(_) => (),
+                Err(_error) => return Ok(false)
+            };
+        },
+        EraserEntity::PseudoRandom =>{
+            match file_overwriting_random(_path){
+                Ok(_) => (),
+                Err(_error) => return Ok(false)
+            }
+        },
+        EraserEntity::Afssi5020 => {
+            match afssi_5020_overwrite_file(_path){
+                Ok(_) => (),
+                Err(_error) => return Ok(false)
+            }
+        },
+        EraserEntity::Dod522022MECE => {
+            match dod_522022_mece_overwrite_file(_path){
+                Ok(_) => (),
+                Err(_error) => return Ok(false)
+            }
+        },
+        EraserEntity::Dod522022ME => {
+            match dod_522022_me_overwrite_file(_path){
+                Ok(_) => (),
+                Err(_error) => return Ok(false)
+            }
+        },
+        _ => todo!(),
+    }
+    
+    match delete_file(String::from(_path)) {
+        Ok(_) => (),
+        Err(_) => return Ok(false)
+    };
+    Ok(true)
+    // one_file_pass()
+}
+
+
 
 fn file_overwriting(_path : &str, _char : [u8; 3])-> io::Result<()> {
     // Declare important variable for this 
@@ -186,7 +250,7 @@ fn dod_522022_mece_overwrite_file(_path : &str) -> Result<bool, &'static str >{
     match dod_522022_me_overwrite_file(_path){
         Ok(_) => true,
         Err(_) => return Err("Error in three first pass")
-    }
+    };
     match file_overwriting_hexa(_path,0x00 as u8){
         Ok(_) => true,
         Err(_) => return Err("Error in the fourth pass")
@@ -227,4 +291,66 @@ fn get_random_patern()->[u8; 3]{
     let x2:u8 = rand::random(); 
     let x3:u8 = rand::random(); 
     return [x1,x2,x3]
+}
+
+fn delete_file(_path : String)-> Result<bool, &'static str>{
+    let mut new_path = _path.clone();
+    let size = match get_file_name_size(new_path.clone()){
+        Ok(s) => s,
+        Err(_) => return Err("Error")
+    };
+
+    for  s in 0..size+1 {
+        new_path = match rename_file(new_path, size -s ){
+            Ok(file) => file,
+            Err(_) => return Err("Error in renaming file")
+        };
+
+    }
+    match fs::remove_file(new_path){
+         Ok(_) => true,
+         Err(_) => return Err("Fail to remove file")
+    };
+    
+    Ok(true)
+}
+
+fn generate_zero_string(size : u32) -> String{
+    let mut _string = String::from("");
+    let mut s_size = 0;
+    while s_size <= size {
+        _string += "0";
+        s_size += 1;
+    }
+    return _string
+}
+
+fn rename_file(_path : String, size : u32) -> Result<String, &'static str>{
+    let _p = Path::new(&_path);
+    if ! (_p.exists() && _p.is_file()){
+        return Err("File dind't exist ou the path given is not a file")
+    }
+    let _file_name = match _p.file_name(){
+        Some(file) => file,
+        None => return Err("Error")
+    };
+    let dir = _p.parent().unwrap().to_str().unwrap();
+    let new_file_name = String::from([dir, &generate_zero_string(size).as_str()].join("/"));
+    match fs::rename(&_path,&new_file_name){
+        Ok(_) => true,
+        Err(_) => return Err("Rename fail")
+    };
+    Ok(new_file_name)
+}
+
+fn get_file_name_size(new_path : String) -> Result<u32, &'static str>{
+    let _p = Path::new(&new_path);
+    if ! (_p.exists() && _p.is_file()){
+        return Err("File dind't exist ou the path given is not a file")
+    }
+    let file_name = match _p.file_name(){
+        Some(file) => file,
+        None => return Err("Error")
+    };
+    Ok(file_name.len() as u32)
 }
