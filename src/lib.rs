@@ -21,8 +21,7 @@ pub enum EraserEntity {
 }
 
 /// Erase one file wirh a giver erase method from EraserEntity
-pub fn erase_file(_path : &str, erase_method : EraserEntity) -> Result<bool, io::Result<()>>
-{
+pub fn erase_file(_path : &str, erase_method : EraserEntity) -> Result<bool, io::Result<()>>{
     let _p = Path::new(_path);
     if ! (_p.exists() && _p.is_file()){
         return Ok(false)
@@ -70,7 +69,6 @@ pub fn erase_file(_path : &str, erase_method : EraserEntity) -> Result<bool, io:
                 Err(_error) => return Ok(false)
             }
         },
-        _ => todo!(),
     }
     
     match delete_file(String::from(_path)) {
@@ -80,8 +78,6 @@ pub fn erase_file(_path : &str, erase_method : EraserEntity) -> Result<bool, io:
     Ok(true)
     // one_file_pass()
 }
-
-
 
 fn file_overwriting(_path : &str, _char : [u8; 3])-> io::Result<()> {
     // Declare important variable for this 
