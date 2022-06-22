@@ -5,13 +5,7 @@ edition = "2021"
 authors = ["Sans-Atout <augustin.rousset-rouviere@isep.fr>"] 
 description = "A rust wipper library"
 license = "GPL-3.0"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-#[lib]
-#path = "src/libs.rs"
-#crate-type = ["lib"] 
-#bench = false
+repository = "https://github.com/Sans-Atout/Nozomi/"
 
 [dependencies]
 rand = "0.8.5"
