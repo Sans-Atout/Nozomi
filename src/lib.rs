@@ -167,3 +167,18 @@ fn rcmp_tssit_ops_ii_overwrite_file(_path : &str) -> Result<bool, &'static str >
     Ok(true)
 }
 
+fn afssi_5020_overwrite_file(_path : &str) -> Result<bool, &'static str >{
+    match file_overwriting_hexa(_path,0x00 as u8){
+        Ok(_) => true,
+        Err(_) => return Err("Error in the first pass")
+    };
+    match file_overwriting_hexa(_path,0xFF as u8){
+        Ok(_) => true,
+        Err(_) => return Err("Error in the second pass")
+    };
+    match file_overwriting_random(_path){
+        Ok(_) => true,
+        Err(why) => return Err(why)
+    }
+    Ok(true)
+}
