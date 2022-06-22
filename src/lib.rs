@@ -12,7 +12,6 @@ pub enum EraserEntity {
     Dod522022MECE,
     Dod522022ME,
     Dod522028MSTD,
-    UsArmyAr38019,
     Afssi5020,
     RcmpTssitOpsII,
     HmgiS5,
@@ -180,5 +179,50 @@ fn afssi_5020_overwrite_file(_path : &str) -> Result<bool, &'static str >{
         Ok(_) => true,
         Err(why) => return Err(why)
     }
+
+fn dod_522022_mece_overwrite_file(_path : &str) -> Result<bool, &'static str >{
+    match dod_522022_me_overwrite_file(_path){
+        Ok(_) => true,
+        Err(_) => return Err("Error in three first pass")
+    }
+    match file_overwriting_hexa(_path,0x00 as u8){
+        Ok(_) => true,
+        Err(_) => return Err("Error in the fourth pass")
+    };
+    match file_overwriting_hexa(_path,0x00 as u8){
+        Ok(_) => true,
+        Err(_) => return Err("Error in the fifth pass")
+    };
+    match file_overwriting_hexa(_path,0xFF as u8){
+        Ok(_) => true,
+        Err(_) => return Err("Error in the sixth pass")
+    };
+    match file_overwriting_random(_path){
+        Ok(_) => true,
+        Err(_) => return Err("Error in the last pass")
+    };
     Ok(true)
+}
+
+fn dod_522022_me_overwrite_file(_path : &str) -> Result<bool, &'static str >{
+    match file_overwriting_hexa(_path,0x00 as u8){
+        Ok(_) => true,
+        Err(_) => return Err("Error in the first pass")
+    };
+    match file_overwriting_hexa(_path,0xFF as u8){
+        Ok(_) => true,
+        Err(_) => return Err("Error in the second pass")
+    };
+    match file_overwriting(_path,get_random_patern()){
+        Ok(_) => true,
+        Err(_) => return Err("Error in the third pass")
+    };
+    Ok(true)
+}
+
+fn get_random_patern()->[u8; 3]{
+    let x1:u8 = rand::random();
+    let x2:u8 = rand::random(); 
+    let x3:u8 = rand::random(); 
+    return [x1,x2,x3]
 }
