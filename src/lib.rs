@@ -7,19 +7,33 @@ use std::io::Read;
 use std::io::Write;
 use std::path::Path;
 
-/// Erase entity
+/// Nozomi Eraser method enume
+/// Based on Eraser for Windows main method
 #[derive(Debug, Clone, Copy)]
 pub enum EraserEntity {
-    Dod522022MECE,
-    Dod522022ME,
+    /// DOD 522022 MECE erasing method <https://www.bitraser.com/article/DoD-5220-22-m-standard-for-drive-erasure.php>X
+    Dod522022MECE, 
+    /// DOD 522022 ME erasing method <https://www.bitraser.com/article/DoD-5220-22-m-standard-for-drive-erasure.php>
+    Dod522022ME, 
+     /// AFSSI 5020 erasing method <https://www.lifewire.com/data-sanitization-methods-2626133#toc-afssi-5020>
     Afssi5020,
-    RcmpTssitOpsII,
-    HmgiS5,
+    /// RCMP TSSIT OPS II erasing method <https://www.datadestroyers.eu/technology/rcmp_tssit_ops-2.html>
+    RcmpTssitOpsII, 
+    /// HMGI S5 erasing method <https://www.bitraser.com/knowledge-series/data-destruction-standards-and-guidelines.php>
+    HmgiS5, 
+     /// Gutmann erasing method <https://en.wikipedia.org/wiki/Gutmann_method>
     Gutmann,
-    PseudoRandom
+    /// Pseudo Random erasing method <https://www.lifewire.com/data-sanitization-methods-2626133#toc-random-data>
+    PseudoRandom 
 }
 
 /// Erase folder method
+/// 
+/// Function that allows you to delete, recursively or not, a folder according to a given secure deletion method 
+/// 
+/// * `_path`        - The path of the folder you wish to delete
+/// * `erase_method` - The secure file deletion method (EraserEntity enumeration)
+/// * `is_recursive` - Does the deletion have to be recursive or not ?
 pub fn erase_folder(_path : &str, erase_method : EraserEntity, is_recursive: bool) -> Result<Success, Error>{
     let _p = Path::new(_path);
     if ! (_p.exists() && _p.is_dir()){
@@ -56,6 +70,10 @@ pub fn erase_folder(_path : &str, erase_method : EraserEntity, is_recursive: boo
 
 /// Erase one file method
 /// 
+/// Function that allows you to delete, recursively or not, a file according to a given secure deletion method 
+/// 
+/// * `_path`        - The path of the file you wish to delete
+/// * `erase_method` - The secure file deletion method (EraserEntity enumeration)
 pub fn erase_file(_path : &str, erase_method : EraserEntity) -> Result<Success, Error>{
     let _p = Path::new(_path);
     if ! (_p.exists() && _p.is_file()){
@@ -520,40 +538,75 @@ fn get_file_name_size(new_path : String) -> Result<u32, Error>{
     Ok(file_name.len() as u32)
 }
 
+/// Nozomi Error management systems
 #[derive(Debug, Clone, Copy)]
 pub enum Error{
-    NotAFolderOrDidntExist,     // If the folder at the given path didn't exist or is not a folder
-    NotAFileOrDidntExist,       // If the file at the given path didn't exist or is not a file
-    ErrorGetFileName,           // Error when trying to retrieve the file name
-    RenameError,                // Error when trying to rename the file  
-    RemoveFileError,            // Error when trying to remove file
-    BufferWritingError,         // Error in buffer writing function
-    Dod522022MECEErrorFourth,   // Error in the fourth overwriting of DOD 522022 MECE
-    Dod522022MECEErrorFifth,    // Error in the fifth overwriting of DOD 522022 MECE
-    Dod522022MECEErrorSixth,    // Error in the sixth overwriting of DOD 522022 MECE
-    Dod522022MECEErrorSeventh,  // Error in the seventh overwriting of DOD 522022 MECE
-    Dod522022MEErrorFirst,      // Error in the first overwriting of DOD 522022 ME
-    Dod522022MEErrorSecond,     // Error in the second overwriting of DOD 522022 ME
-    Dod522022MEErrorThird,      // Error in the third overwriting of DOD 522022 ME
-    Afssi5020ErrorFirst,        // Error in the first overwriting of AFSSI 5020
-    Afssi5020ErrorSecond,       // Error in the second overwriting of AFSSI 5020
-    Afssi5020ErrorThird,        // Error in the third overwriting of AFSSI 5020
-    RcmpTssitOpsIIErrorFirst,   // Error in the first overwriting of RCMP TSSIT OPS II
-    RcmpTssitOpsIIErrorSecond,  // Error in the second overwriting of RCMP TSSIT OPS II
-    RcmpTssitOpsIIErrorThird,   // Error in the third overwriting of RCMP TSSIT OPS II
-    RcmpTssitOpsIIErrorFourth,  // Error in the fourth overwriting of RCMP TSSIT OPS II
-    RcmpTssitOpsIIErrorFifth,   // Error in the fifth overwriting of RCMP TSSIT OPS II
-    RcmpTssitOpsIIErrorSixth,   // Error in the sixth overwriting of RCMP TSSIT OPS II
-    RcmpTssitOpsIIErrorSeventh, // Error in the seventh overwriting of RCMP TSSIT OPS II
-    HmgiS5ErrorFirst,           // Error in the first overwriting with HMGI S5 method
-    HmgiS5ErrorSecond,          // Error in the first overwriting with HMGI S5 method
-    PseudoRandomError,          // Error in the overwriting with PseudoRandom method
-    FileOpeningError,           // Error in file opening
-    VerificationFailed,         // One of the verification Fail
-    BufferReadingError,         // Error in buffer reading
-    RemoveDirError,             // Remove folder error
-    GutmannRandomPaternError,   // Gutman random patern overwriting problem Error
-    GutmannSpecificPaternError, // Gutman specific patern overwriting problem Error
+    /// If the folder at the given path didn't exist or is not a folder
+    NotAFolderOrDidntExist, 
+    /// If the file at the given path didn't exist or is not a file   
+    NotAFileOrDidntExist,
+    /// Error when trying to retrieve the file name     
+    ErrorGetFileName,         
+    /// Error when trying to rename the file    
+    RenameError,                
+    /// Error when trying to remove file
+    RemoveFileError, 
+    /// Error in buffer writing function           
+    BufferWritingError,   
+    /// Error in the fourth overwriting of DOD 522022 MECE      
+    Dod522022MECEErrorFourth, 
+    /// Error in the fifth overwriting of DOD 522022 MECE  
+    Dod522022MECEErrorFifth,
+    /// Error in the sixth overwriting of DOD 522022 MECE
+    Dod522022MECEErrorSixth,    
+    /// Error in the seventh overwriting of DOD 522022 MECE
+    Dod522022MECEErrorSeventh,  
+    /// Error in the first overwriting of DOD 522022 ME
+    Dod522022MEErrorFirst,      
+    /// Error in the second overwriting of DOD 522022 ME
+    Dod522022MEErrorSecond,     
+    /// Error in the third overwriting of DOD 522022 ME
+    Dod522022MEErrorThird,      
+    /// Error in the first overwriting of AFSSI 5020
+    Afssi5020ErrorFirst,        
+    /// Error in the second overwriting of AFSSI 5020
+    Afssi5020ErrorSecond,       
+    /// Error in the third overwriting of AFSSI 5020
+    Afssi5020ErrorThird, 
+    /// Error in the first overwriting of RCMP TSSIT OPS II       
+    RcmpTssitOpsIIErrorFirst,  
+    /// Error in the second overwriting of RCMP TSSIT OPS II 
+    RcmpTssitOpsIIErrorSecond,  
+    /// Error in the third overwriting of RCMP TSSIT OPS II
+    RcmpTssitOpsIIErrorThird,   
+    /// Error in the fourth overwriting of RCMP TSSIT OPS II
+    RcmpTssitOpsIIErrorFourth,  
+    /// Error in the fifth overwriting of RCMP TSSIT OPS II
+    RcmpTssitOpsIIErrorFifth,   
+    /// Error in the sixth overwriting of RCMP TSSIT OPS II
+    RcmpTssitOpsIIErrorSixth,   
+    /// Error in the seventh overwriting of RCMP TSSIT OPS II
+    RcmpTssitOpsIIErrorSeventh, 
+    /// Error in the first overwriting with HMGI S5 method
+    HmgiS5ErrorFirst,      
+    /// Error in the first overwriting with HMGI S5 method     
+    HmgiS5ErrorSecond,    
+    /// Error in the overwriting with PseudoRandom method      
+    PseudoRandomError,      
+    /// Error in file opening    
+    FileOpeningError,   
+    /// One of the verification Fail        
+    VerificationFailed,       
+    /// Error in buffer reading  
+    BufferReadingError,  
+    /// Remove folder error       
+    RemoveDirError,    
+    /// Gutman random patern overwriting problem Error       
+    GutmannRandomPaternError,
+    /// Gutman specific patern overwriting problem Error   
+    GutmannSpecificPaternError,  
+}
+
 /// Nozomi Sucesss management systems
 #[derive(Debug, Clone, Copy)]
 pub enum Success{ 
