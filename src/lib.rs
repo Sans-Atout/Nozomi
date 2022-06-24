@@ -19,7 +19,8 @@ pub enum EraserEntity {
     PseudoRandom
 }
 
-pub fn erase_folder(_path : &str, erase_method : EraserEntity, is_recursive: bool) -> Result<bool, Error>{
+/// Erase folder method
+pub fn erase_folder(_path : &str, erase_method : EraserEntity, is_recursive: bool) -> Result<Success, Error>{
     let _p = Path::new(_path);
     if ! (_p.exists() && _p.is_dir()){
         return Err(Error::NotAFolderOrDidntExist)
@@ -48,13 +49,14 @@ pub fn erase_folder(_path : &str, erase_method : EraserEntity, is_recursive: boo
 
     }
     match fs::remove_dir_all(_path){
-        Ok(_) => Ok(true),
+        Ok(_) => Ok(Success::EraseFolderSuccess),
         Err(_) => Err(Error::RemoveDirError)
     }
 }
 
-/// Erase one file wirh a giver erase method from EraserEntity
-pub fn erase_file(_path : &str, erase_method : EraserEntity) -> Result<bool, Error>{
+/// Erase one file method
+/// 
+pub fn erase_file(_path : &str, erase_method : EraserEntity) -> Result<Success, Error>{
     let _p = Path::new(_path);
     if ! (_p.exists() && _p.is_file()){
         return Err(Error::NotAFileOrDidntExist)
@@ -105,14 +107,13 @@ pub fn erase_file(_path : &str, erase_method : EraserEntity) -> Result<bool, Err
     }
     
     match delete_file(String::from(_path)) {
-        Ok(_) => (),
-        Err(_) => return Ok(false)
+        Ok(_) => true,
+        Err(error) => return Err(error)
     };
-    Ok(true)
-    // one_file_pass()
+    Ok(Success::EraseFileSuccess)
 }
 
-fn file_overwriting(_path : &str, _char : [u8; 3])-> Result<bool, Error> {
+fn file_overwriting(_path : &str, _char : [u8; 3])-> Result<Success, Error> {
     // Declare important variable for this 
     let mut _file = match File::options().read(true).open(_path){
         Ok(file) => file, 
@@ -138,10 +139,10 @@ fn file_overwriting(_path : &str, _char : [u8; 3])-> Result<bool, Error> {
         Err(_) => return Err(Error::BufferWritingError)
     };
 
-    Ok(true)
+    Ok(Success::FileOverWritting)
 }
 
-fn file_overwriting_random(_path : &str)-> Result<bool, Error> {
+fn file_overwriting_random(_path : &str)-> Result<Success, Error> {
     // Declare important variable for this 
     let mut _file = match File::options().read(true).open(_path){
         Ok(file) => file, 
@@ -170,10 +171,10 @@ fn file_overwriting_random(_path : &str)-> Result<bool, Error> {
         Err(_) => return Err(Error::BufferWritingError)
     };
 
-    Ok(true)
+    Ok(Success::FileOverWritting)
 }
 
-fn file_overwriting_hexa(_path : &str, _char : u8)-> Result<bool, Error> {
+fn file_overwriting_hexa(_path : &str, _char : u8)-> Result<Success, Error> {
     // Declare important variable for this 
     let mut _file = match File::options().read(true).open(_path){
         Ok(file) => file, 
@@ -199,10 +200,10 @@ fn file_overwriting_hexa(_path : &str, _char : u8)-> Result<bool, Error> {
         Err(_) => return Err(Error::BufferWritingError)
     };
 
-    Ok(true)
+    Ok(Success::FileOverWritting)
 }
 
-fn gutmann_overwrite_file(_path : &str)-> Result<bool, Error> {
+fn gutmann_overwrite_file(_path : &str)-> Result<Success, Error> {
     match file_overwriting_random(_path){
         Ok(_) => true,
         Err(_) => return Err(Error::GutmannRandomPaternError)
@@ -331,10 +332,10 @@ fn gutmann_overwrite_file(_path : &str)-> Result<bool, Error> {
         Ok(_) => true,
         Err(_) => return Err(Error::GutmannRandomPaternError)
     };
-    Ok(true)
+    Ok(Success::GutmannSuccess)
 }
 
-fn hmgi_s5_overwrite_file(_path : &str)-> Result<bool, Error >{
+fn hmgi_s5_overwrite_file(_path : &str)-> Result<Success, Error >{
     match file_overwriting(_path,[0x00 as u8,0x00 as u8,0x00 as u8]){
         Ok(_) => true,
         Err(_) => return Err(Error::HmgiS5ErrorFirst)
@@ -359,10 +360,10 @@ fn hmgi_s5_overwrite_file(_path : &str)-> Result<bool, Error >{
             return Err(Error::VerificationFailed)
         }
     }
-    return Ok(true)
+    return Ok(Success::HmgiS5Sucess)
 }
 
-fn rcmp_tssit_ops_ii_overwrite_file(_path : &str) -> Result<bool, Error >{
+fn rcmp_tssit_ops_ii_overwrite_file(_path : &str) -> Result<Success, Error >{
     match file_overwriting_hexa(_path,0x00 as u8){
         Ok(_) => true,
         Err(_) => return Err(Error::RcmpTssitOpsIIErrorFirst)
@@ -391,10 +392,10 @@ fn rcmp_tssit_ops_ii_overwrite_file(_path : &str) -> Result<bool, Error >{
         Ok(_) => true,
         Err(_) => return Err(Error::RcmpTssitOpsIIErrorSeventh)
     };
-    Ok(true)
+    Ok(Success::RcmpTssitOpsIISucess)
 }
 
-fn afssi_5020_overwrite_file(_path : &str) -> Result<bool, Error >{
+fn afssi_5020_overwrite_file(_path : &str) -> Result<Success, Error >{
     match file_overwriting_hexa(_path,0x00 as u8){
         Ok(_) => true,
         Err(_) => return Err(Error::Afssi5020ErrorFirst)
@@ -407,10 +408,10 @@ fn afssi_5020_overwrite_file(_path : &str) -> Result<bool, Error >{
         Ok(_) => true,
         Err(_) => return Err(Error::Afssi5020ErrorThird)
     };
-    Ok(true)
+    Ok(Success::Afssi5020Success)
 }
 
-fn dod_522022_mece_overwrite_file(_path : &str) -> Result<bool, Error >{
+fn dod_522022_mece_overwrite_file(_path : &str) -> Result<Success, Error >{
     match dod_522022_me_overwrite_file(_path){
         Ok(_) => true,
         Err(error) => return Err(error)
@@ -431,10 +432,10 @@ fn dod_522022_mece_overwrite_file(_path : &str) -> Result<bool, Error >{
         Ok(_) => true,
         Err(_) => return Err(Error::Dod522022MECEErrorFourth)
     };
-    Ok(true)
+    Ok(Success::Dod522022MECESuccess)
 }
 
-fn dod_522022_me_overwrite_file(_path : &str) -> Result<bool, Error >{
+fn dod_522022_me_overwrite_file(_path : &str) -> Result<Success, Error >{
     match file_overwriting_hexa(_path,0x00 as u8){
         Ok(_) => true,
         Err(_) => return Err(Error::Dod522022MEErrorFirst)
@@ -447,7 +448,7 @@ fn dod_522022_me_overwrite_file(_path : &str) -> Result<bool, Error >{
         Ok(_) => true,
         Err(_) => return Err(Error::Dod522022MEErrorThird)
     };
-    Ok(true)
+    Ok(Success::Dod522022MESucess)
 }
 
 fn get_random_patern()->[u8; 3]{
@@ -457,7 +458,7 @@ fn get_random_patern()->[u8; 3]{
     return [x1,x2,x3]
 }
 
-fn delete_file(_path : String)-> Result<bool, Error>{
+fn delete_file(_path : String)-> Result<Success, Error>{
     let mut new_path = _path.clone();
     let size = match get_file_name_size(new_path.clone()){
         Ok(s) => s,
@@ -476,7 +477,7 @@ fn delete_file(_path : String)-> Result<bool, Error>{
          Err(_) => return Err(Error::RemoveFileError)
     };
     
-    Ok(true)
+    Ok(Success::DeleteFileSuccess)
 }
 
 fn generate_zero_string(size : u32) -> String{
@@ -553,4 +554,29 @@ pub enum Error{
     RemoveDirError,             // Remove folder error
     GutmannRandomPaternError,   // Gutman random patern overwriting problem Error
     GutmannSpecificPaternError, // Gutman specific patern overwriting problem Error
+/// Nozomi Sucesss management systems
+#[derive(Debug, Clone, Copy)]
+pub enum Success{ 
+    /// DOD 522022 MECE method success
+    Dod522022MECESuccess, 
+    /// DOD 522022 ME method success
+    Dod522022MESucess,    
+    /// AFSSI 5020 erasing method success
+    Afssi5020Success,     
+    /// RCMP TSSIT OPS II method success
+    RcmpTssitOpsIISucess, 
+    /// HMGI S5 method success
+    HmgiS5Sucess,      
+    /// Gutmann method success   
+    GutmannSuccess,  
+    /// Pseudo Random method success     
+    PseudoRandomSuccess,  
+    /// The erase_folder method was completed without any errors.
+    EraseFolderSuccess,   
+    /// The erase_file method was completed without any errors
+    EraseFileSuccess,   
+    /// file_overwritting generic success return  
+    FileOverWritting, 
+    /// The delete_file function ended successfully  
+    DeleteFileSuccess,    
 }
