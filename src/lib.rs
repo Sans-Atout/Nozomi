@@ -33,6 +33,15 @@ pub fn erase_folder(_path : &str, erase_method : EraserEntity) -> Result<bool, i
             Some(file) => file,
             None => return Ok(false)
         };
+        if is_recursive{
+            let is_folder = Path::new(path).is_dir();
+            if is_folder {
+                match erase_folder(path,erase_method, is){
+                    Ok(_) => true,
+                    Err(_) => return Ok(false)
+                };
+            }
+        }
         match erase_file(_file_name,erase_method){
             Ok(_) => true,
             Err(_) => return Ok(false)
