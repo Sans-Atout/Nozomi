@@ -47,19 +47,21 @@ pub fn erase_folder(_path : &str, erase_method : EraserEntity, is_recursive: boo
             Some(file) => file,
             None => return Err(Error::ErrorGetFileName)
         };
-        if is_recursive{
-            let is_folder = Path::new(_file_name).is_dir();
-            if is_folder {
+        let is_folder = Path::new(_file_name).is_dir();
+        if is_folder {
+            if is_recursive{
                 match erase_folder(_file_name,erase_method, is_recursive){
                     Ok(_) => true,
                     Err(error) => return Err(error)
                 };
             }
         }
-        match erase_file(_file_name,erase_method){
-            Ok(_) => true,
-            Err(error) => return Err(error)
-        };
+        else{
+            match erase_file(_file_name,erase_method){
+                Ok(_) => true,
+                Err(error) => return Err(error)
+            };
+        }
 
     }
     match fs::remove_dir_all(_path){
