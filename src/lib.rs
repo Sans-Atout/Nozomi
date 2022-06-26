@@ -1,6 +1,6 @@
 // Librairie use in this librairie
 use rand;
-use std::fs;
+use std::{fs,fmt};
 use std::fs::File;
 use std::io::BufReader;
 use std::io::Read;
@@ -157,7 +157,7 @@ fn file_overwriting(_path : &str, _char : [u8; 3])-> Result<Success, Error> {
         Err(_) => return Err(Error::BufferWritingError)
     };
 
-    Ok(Success::FileOverWritting)
+    Ok(Success::FileOverWriting)
 }
 
 fn file_overwriting_random(_path : &str)-> Result<Success, Error> {
@@ -189,7 +189,7 @@ fn file_overwriting_random(_path : &str)-> Result<Success, Error> {
         Err(_) => return Err(Error::BufferWritingError)
     };
 
-    Ok(Success::FileOverWritting)
+    Ok(Success::FileOverWriting)
 }
 
 fn file_overwriting_hexa(_path : &str, _char : u8)-> Result<Success, Error> {
@@ -218,7 +218,7 @@ fn file_overwriting_hexa(_path : &str, _char : u8)-> Result<Success, Error> {
         Err(_) => return Err(Error::BufferWritingError)
     };
 
-    Ok(Success::FileOverWritting)
+    Ok(Success::FileOverWriting)
 }
 
 fn gutmann_overwrite_file(_path : &str)-> Result<Success, Error> {
@@ -629,7 +629,68 @@ pub enum Success{
     /// The erase_file method was completed without any errors
     EraseFileSuccess,   
     /// file_overwritting generic success return  
-    FileOverWritting, 
+    FileOverWriting, 
     /// The delete_file function ended successfully  
     DeleteFileSuccess,    
+}
+
+impl fmt::Display for Success{
+
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Success::Dod522022MECESuccess => write!(f,"Your erase file with DOD 522022 MECE method successfuly"),
+            Success::Dod522022MESucess => write!(f,"Your erase file with DOD 522022 ME method successfuly"),
+            Success::Afssi5020Success => write!(f,"Your erase file with AFSSI 5020 method successfuly"),
+            Success::RcmpTssitOpsIISucess => write!(f,"Your erase file with RCMP TSSIT OPS II method successfuly"),
+            Success::HmgiS5Sucess => write!(f,"You erase file with HMGI S5 method successfuly"),
+            Success::GutmannSuccess => write!(f, "You erase file with Gutmann method successfuly"),
+            Success::PseudoRandomSuccess => write!(f, "You erase file with Pseudo Random method successfuly"),
+            Success::EraseFolderSuccess => write!(f, "You successfuly erase a folder"),
+            Success::EraseFileSuccess => write!(f, "You successfuly erase a file"),
+            Success::DeleteFileSuccess => write!(f,"You delete a file successfuly"),
+            Success::FileOverWriting => write!(f,"The file was successfuly overwritten")
+        }
+
+    }
+}
+
+impl fmt::Display for Error{
+
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Error::NotAFolderOrDidntExist => write!(f,"The folder dind't exist or the path given is not a folder"), 
+            Error::NotAFileOrDidntExist => write!(f,"The file dind't exist or the path given is not a file"), 
+            Error::ErrorGetFileName => write!(f,"There was an error in retrieving the name of a file"),          
+            Error::RenameError => write!(f,"There was an error when trying to rename a file"), 
+            Error::RemoveFileError => write!(f,"There was an error when trying to remove a file"), 
+            Error::BufferWritingError => write!(f,"There was an error when trying to overwriting a file"),  
+            Error::Dod522022MECEErrorFourth => write!(f,"Error in the fourth overwritting of DOD 522022 MECE"),   
+            Error::Dod522022MECEErrorFifth => write!(f,"Error in the fifth overwritting of DOD 522022 MECE"),   
+            Error::Dod522022MECEErrorSixth => write!(f,"Error in the sixth overwritting of DOD 522022 MECE"),       
+            Error::Dod522022MECEErrorSeventh => write!(f,"Error in the seventh overwritting of DOD 522022 MECE"),   
+            Error::Dod522022MEErrorFirst => write!(f,"Error in the first overwritting of DOD 522022 ME"),      
+            Error::Dod522022MEErrorSecond => write!(f,"Error in the second overwritting of DOD 522022 ME"),     
+            Error::Dod522022MEErrorThird => write!(f,"Error in the third overwritting of DOD 522022 ME"),       
+            Error::Afssi5020ErrorFirst => write!(f,"Error in the first overwritting of AFSSI 5020"),        
+            Error::Afssi5020ErrorSecond => write!(f,"Error in the second overwritting of AFSSI 5020"),       
+            Error::Afssi5020ErrorThird => write!(f,"Error in the third overwritting of AFSSI 5020"),  
+            Error::RcmpTssitOpsIIErrorFirst => write!(f,"Error in the first overwritting of RCMP TSSIT OPS II"),  
+            Error::RcmpTssitOpsIIErrorSecond => write!(f,"Error in the second overwritting of RCMP TSSIT OPS II"),  
+            Error::RcmpTssitOpsIIErrorThird => write!(f,"Error in the third overwritting of  RCMP TSSIT OPS II"),   
+            Error::RcmpTssitOpsIIErrorFourth => write!(f,"Error in the fourth overwritting of RCMP TSSIT OPS II"),   
+            Error::RcmpTssitOpsIIErrorFifth => write!(f,"Error in the fifth overwritting of RCMP TSSIT OPS II"),   
+            Error::RcmpTssitOpsIIErrorSixth => write!(f,"Error in the sixth overwritting of RCMP TSSIT OPS II"),    
+            Error::RcmpTssitOpsIIErrorSeventh => write!(f,"Error in the seventh overwritting of RCMP TSSIT OPS II"), 
+            Error::HmgiS5ErrorFirst => write!(f,"Error in the first overwritting of HMGI S5"), 
+            Error::HmgiS5ErrorSecond => write!(f,"Error in the second overwritting of HMGI S5"),  
+            Error::PseudoRandomError => write!(f,"Error in the third overwritting of HMGI S5"),    
+            Error::FileOpeningError => write!(f,"Error when trying to opening a file"),  
+            Error::VerificationFailed => write!(f,"Some of verification failed"),     
+            Error::BufferReadingError => write!(f,"Error in buffer reading"), 
+            Error::RemoveDirError => write!(f,"Error when removing a folder"), 
+            Error::GutmannRandomPaternError => write!(f,"Error in the random patern overwritting of Gutmann"), 
+            Error::GutmannSpecificPaternError => write!(f,"Error in the specific patern overwritting of Gutmann"), 
+        }
+
+    }
 }
