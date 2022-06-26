@@ -4,10 +4,9 @@ A Rust librairy that wipe all file or folder. \
 This library includes most of the secure deletion methods of the [Eraser](https://eraser.heidi.ie) for Windows software.
 
 # Add to your project
-
 ```
 [dependencies]
-nozomi = "1.0.0"
+nozomi = "1.0.2"
 ```
 
 ## Code example
@@ -16,7 +15,10 @@ nozomi = "1.0.0"
 use nozomi;
 
 fn main() {
-    nozomi::erase_file("path_to_file", nozomi::EraserEntity::PseudoRandom);
+    match nozomi::erase_file("path_to_file", nozomi::EraserEntity::PseudoRandom){
+        Ok(info) => println!("{}",info),
+        Err(error) => println!("{}",error)
+    };
 }
 ```
 
@@ -25,13 +27,43 @@ fn main() {
 use nozomi;
 
 fn main() {
-    nozomi::erase_folder("path_to_folder", nozomi::EraserEntity::PseudoRandom);
+    match nozomi::erase_folder("path_to_folder", nozomi::EraserEntity::PseudoRandom){
+        Ok(info) => println!("{}",info),
+        Err(error) => println!("{}",error)
+    };
 }
-
 ```
-# Erase Method
-Here are the methods implemented or to be implemented in this library 
+# Changelog
+## [v1.0.2](https://crates.io/crates/nozomi/1.0.2)
+```
+[+] Update Readme file
+[B] Correct a bug in erase_folder function
+    [C] When a folder is found in erase folder function, the function crash
+        because a folder is not a file
+[+] Adding error handling
+[+] Adding success handling
+```
 
+## [v1.0.1](https://crates.io/crates/nozomi/1.0.1)
+```
+[+] Update Readme file
+```
+
+## [v1.0.0](https://crates.io/crates/nozomi/1.0.0)
+```
+[+] Adding erase file method
+    [+] Pseudo Random
+    [+] Gutmann
+    [+] HMGI S5
+    [+] DOD 522022 MECE
+    [+] DOD 522022 ME
+    [+] AFSSI 5020
+    [+] RCMP TSSIT OPS II
+
+[+] Adding erase folder method
+```
+
+# Erase Method
 ## [Pseudo Random](https://www.lifewire.com/data-sanitization-methods-2626133#toc-random-data)
 
 | Pass number | Patern |
