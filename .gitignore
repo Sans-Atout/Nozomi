@@ -13,3 +13,6 @@ Cargo.lock
 # Added by cargo
 
 /target
+/data/*.txt
+/data/*/*.txt
+/data/folder
