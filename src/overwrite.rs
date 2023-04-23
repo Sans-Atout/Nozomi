@@ -1,8 +1,8 @@
 use std::fs::File;
 use std::io::{BufReader, Read};
 
-use crate::utils::{file_overwriting,file_overwriting_random, file_overwriting_hexa};
-use crate::enums::{success::Success, error::Error};
+use crate::enums::{error::Error, success::Success};
+use crate::utils::{file_overwriting, file_overwriting_hexa, file_overwriting_random};
 
 pub fn gutmann_overwrite_file(_path: &str) -> Result<Success, Error> {
     match file_overwriting_random(_path) {

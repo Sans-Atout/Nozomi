@@ -1,7 +1,10 @@
-use std::{fs::{File, self}, io::{Write, BufReader, Read}, path::Path};
+use std::{
+    fs::{self, File},
+    io::{BufReader, Read, Write},
+    path::Path,
+};
 
 use crate::enums::{error::Error, success::Success};
-
 
 pub fn file_overwriting(_path: &str, _char: [u8; 3]) -> Result<Success, Error> {
     // Declare important variable for this
@@ -164,4 +167,3 @@ fn get_file_name_size(new_path: &String) -> Result<u32, Error> {
     };
     Ok(file_name.len() as u32)
 }
-

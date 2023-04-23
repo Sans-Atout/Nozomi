@@ -1,16 +1,19 @@
 // Librairie use in this librairie
 pub mod enums;
-pub mod utils;
 pub mod overwrite;
 mod test;
+pub mod utils;
 
-use std::{path::Path, fs};
+use std::{fs, path::Path};
 
 use enums::erase_method::EraserEntity;
 use enums::error::Error;
 use enums::success::Success;
-use overwrite::{gutmann_overwrite_file, hmgi_s5_overwrite_file, rcmp_tssit_ops_ii_overwrite_file, afssi_5020_overwrite_file, dod_522022_mece_overwrite_file, dod_522022_me_overwrite_file};
-use utils::{file_overwriting_random, delete_file};
+use overwrite::{
+    afssi_5020_overwrite_file, dod_522022_me_overwrite_file, dod_522022_mece_overwrite_file,
+    gutmann_overwrite_file, hmgi_s5_overwrite_file, rcmp_tssit_ops_ii_overwrite_file,
+};
+use utils::{delete_file, file_overwriting_random};
 
 /// Erase folder method
 ///
@@ -111,4 +114,3 @@ pub fn erase_file(_path: &str, erase_method: EraserEntity) -> Result<Success, Er
     };
     Ok(Success::EraseFileSuccess)
 }
-

@@ -3,9 +3,9 @@ name = "nozomi"
 version = "1.0.2"
 edition = "2021"
 
-authors = ["Sans-Atout <augustin.rousset-rouviere@isep.fr>"] 
+authors = ["Sans-Atout <augustin.rousset-rouviere@isep.fr>"]
 description = "Equivalent of the Linux shred command but in rust and library. Allows you to securely erase data from a hard drive."
-keywords = ["security", "erase","eraser", "wipping", "wipper"]
+keywords = ["security", "erase", "eraser", "wipping", "wipper"]
 
 license = "GPL-3.0"
 repository = "https://github.com/Sans-Atout/Nozomi/"
