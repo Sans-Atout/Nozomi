@@ -6,10 +6,16 @@ This library includes most of the secure deletion methods of the [Eraser](https:
 # Add to your project
 ```toml
 [dependencies]
-nozomi = "1.0.2"
+nozomi = "2.0.0"
 ```
 
 ## Test libraries
+### Prerequisites 
+```shell
+cargo install cargo-nextest --locked 
+```
+
+### Library test
 ```shell
 git clone https://github.com/Sans-Atout/Nozomi.git
 cd Nozomi
