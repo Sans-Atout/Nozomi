@@ -1,7 +1,6 @@
 // Librairie use in this librairie
 pub mod enums;
 pub mod overwrite;
-mod test;
 pub mod utils;
 
 use std::{fs, path::Path};
