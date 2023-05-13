@@ -156,8 +156,24 @@ pub fn rename_file(_path: String, size: u32) -> Result<String, Error> {
     Ok(new_file_name)
 }
 
-fn get_file_name_size(new_path: &String) -> Result<u32, Error> {
-    let _p = Path::new(new_path);
+/// Function that return the size of the file name
+/// 
+/// Argument : 
+/// * path (&String) : The file for which you want to retrieve the name length
+/// 
+/// Return :
+/// * (u32) : the name length if sucess
+/// * (nozomi::error) : errors if fails 
+/// 
+/// # Example:
+/// ```
+/// let size = match get_file_name_size(&_path) {
+///     Ok(s) => s,
+///     Err(error) => return Err(error),
+/// };
+/// ```
+fn get_file_name_size(path: &String) -> Result<u32, Error> {
+    let _p = Path::new(path);
     if !(_p.exists() && _p.is_file()) {
         return Err(Error::NotAFileOrDidntExist);
     }

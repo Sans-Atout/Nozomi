@@ -1,4 +1,4 @@
-// Librairie use in this librairie
+// Libraries use in this library
 pub mod enums;
 pub mod overwrite;
 pub mod utils;
@@ -17,7 +17,6 @@ use utils::{delete_file, file_overwriting_random};
 /// Erase folder method
 ///
 /// Function that allows you to delete, recursively or not, a folder according to a given secure deletion method
-///
 /// * `_path`        - The path of the folder you wish to delete
 /// * `erase_method` - The secure file deletion method (EraserEntity enumeration)
 /// * `is_recursive` - Does the deletion have to be recursive or not ?
@@ -62,7 +61,6 @@ pub fn erase_folder(
 /// Erase one file method
 ///
 /// Function that allows you to delete, recursively or not, a file according to a given secure deletion method
-///
 /// * `_path`        - The path of the file you wish to delete
 /// * `erase_method` - The secure file deletion method (EraserEntity enumeration)
 pub fn erase_file(_path: &str, erase_method: EraserEntity) -> Result<Success, Error> {
