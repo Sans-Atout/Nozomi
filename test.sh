@@ -40,7 +40,7 @@ generate afssi_5020
 generate dod_522022_me
 generate dod_522022_mece
 generate random
-generate gutman
+generate gutmann
 generate hmgi_s5
 generate rcmp_tssit_ops_ii
 
@@ -57,7 +57,7 @@ reverse_chmod afssi_5020
 reverse_chmod dod_522022_me
 reverse_chmod dod_522022_mece
 reverse_chmod random
-reverse_chmod gutman
+reverse_chmod gutmann
 reverse_chmod hmgi_s5
 reverse_chmod rcmp_tssit_ops_ii
 echo -e "\033[0;32mOK\033[0;0m reverse chmod -w command" 
