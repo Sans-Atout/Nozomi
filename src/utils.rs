@@ -8,31 +8,82 @@ use error_stack::{IntoReport, Report, Result, ResultExt};
 
 use crate::error::{InputError, ProcessError};
 
+/// Object that represent an overwrite task
+///
+/// # Example
+/// ```
+/// Overwrite::new(_path)
+///     .bytes_pattern(pattern)
+///     .write()
+///     .attach_printable(format!(
+///         "Overwrite method failed :\nmethod : Gutmann\nStep : {step}\npath : {_path}",
+///     ))?;
+/// ```
 pub struct Overwrite {
     path: String,
-    bytes_patern: Option<[u8; 3]>,
-    bytes: Option<u8>,
+    pattern: Option<[u8; 3]>,
+    byte: Option<u8>,
     random: bool,
 }
 
 impl Overwrite {
+    /// Function that return a new instance of an Overwrite tasks
+    ///
+    /// By default, the overwrite tasks is set to a random overwriting procedure. \
+    /// When the overwriting task is params as you wish you have to use the write method.
+    ///
+    /// ## Argument :
+    /// * `path` (&str) : path of the file you want to overwrite
+    ///
+    /// ## Return :
+    /// * (Overwrite) : an overwrite task object with random as overwrite method
+    ///
+    /// # Example
+    /// ```
+    /// let ow_task = Overwrite::new(_path);
+    /// ```
     pub fn new(path: &str) -> Overwrite {
         Overwrite {
             path: path.to_string(),
-            bytes_patern: None,
-            bytes: None,
-            random: false,
+            pattern: None,
+            byte: None,
+            random: true,
         }
     }
 
+    /// Function that execute the overwrite task
+    ///
+    /// Possible overwriting scheme :
+    /// * default : random u8 value
+    /// * byte : a defined u8 value
+    /// * bytes pattern : a defined array of 3 u8 values
+    ///
+    /// ## Return :
+    /// * () : everything is ok
+    /// * ProcessError : an process error with an detail stack of what happen (I hope so)
+    ///
+    /// # Example
+    /// Default method
+    /// ```rust
+    /// Overwrite::new(_path).write()?;
+    /// ```
+    /// byte method
+    /// ```rust
+    /// Overwrite::new(_path).byte(0x42_u8).write()?;
+    /// ```
+    /// byte pattern method
+    /// ```rust
+    /// Overwrite::new(_path).pattern([0x00_u8, 0x42_u8, 0xFF_u8]).write()?;
+    /// ```
     pub fn write(&self) -> Result<(), ProcessError> {
         let mut _file = File::options()
             .read(true)
             .open(&self.path)
             .into_report()
             .change_context(InputError)
-            .attach_printable(format!("Invalid reading rigth for file : {}", self.path))
-            .change_context(ProcessError).attach_printable("Process Failled : overwriting failed".to_owned(),)?;
+            .attach_printable(format!("Invalid reading right for file : {}", self.path))
+            .change_context(ProcessError)
+            .attach_printable("Process Failed : overwriting failed".to_owned())?;
 
         let mut reader = BufReader::new(_file);
         let mut buffer = Vec::new();
@@ -43,8 +94,8 @@ impl Overwrite {
             .into_report()
             .change_context(InputError)
             .attach_printable(format!("buffer reading error for file : {}", self.path))
-
-            .change_context(ProcessError).attach_printable("Process Failled : overwriting failed".to_owned(),)?;
+            .change_context(ProcessError)
+            .attach_printable("Process Failed : overwriting failed".to_owned())?;
 
         if self.random {
             for _id in 0..buffer.len() {
@@ -53,16 +104,15 @@ impl Overwrite {
             }
         }
 
-        if self.bytes.is_some(){
-            let data = self.bytes.unwrap();
+        if self.byte.is_some() {
+            let data = self.byte.unwrap();
             for _id in 0..buffer.len() {
                 buffer_modified.push(data);
             }
-        
         }
 
-        if self.bytes_patern.is_some(){
-            let data = self.bytes_patern.unwrap();
+        if self.pattern.is_some() {
+            let data = self.pattern.unwrap();
             for _id in 0..buffer.len() {
                 buffer_modified.push(data[_id % 3]);
             }
@@ -73,33 +123,79 @@ impl Overwrite {
             .open(&self.path)
             .into_report()
             .change_context(InputError)
-            .attach_printable(format!("Invalid writing rigth for file :  {}", self.path))
-
-            .change_context(ProcessError).attach_printable("Process Failled : overwriting failed".to_owned(),)?;
+            .attach_printable(format!("Invalid writing right for file :  {}", self.path))
+            .change_context(ProcessError)
+            .attach_printable("Process Failed : overwriting failed".to_owned())?;
 
         _file
             .write_all(buffer_modified.as_slice())
             .into_report()
             .change_context(InputError)
             .attach_printable(format!("buffer reading error for file : {}", self.path))
-            .change_context(ProcessError).attach_printable("Process Failled : overwriting failed".to_owned(),)?;
+            .change_context(ProcessError)
+            .attach_printable("Process Failed : overwriting failed".to_owned())?;
 
         Ok(())
     }
 
-    pub fn bytes(&mut self, bytes: &u8) -> &mut Overwrite {
-        self.bytes = Some(bytes.clone());
+    /// Function that configure an existing Overwriting instance to make sure that
+    /// the file will be overwrite with an given byte.
+    ///
+    /// When the overwriting task is params as you wish you have to use the write method.
+    ///
+    /// ## Argument :
+    /// * byte (u8) : Byte you want to use to replace all bytes  in the file.
+    ///
+    /// ## Return :
+    /// * () : everything is ok
+    /// * ProcessError : an process error with an detail stack of what happen (I hope so)
+    ///
+    /// # Example
+    /// ```
+    /// Overwrite::new(_path).byte(&0x42_u8).write()?;
+    /// ```
+    pub fn byte(&mut self, byte: &u8) -> &mut Overwrite {
+        self.byte = Some(*byte);
         self.random = false;
-        return self;
+        self
     }
 
-    pub fn bytes_patern(&mut self, bytes_patern: &[u8; 3]) -> &mut Overwrite {
-        self.bytes_patern = Some(bytes_patern.clone());
+    /// Function that configure an existing Overwriting instance to make sure that
+    /// the file will be overwrite with an given byte pattern.
+    ///
+    /// When the overwriting task is params as you wish you have to use the write method.
+    ///
+    /// ## Argument :
+    /// * bytes_pattern (&[u8; 3]) : Byte pattern you want to use to replace all bytes in the file.
+    ///
+    /// ## Return :
+    /// * () : everything is ok
+    /// * ProcessError : an process error with an detail stack of what happen (I hope so)
+    ///
+    /// # Example
+    /// ```
+    /// Overwrite::new(_path).pattern([0x00_u8, 0x42_u8, 0xFF_u8]).write()?;
+    /// ```
+    pub fn pattern(&mut self, bytes_pattern: &[u8; 3]) -> &mut Overwrite {
+        self.pattern = Some(*bytes_pattern);
         self.random = false;
-        return self;
+        self
     }
 }
 
+/// Function that delete a file.
+///
+/// ## Argument :
+/// * _path (&str) : the path of the file you want to delete.
+///
+/// ## Return :
+/// * () : everything is ok
+/// * InputError : an input error with an detail stack of what happen (I hope so)
+///
+/// # Example
+/// ```
+/// delete_file("/path/to/file")?;
+/// ```
 pub fn delete_file(_path: String) -> Result<(), InputError> {
     let mut new_path = _path.clone();
     let size = get_file_name_size(&_path)?;
@@ -115,6 +211,18 @@ pub fn delete_file(_path: String) -> Result<(), InputError> {
     Ok(())
 }
 
+/// Function that generate a string of a given length.
+///
+/// ## Argument :
+/// * size (u32) : the size of the string you want to generate
+///
+/// ## Return :
+/// * _string (String) : a string of zero of a given length
+///
+/// # Example
+/// ```
+/// generate_zero_string("/path/to/file")?;
+/// ```
 pub fn generate_zero_string(size: u32) -> String {
     let mut _string = String::from("");
     let mut s_size = 0;
@@ -125,6 +233,20 @@ pub fn generate_zero_string(size: u32) -> String {
     _string
 }
 
+/// Function that generate a string of a given length.
+///
+/// ## Argument :
+/// * size (u32) : the size of the string you want to generate
+/// * _path (String) : the size of the string you want to generate
+///
+/// ## Return :
+/// * new_file_name (String) : if success the new name of a file
+/// * InputError : if fail (aka wrong path given, not a file or wrong right)
+///
+/// # Example
+/// ```
+/// rename_file("/path/to/string")?;
+/// ```
 pub fn rename_file(_path: String, size: u32) -> Result<String, InputError> {
     let _p = Path::new(&_path);
 
@@ -143,7 +265,7 @@ pub fn rename_file(_path: String, size: u32) -> Result<String, InputError> {
         Some(file) => file,
         None => {
             return Err(Report::new(InputError)
-                .attach_printable(format!("Cannot retrive file name : {_path}")))
+                .attach_printable(format!("Cannot retrieve file name : {_path}")))
         }
     };
     let dir = _p.parent().unwrap().to_str().unwrap();
@@ -161,7 +283,7 @@ pub fn rename_file(_path: String, size: u32) -> Result<String, InputError> {
 /// * path (&String) : The file for which you want to retrieve the name length
 ///
 /// Return :
-/// * (u32) : the name length if sucess
+/// * (u32) : the name length if success
 /// * (nozomi::error) : errors if fails
 ///
 /// # Example:
@@ -188,7 +310,7 @@ fn get_file_name_size(path: &String) -> Result<u32, InputError> {
         Some(file) => file,
         None => {
             return Err(Report::new(InputError)
-                .attach_printable(format!("Cannot retrive file name : {path}")))
+                .attach_printable(format!("Cannot retrieve file name : {path}")))
         }
     };
     Ok(file_name.len() as u32)

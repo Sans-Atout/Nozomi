@@ -65,7 +65,7 @@ pub fn erase_folder(
             Some(file) => file,
             None => {
                 return Err(Report::new(InputError)
-                    .attach_printable(format!("Cannot retrive file name : {_path}"))
+                    .attach_printable(format!("Cannot retrieve file name : {_path}"))
                     .change_context(ProcessError)
                     .attach_printable("Process Error : erase folder fail"))
             }
