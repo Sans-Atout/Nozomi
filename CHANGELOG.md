@@ -12,9 +12,11 @@
 + Implement test
 + add test script 
 
-Common update
 ! Update README file
 + CHANGELOG file
++ CONTRIBUTING file
++ SECURITY file
++ examples folder
 ```
 
 ## [v1.0.2](https://crates.io/crates/nozomi/1.0.2)

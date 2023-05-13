@@ -27,10 +27,10 @@ chmod +x test.sh
 ### Erase one file with Pseudo Random method
 ```rust
 use nozomi;
-use nozomi::enums::erase_method::EraserEntity;
+use nozomi::OverwriteMethod::Afssi5020;
 
 fn main() {
-    match nozomi::erase_file("path_to_file", EraserEntity::PseudoRandom){
+    match nozomi::erase_file("path_to_file", Afssi5020){
         Ok(info) => println!("{}",info),
         Err(error) => println!("{}",error)
     };
@@ -40,16 +40,17 @@ fn main() {
 ### Erase one folder with Pseudo Random method
 ```rust
 use nozomi;
-use nozomi::enums::erase_method::EraserEntity;
+use nozomi::OverwriteMethod::Afssi5020;
 
 fn main() {
-    match nozomi::erase_folder("path_to_folder", EraserEntity::PseudoRandom){
+    match nozomi::erase_folder("path_to_folder", Afssi5020, false){
         Ok(info) => println!("{}",info),
         Err(error) => println!("{}",error)
     };
 }
 ```
 # [Changelog](CHANGELOG.md)
+# [Contributing](CONTRIBUTING.md)
 
 # Erase Method
 Here are all the methods available and an illustrative diagram for each suppression method.
@@ -62,7 +63,7 @@ You can see below an explanation of one brick of the scheme :
 
 ## [Gutmann](https://en.wikipedia.org/wiki/Gutmann_method)
 
-![gutman erase method](images/gutmann.png)
+![gutmann erase method](images/gutmann.png)
 
 ## [Hmgi S5](https://www.bitraser.com/knowledge-series/data-destruction-standards-and-guidelines.php)
 
@@ -80,3 +81,7 @@ You can see below an explanation of one brick of the scheme :
 
 ## [RCMP TSSIT OPS II](https://www.datadestroyers.eu/technology/rcmp_tssit_ops-2.html)
 ![RCMP TSSIT OPS II](images/RCMP_TSSIT_OPS_II.png)
+
+# TODO Issue template 
+# TODO Pull Request template
+# TODO Code of conduct
