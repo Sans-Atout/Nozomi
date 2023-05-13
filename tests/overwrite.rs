@@ -49,9 +49,9 @@ fn is_file_overwrited(path : &str) -> bool{
 mod afssi_5020 {
     use crate::is_file_overwrited;
     // Change the function to your overwriting method but not the alias
-    use nozomi::overwrite::afssi_5020_overwrite_file as overwrite_method;
+    use nozomi::method::afssi_5020_overwrite_file as overwrite_method;
     // Change the entity to your overwriting method but not the alias
-    use nozomi::enums::erase_method::EraserEntity::Afssi5020 as erase_entity;
+    use nozomi::OverwriteMethod::Afssi5020 as erase_entity;
     // Change it to your overwritting algorithm 
     static ERASE_METHOD_NAME: &str = "afssi_5020";
 

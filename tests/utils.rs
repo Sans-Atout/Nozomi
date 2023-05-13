@@ -1,7 +1,9 @@
 
 use std::path::Path;
 
-use nozomi::{enums::erase_method::EraserEntity, erase_folder, utils::{delete_file, generate_zero_string, self}, erase_file};
+use nozomi::{utils::{generate_zero_string, delete_file}, erase_file, erase_folder};
+use nozomi::OverwriteMethod::PseudoRandom;
+use nozomi::utils;
 
 #[test]
 fn zero_string() {
@@ -20,19 +22,19 @@ fn delete() {
 
 #[test]
 fn file() {
-    let mut result = erase_file(&"./data/file_to_erase.txt", EraserEntity::PseudoRandom);
+    let mut result = erase_file(&"./data/file_to_erase.txt", PseudoRandom);
     assert!(result.is_ok());
     assert!(!Path::new("./data/file_1.txt").exists());
-    result = erase_file(&"./data/file_1.txt", EraserEntity::PseudoRandom);
+    result = erase_file(&"./data/invalid.txt", nozomi::OverwriteMethod::PseudoRandom);
     assert!(result.is_err());
 }
 
 #[test]
 fn folder() {
-    let mut result = erase_folder(&"./data/folder_to_erase", EraserEntity::PseudoRandom, false);
+    let mut result = erase_folder(&"./data/folder_to_erase", PseudoRandom, false);
     assert!(result.is_ok());
     assert!(!Path::new("./data/folder").exists());
-    result = crate::erase_folder(&"./data/folder", EraserEntity::PseudoRandom, false);
+    result = crate::erase_folder(&"./data/folder", PseudoRandom, false);
     assert!(result.is_err());
 }
 

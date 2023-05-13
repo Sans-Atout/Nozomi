@@ -37,8 +37,8 @@ create_file file_to_erase.txt
 echo -e "\033[0;32mOK\033[0;0m Create common file for test" 
 
 generate afssi_5020
-generate dod_5022022_me
-generate dod_5022022_mece
+generate dod_522022_me
+generate dod_522022_mece
 generate random
 generate gutman
 generate hmgi_s5
@@ -47,8 +47,6 @@ generate rcmp_tssit_ops_ii
 echo -e "\033[0;32mOK\033[0;0m create file for test"
 generate_folder folder_to_erase
 echo -e "\033[0;32mOK\033[0;0m create folder for test" 
-export TEXT
-echo -e "\033[0;32mOK\033[0;0m unset TEST variable" 
 echo "-----------------------------------------------------------"
 cargo nextest run
 
@@ -56,13 +54,14 @@ echo "-----------------------------------------------------------"
 echo " Post Test cleanup" 
 echo "-----------------------------------------------------------"
 reverse_chmod afssi_5020
-reverse_chmod dod_5022022_me
-reverse_chmod dod_5022022_mece
+reverse_chmod dod_522022_me
+reverse_chmod dod_522022_mece
 reverse_chmod random
 reverse_chmod gutman
 reverse_chmod hmgi_s5
 reverse_chmod rcmp_tssit_ops_ii
 echo -e "\033[0;32mOK\033[0;0m reverse chmod -w command" 
-
 rm -r data/*
 echo -e "\033[0;32mOK\033[0;0m remove all test data file" 
+export TEXT
+echo -e "\033[0;32mOK\033[0;0m unset TEST variable" 
