@@ -1,39 +1,48 @@
 # Changelog
 ## [v2.0.0](https://crates.io/crates/nozomi/2.0.0)
-```
-[*] Apply ANSSI best practice for Rust 
-[*] Refactoring code
-[+] Implement test
+```diff
++ Apply ANSSI best practice for Rust
++ Apply error handling best practice
+    reference can be found here : https://www.youtube.com/watch?v=g6WUHcyjsfc
 
-[*] Update README file
-[+] Add CHANGELOG file
+! Refactoring code
++   Code easier to use for user
++   Code more flexible
+
++ Implement test
++ add test script 
+
+Common update
+! Update README file
++ CHANGELOG file
 ```
 
 ## [v1.0.2](https://crates.io/crates/nozomi/1.0.2)
-```
-[+] Update Readme file
-[B] Correct a bug in erase_folder function
-    [C] When a folder is found in erase folder function, the function crash
-        because a folder is not a file
-[+] Adding error handling
-[+] Adding success handling
+```diff
+! Update Readme file
+
+- Correct a bug in erase_folder overwrite method
+    When a folder is found in erase folder overwrite method, the overwrite method crash because a folder is not a file.
+
++ error handling
++ success handling
 ```
 
 ## [v1.0.1](https://crates.io/crates/nozomi/1.0.1)
-```
-[+] Update Readme file
+```diff
+! Update Readme file
 ```
 
 ## [v1.0.0](https://crates.io/crates/nozomi/1.0.0)
-```
-[+] Adding erase file method
-    [+] Pseudo Random
-    [+] Gutmann
-    [+] HMGI S5
-    [+] DOD 522022 MECE
-    [+] DOD 522022 ME
-    [+] AFSSI 5020
-    [+] RCMP TSSIT OPS II
 
-[+] Adding erase folder method
+```diff
++ Pseudo Random overwrite method
++ Gutmann overwrite method
++ HMGI S5 overwrite method
++ DOD 522022 MECE overwrite method
++ DOD 522022 ME overwrite method
++ AFSSI 5020 overwrite method
++ RCMP TSSIT OPS II overwrite method
+
++ erase folder method
 ```
