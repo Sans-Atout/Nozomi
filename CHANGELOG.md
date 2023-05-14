@@ -15,6 +15,7 @@
 ! Update README file
 + CHANGELOG file
 + CONTRIBUTING file
++ CODE_OF_CONDUCT file
 + SECURITY file
 + examples folder
 ```

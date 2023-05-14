@@ -81,7 +81,3 @@ You can see below an explanation of one brick of the scheme :
 
 ## [RCMP TSSIT OPS II](https://www.datadestroyers.eu/technology/rcmp_tssit_ops-2.html)
 ![RCMP TSSIT OPS II](images/RCMP_TSSIT_OPS_II.png)
-
-# TODO Issue template 
-# TODO Pull Request template
-# TODO Code of conduct
