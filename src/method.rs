@@ -14,11 +14,7 @@ use crate::utils::Overwrite;
 ///
 /// # Example :
 /// ```
-/// use nozomi::method::gutmann_overwrite_file;
-///
-/// fn main(){
-///     gutmann_overwrite_file("/path/to/file")?;
-/// }
+/// nozomi::method::gutmann_overwrite_file("/path/to/file")?;
 /// ```
 pub fn gutmann_overwrite_file(_path: &str) -> Result<(), ProcessError> {
     let mut step = 1;
@@ -115,11 +111,7 @@ pub fn gutmann_overwrite_file(_path: &str) -> Result<(), ProcessError> {
 ///
 /// # Example :
 /// ```
-/// use nozomi::method::hmgi_s5_overwrite_file;
-///
-/// fn main(){
-///     hmgi_s5_overwrite_file("/path/to/file")?;
-/// }
+/// nozomi::method::hmgi_s5_overwrite_file("/path/to/file")?;
 /// ```
 pub fn hmgi_s5_overwrite_file(_path: &str) -> Result<(), ProcessError> {
     Overwrite::new(_path)
@@ -150,11 +142,7 @@ pub fn hmgi_s5_overwrite_file(_path: &str) -> Result<(), ProcessError> {
 ///
 /// # Example :
 /// ```
-/// use nozomi::method::rcmp_tssit_ops_ii_overwrite_file;
-///
-/// fn main(){
-///     rcmp_tssit_ops_ii_overwrite_file("/path/to/file")?;
-/// }
+/// nozomi::method::rcmp_tssit_ops_ii_overwrite_file("/path/to/file")?;
 /// ```
 pub fn rcmp_tssit_ops_ii_overwrite_file(_path: &str) -> Result<(), ProcessError> {
     Overwrite::new(_path)
@@ -216,11 +204,7 @@ pub fn rcmp_tssit_ops_ii_overwrite_file(_path: &str) -> Result<(), ProcessError>
 ///
 /// # Example :
 /// ```
-/// use nozomi::method::afssi_5020_overwrite_file;
-///
-/// fn main(){
-///     afssi_5020_overwrite_file("/path/to/file")?;
-/// }
+/// nozomi::method::afssi_5020_overwrite_file("/path/to/file")?;
 /// ```
 pub fn afssi_5020_overwrite_file(_path: &str) -> Result<(), ProcessError> {
     Overwrite::new(_path)
@@ -255,11 +239,7 @@ pub fn afssi_5020_overwrite_file(_path: &str) -> Result<(), ProcessError> {
 ///
 /// # Example :
 /// ```
-/// use nozomi::method::dod_522022_mece_overwrite_file;
-///
-/// fn main(){
-///     dod_522022_mece_overwrite_file("/path/to/file")?;
-/// }
+/// nozomi::method::dod_522022_mece_overwrite_file("/path/to/file")?;
 /// ```
 pub fn dod_522022_mece_overwrite_file(_path: &str) -> Result<(), ProcessError> {
     Overwrite::new(_path)
@@ -313,11 +293,7 @@ pub fn dod_522022_mece_overwrite_file(_path: &str) -> Result<(), ProcessError> {
 ///
 /// # Example :
 /// ```
-/// use nozomi::method::dod_522022_me_overwrite_file;
-///
-/// fn main(){
-///     dod_522022_me_overwrite_file("/path/to/file")?;
-/// }
+/// nozomi::method::dod_522022_me_overwrite_file("/path/to/file")?;
 /// ```
 pub fn dod_522022_me_overwrite_file(_path: &str) -> Result<(), ProcessError> {
     Overwrite::new(_path)
