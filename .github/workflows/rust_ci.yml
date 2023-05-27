@@ -15,15 +15,15 @@ jobs:
       - name: Install Rust
         uses: actions/checkout@v2
       - name: Install rust auditing tools
-        uses: cargo install cargo-audit
+        run: cargo install cargo-audit
       - name : Install cargo-nextest
-        uses: cargo install cargo-nextest
+        run: cargo install cargo-nextest
       - name : Build
-        uses: cargo build --verbose
+        run: cargo build --verbose
       - name : Clippy
-        uses: cargo clippy --verbose -- -D warnings
+        run: cargo clippy --verbose -- -D warnings
       - name: Audit
-        uses: cargo audit
+        run: cargo audit
       - name: Test
-        uses: ./test.sh
+        run: ./test.sh
 
