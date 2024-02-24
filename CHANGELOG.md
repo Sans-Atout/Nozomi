@@ -1,4 +1,12 @@
 # Changelog
+## [v2.0.1](https://crates.io/crates/nozomi/2.0.1)
+```diff
+! Update dependencies
++ Add pretty_assertions as dev dependencies
+
+Rerun all tests
+```
+
 ## [v2.0.0](https://crates.io/crates/nozomi/2.0.0)
 ```diff
 + Apply ANSSI best practice for Rust
