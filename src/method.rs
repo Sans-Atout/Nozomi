@@ -281,7 +281,6 @@ pub fn dod_522022_mece_overwrite_file(_path: &str) -> Result<(), ProcessError> {
     Ok(())
 }
 
-
 /// Function that implement [DOD 522022 ME overwrite method](https://www.bitraser.com/article/DoD-5220-22-m-standard-for-drive-erasure.php)
 ///
 /// Argument :

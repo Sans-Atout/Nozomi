@@ -6,12 +6,13 @@ pub mod utils;
 use std::{fs, path::Path};
 
 use error::{InputError, ProcessError};
-use error_stack::{IntoReport, Report, Result, ResultExt};
+use error_stack::{Report, Result, ResultExt};
 
 use method::{
     afssi_5020_overwrite_file, dod_522022_me_overwrite_file, dod_522022_mece_overwrite_file,
     gutmann_overwrite_file, hmgi_s5_overwrite_file, rcmp_tssit_ops_ii_overwrite_file,
 };
+
 use utils::{delete_file, Overwrite};
 
 /// Nozomi Eraser method enumeration based on Eraser for Windows main method
@@ -83,7 +84,6 @@ pub fn erase_folder(
         }
     }
     fs::remove_dir_all(_path)
-        .into_report()
         .change_context(ProcessError)
         .attach_printable("Process Error : can not delete folder")?;
     Ok(())

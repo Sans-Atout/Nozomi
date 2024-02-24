@@ -9,8 +9,8 @@ use nozomi::{
 use pretty_assertions::assert_eq;
 
 /// Function that test if the function `generate_zero_string` work well
-/// 
-/// Test passed if the function can generate a for zero string 
+///
+/// Test passed if the function can generate a for zero string
 #[test]
 fn zero_string() {
     let string_res = generate_zero_string(4);
@@ -18,7 +18,7 @@ fn zero_string() {
 }
 
 /// Function that test if the function `delete_file` work well
-/// 
+///
 /// Test passed if :
 /// * the function can delete a file
 /// * if we want to delete a non existing file the function return an error
@@ -32,35 +32,35 @@ fn delete() {
 }
 
 /// Function that test if the function `erase_file` work well
-/// 
+///
 /// Test passed if :
 /// * we can erase a file with this method
 /// * if the path given is invalid the function return an error
 #[test]
 fn file() {
-    let mut result = erase_file(&"./data/file_to_erase.txt", PseudoRandom);
+    let mut result = erase_file("./data/file_to_erase.txt", PseudoRandom);
     assert!(result.is_ok());
     assert!(!Path::new("./data/file_1.txt").exists());
-    result = erase_file(&"./data/invalid.txt", nozomi::OverwriteMethod::PseudoRandom);
+    result = erase_file("./data/invalid.txt", nozomi::OverwriteMethod::PseudoRandom);
     assert!(result.is_err());
 }
 
 /// Function that test if the function `erase_folder` work well
-/// 
+///
 /// Test passed if :
 /// * we can erase a folder with this method
 /// * if the path given is invalid the function return an error
 #[test]
 fn folder() {
-    let mut result = erase_folder(&"./data/folder_to_erase", PseudoRandom, false);
+    let mut result = erase_folder("./data/folder_to_erase", PseudoRandom, false);
     assert!(result.is_ok());
     assert!(!Path::new("./data/folder").exists());
-    result = crate::erase_folder(&"./data/folder", PseudoRandom, false);
+    result = crate::erase_folder("./data/folder", PseudoRandom, false);
     assert!(result.is_err());
 }
 
 /// Function that test if the function `rename_file` work well
-/// 
+///
 /// Test passed if :
 /// * we can rename a file with this method
 /// * if the path given is invalid the function return an error
