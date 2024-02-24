@@ -6,6 +6,7 @@ use nozomi::{
     erase_file, erase_folder,
     utils::{delete_file, generate_zero_string},
 };
+use pretty_assertions::assert_eq;
 
 /// Function that test if the function `generate_zero_string` work well
 /// 

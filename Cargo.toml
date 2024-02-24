@@ -15,3 +15,9 @@ env_logger = "0.10.0"
 error-stack = "0.3.1"
 log = "0.4.17"
 rand = "0.8.5"
+
+[lints.rust]
+unsafe_code="forbid"
+
+[dev-dependencies]
+pretty_assertions = "1.4.0"
