@@ -6,7 +6,7 @@ This library includes most of the secure deletion methods of the [Eraser](https:
 # Add to your project
 ```toml
 [dependencies]
-nozomi = "2.0.0"
+nozomi = "2.0.1"
 ```
 
 ## Test libraries

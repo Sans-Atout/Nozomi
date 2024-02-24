@@ -4,7 +4,7 @@ use std::{
     path::Path,
 };
 
-use error_stack::{IntoReport, Report, Result, ResultExt};
+use error_stack::{Report, Result, ResultExt};
 
 use crate::error::{InputError, ProcessError};
 
@@ -79,7 +79,6 @@ impl Overwrite {
         let mut _file = File::options()
             .read(true)
             .open(&self.path)
-            .into_report()
             .change_context(InputError)
             .attach_printable(format!("Invalid reading right for file : {}", self.path))
             .change_context(ProcessError)
@@ -91,7 +90,6 @@ impl Overwrite {
 
         reader
             .read_to_end(&mut buffer)
-            .into_report()
             .change_context(InputError)
             .attach_printable(format!("buffer reading error for file : {}", self.path))
             .change_context(ProcessError)
@@ -121,7 +119,6 @@ impl Overwrite {
         _file = File::options()
             .write(true)
             .open(&self.path)
-            .into_report()
             .change_context(InputError)
             .attach_printable(format!("Invalid writing right for file :  {}", self.path))
             .change_context(ProcessError)
@@ -129,7 +126,6 @@ impl Overwrite {
 
         _file
             .write_all(buffer_modified.as_slice())
-            .into_report()
             .change_context(InputError)
             .attach_printable(format!("buffer reading error for file : {}", self.path))
             .change_context(ProcessError)
@@ -204,7 +200,6 @@ pub fn delete_file(_path: String) -> Result<(), InputError> {
         new_path = rename_file(new_path, size - s)?;
     }
     fs::remove_file(new_path)
-        .into_report()
         .change_context(InputError)
         .attach_printable(format!("Can not delete file : {_path}"))?;
 
@@ -271,7 +266,6 @@ pub fn rename_file(_path: String, size: u32) -> Result<String, InputError> {
     let dir = _p.parent().unwrap().to_str().unwrap();
     let new_file_name = [dir, (generate_zero_string(size).as_str())].join("/");
     fs::rename(&_path, &new_file_name)
-        .into_report()
         .change_context(InputError)
         .attach_printable(format!("Cannot rename file : {_path} to {new_file_name}"))?;
     Ok(new_file_name)

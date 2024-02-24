@@ -37,7 +37,7 @@ fn is_file_overwritten(path: &str) -> bool {
         return true;
     }
 
-    return breton_text == tested_content.unwrap();
+    breton_text == tested_content.unwrap()
 }
 
 /// Test for the afssi_5020 erase method :
