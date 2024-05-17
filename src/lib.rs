@@ -5,6 +5,7 @@ pub mod utils;
 
 use std::{fs, path::Path};
 
+use crate::error::{Error, Result};
 use error::{InputError, ProcessError};
 use error_stack::{Report, Result, ResultExt};
 
