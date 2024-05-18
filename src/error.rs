@@ -2,7 +2,7 @@
 use error_stack::{self, Context};
 use std::{fmt, path::Path};
 
-use crate::models::SecureDelete;
+use crate::{methods::Method, models::SecureDelete};
 
 /// 
 #[cfg(feature = "error-stack")]
@@ -42,7 +42,7 @@ pub type Result<T> = core::result::Result<T, Error>;
 pub enum Error {
     InputError(String),
     FileNotFound(String),
-    OverwriteError(SecureDelete),
+    OverwriteError(Method,u32),
     DeleteError(SecureDelete),
     NoFileName(SecureDelete),
     StringConversionError,
