@@ -5,8 +5,6 @@ use nozomi::{
     OverwriteMethod,
 };
 
-fn has_send_sync<T: Sized + Send + Sync + Unpin>() {}
-fn has_needed<T: Copy + Clone + Debug>() {}
 
 /// Test if all Entity int this library has Send and Sync trait implemented
 ///

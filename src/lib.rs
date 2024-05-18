@@ -1,11 +1,16 @@
 // Libraries use in this library
 pub mod error;
 pub mod method;
+#[cfg(test)]
+pub mod tests;
 pub mod utils;
-
+pub mod methods; 
+pub mod models;
 use std::{fs, path::Path};
 
 use crate::error::{Error, Result};
+
+/*
 use error::{InputError, ProcessError};
 use error_stack::{Report, Result, ResultExt};
 
@@ -14,6 +19,7 @@ use method::{
     gutmann_overwrite_file, hmgi_s5_overwrite_file, rcmp_tssit_ops_ii_overwrite_file,
 };
 
+use methods;
 use utils::{delete_file, Overwrite};
 
 /// Nozomi Eraser method enumeration based on Eraser for Windows main method
@@ -46,7 +52,8 @@ pub fn erase_folder(
     _path: &str,
     erase_method: OverwriteMethod,
     is_recursive: bool,
-) -> Result<(), ProcessError> {
+) -> 
+Result<(), ProcessError> {
     let _p = Path::new(_path);
     if !_p.exists() {
         return Err(Report::new(InputError)
@@ -125,3 +132,5 @@ pub fn erase_file(_path: &str, erase_method: OverwriteMethod) -> Result<(), Proc
         .attach_printable(format!("Process Error : Cannot delete file {_path}"))?;
     Ok(())
 }
+ */
+

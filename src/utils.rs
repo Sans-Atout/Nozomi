@@ -3,7 +3,7 @@ use std::{
     io::{BufReader, Read, Write},
     path::Path,
 };
-
+/*
 use error_stack::{Report, Result, ResultExt};
 
 use crate::error::{InputError, ProcessError};
@@ -309,3 +309,5 @@ fn get_file_name_size(path: &String) -> Result<u32, InputError> {
     };
     Ok(file_name.len() as u32)
 }
+ */
+
