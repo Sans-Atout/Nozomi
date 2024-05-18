@@ -44,6 +44,22 @@ pub enum Error {
     FileNotFound(String),
     OverwriteError(SecureDelete),
     DeleteError(SecureDelete),
-    NoFileName(SecureDelete)
+    NoFileName(SecureDelete),
+    StringConversionError,
+    RenameError(String),
+    FileDeletionError(String),
+    #[cfg(test)]
+    FileCreationError(std::io::Error)
 
 }
+
+impl core::fmt::Display for Error {
+	fn fmt(
+		&self,
+		fmt: &mut core::fmt::Formatter,
+	) -> core::result::Result<(), core::fmt::Error> {
+		write!(fmt, "{self:?}")
+	}
+}
+
+impl std::error::Error for Error {}
