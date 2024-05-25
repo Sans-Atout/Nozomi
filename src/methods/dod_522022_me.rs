@@ -1,33 +1,3 @@
-const OVERWRITE_PATTERN: [[u8; 3]; 27] = [
-    [0x55_u8, 0x55_u8, 0x55_u8],
-    [0xAA_u8, 0xAA_u8, 0xAA_u8],
-    [0x92_u8, 0x49_u8, 0x24_u8],
-    [0x49_u8, 0x24_u8, 0x92_u8],
-    [0x24_u8, 0x92_u8, 0x49_u8],
-    [0x00_u8, 0x00_u8, 0x00_u8],
-    [0x11_u8, 0x11_u8, 0x11_u8],
-    [0x22_u8, 0x22_u8, 0x22_u8],
-    [0x33_u8, 0x33_u8, 0x33_u8],
-    [0x44_u8, 0x44_u8, 0x44_u8],
-    [0x55_u8, 0x55_u8, 0x55_u8],
-    [0x66_u8, 0x66_u8, 0x66_u8],
-    [0x77_u8, 0x77_u8, 0x77_u8],
-    [0x88_u8, 0x88_u8, 0x88_u8],
-    [0x99_u8, 0x99_u8, 0x99_u8],
-    [0xAA_u8, 0xAA_u8, 0xAA_u8],
-    [0xBB_u8, 0xBB_u8, 0xBB_u8],
-    [0xCC_u8, 0xCC_u8, 0xCC_u8],
-    [0xDD_u8, 0xDD_u8, 0xDD_u8],
-    [0xEE_u8, 0xEE_u8, 0xEE_u8],
-    [0xFF_u8, 0xFF_u8, 0xFF_u8],
-    [0x92_u8, 0x49_u8, 0x24_u8],
-    [0x49_u8, 0x24_u8, 0x92_u8],
-    [0x24_u8, 0x92_u8, 0x49_u8],
-    [0x6D_u8, 0xB6_u8, 0xDB_u8],
-    [0xB6_u8, 0xDB_u8, 0x6D_u8],
-    [0xDB_u8, 0x6D_u8, 0xB6_u8],
-];
-
 #[cfg(not(feature = "error-stack"))]
 use crate::error::{Error, Result};
 use crate::methods::Method;
@@ -37,38 +7,16 @@ use crate::models::SecureDelete;
 pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
     let mut secure_deletion = SecureDelete::new(path)?;
     secure_deletion
+        .byte(&0x00_u8)
         .overwrite()
-        .map_err(|_| Error::OverwriteError(Method::Gutmann, 1))?;
+        .map_err(|_| Error::OverwriteError(Method::Dod522022ME, 1))?;
+    secure_deletion
+        .byte(&0xFF_u8)
+        .overwrite()
+        .map_err(|_| Error::OverwriteError(Method::Dod522022ME, 2))?;
     secure_deletion
         .overwrite()
-        .map_err(|_| Error::OverwriteError(Method::Gutmann, 2))?;
-    secure_deletion
-        .overwrite()
-        .map_err(|_| Error::OverwriteError(Method::Gutmann, 3))?;
-    secure_deletion
-        .overwrite()
-        .map_err(|_| Error::OverwriteError(Method::Gutmann, 4))?;
-
-    let mut step = 4;
-    for pattern in &OVERWRITE_PATTERN {
-        step += 1;
-        secure_deletion
-            .pattern(pattern)
-            .overwrite()
-            .map_err(|_| Error::OverwriteError(Method::Gutmann, step))?;
-    }
-    secure_deletion
-        .overwrite()
-        .map_err(|_| Error::OverwriteError(Method::Gutmann, step + 1))?;
-    secure_deletion
-        .overwrite()
-        .map_err(|_| Error::OverwriteError(Method::Gutmann, step + 2))?;
-    secure_deletion
-        .overwrite()
-        .map_err(|_| Error::OverwriteError(Method::Gutmann, step + 3))?;
-    secure_deletion
-        .overwrite()
-        .map_err(|_| Error::OverwriteError(Method::Gutmann, step + 4))?;
+        .map_err(|_| Error::OverwriteError(Method::Dod522022ME, 3))?;
     Ok(secure_deletion)
 }
 
@@ -80,12 +28,12 @@ mod std_test {
     use super::overwrite_file;
     use crate::tests::standard::{create_test_file, get_bytes};
     use crate::tests::TestType;
-    use crate::methods::Method::Gutmann as EraseMethod;
+    use crate::methods::Method::Dod522022ME as EraseMethod;
     use crate::{Error, Result};
 
-    use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
+    use pretty_assertions::{assert_eq, assert_ne};
 
-    const METHOD_NAME: &str = "gutmann";
+    const METHOD_NAME: &str = "dod_522022_me";
 
     #[test]
     fn basic_overwrite() -> Result<()> {
@@ -113,7 +61,6 @@ mod std_test {
     #[test]
     fn medium_deletion() -> Result<()> {
         let (string_path, _) = create_test_file(&TestType::MediumFile, &METHOD_NAME)?;
-        assert_str_eq!("/tmp/gutmann/gutmann_medium_file_test",string_path);
         let path = Path::new(&string_path);
         assert!(path.exists());
         EraseMethod.delete(&string_path)?;
@@ -141,5 +88,6 @@ mod std_test {
         assert!(!path.exists());
         Ok(())
     }
+
 
 }

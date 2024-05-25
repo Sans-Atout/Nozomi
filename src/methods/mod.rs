@@ -1,6 +1,12 @@
-use std::{fs::{self, read_dir}, path::Path};
+use std::{fs::read_dir, path::Path};
 
 mod gutmann;
+mod dod_522022_mece;
+mod dod_522022_me;
+mod afssi_5020;
+mod hmgi_s5;
+mod pseudo_random;
+mod rcmp_tssit_ops_ii;
 
 /// Nozomi Eraser method enumeration based on Eraser for Windows main method
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
@@ -36,11 +42,13 @@ impl Method {
         }
         if !path_to_delete.is_dir() {
             match self {
-                Method::Dod522022MECE => todo!(),
-                Method::Dod522022ME => todo!(),
-                Method::RcmpTssitOpsII => todo!(),
-                Method::HmgiS5 => todo!(),
+                Method::Dod522022MECE => dod_522022_me::overwrite_file(path)?.delete()?,
+                Method::Dod522022ME => dod_522022_mece::overwrite_file(path)?.delete()?,
+                Method::Afssi5020 => afssi_5020::overwrite_file(path)?.delete()?,
+                Method::RcmpTssitOpsII => rcmp_tssit_ops_ii::overwrite_file(path)?.delete()?,
+                Method::HmgiS5 => hmgi_s5::overwrite_file(path)?.delete()?,
                 Method::Gutmann => gutmann::overwrite_file(path)?.delete()?,
+                Method::PseudoRandom => pseudo_random::overwrite_file(path)?.delete()?,
             };
             return Ok(());
         }
