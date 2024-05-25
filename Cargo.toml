@@ -11,16 +11,18 @@ license = "GPL-3.0"
 repository = "https://github.com/Sans-Atout/Nozomi/"
 
 [dependencies]
-env_logger = "0.11.2"
-error-stack = "0.4.1"
-log = { version = "0.4.20", optional=true}
-rand = "0.8.5"
+env_logger = {version = "0.11.3",optional=true}
+error-stack = {version = "0.4.1",optional=true}
+log = { version = "0.4.21", optional=true}
+rand = "0.8.4"
 
 [lints.rust]
 unsafe_code="forbid"
 
 [dev-dependencies]
 pretty_assertions = "1.4.0"
+
 [features]
-error-stack = []
-log = ["dep:log"]
+error-stack = ["dep:error-stack"]
+log = ["dep:log","dep:env_logger"]
+secure_log = ["log"]
