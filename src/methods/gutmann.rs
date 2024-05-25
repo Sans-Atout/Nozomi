@@ -75,31 +75,70 @@ pub fn gutmann_overwrite_file(path: &str) -> Result<SecureDelete> {
 #[cfg(test)]
 #[cfg(not(feature = "error-stack"))]
 mod std_test {
-    use std::fs::create_dir_all;
+    use std::path::Path;
 
-    use super::gutmann_overwrite_file;
-    use crate::tests::standard::{file, get_bytes};
+    use super::overwrite_file;
+    use crate::tests::standard::{create_test_file, get_bytes};
+    use crate::tests::TestType;
+    use crate::methods::Method::Gutmann;
     use crate::{Error, Result};
 
-    use pretty_assertions::{assert_eq, assert_ne};
+    use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
+
+    const METHOD_NAME: &str = "gutmann";
 
     #[test]
     fn basic_overwrite() -> Result<()> {
-        let mut tmp_file = std::env::temp_dir();
-        tmp_file.push("gutmann");
-        if !tmp_file.as_path().exists() {
-            create_dir_all(&tmp_file).map_err(|e| Error::FileCreationError(e))?;
-        }
-        tmp_file.push("std_basic_overwrite");
-        tmp_file.set_extension("txt");
-        let path = tmp_file.as_path();
-        file(path, "Hello, world!")?;
+        let (string_path, lorem) = create_test_file(&TestType::OverwriteOnly, &METHOD_NAME)?;
+        let path = Path::new(&string_path);
         assert!(path.exists());
-        let str = path.to_str().ok_or(Error::StringConversionError)?;
-        gutmann_overwrite_file(str)?;
+        overwrite_file(&string_path)?;
         let bytes = get_bytes(&path)?;
-        assert_eq!(bytes.len(), b"Hello, world!".len());
-        assert_ne!(bytes, b"Hello, world!");
+        assert_eq!(bytes.len(), lorem.as_bytes().len());
+        assert_ne!(bytes, lorem.as_bytes());
+        std::fs::remove_file(&string_path).map_err(|_| Error::FileDeletionError(string_path.to_string()))?;
+        Ok(())
+    }
+
+    #[test]
+    fn small_deletion() -> Result<()> {
+        let (string_path, _) = create_test_file(&TestType::SmallFile, &METHOD_NAME)?;
+        let path = Path::new(&string_path);
+        assert!(path.exists());
+        Gutmann.delete(&string_path)?;
+        assert!(!path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn medium_deletion() -> Result<()> {
+        let (string_path, _) = create_test_file(&TestType::MediumFile, &METHOD_NAME)?;
+        assert_str_eq!("/tmp/gutmann/gutmann_medium_file_test",string_path);
+        let path = Path::new(&string_path);
+        assert!(path.exists());
+        Gutmann.delete(&string_path)?;
+        assert!(!Path::new(&string_path).exists());
+        Ok(())
+    }
+
+    #[test]
+    #[ignore = "test to long"]
+    fn large_deletion() -> Result<()> {
+        let (string_path, _) = create_test_file(&TestType::LargeFile, &METHOD_NAME)?;
+        let path = Path::new(&string_path);
+        assert!(path.exists());
+        Gutmann.delete(&string_path)?;
+        assert!(!path.exists());
+        Ok(())
+    }
+    
+    #[test]
+    fn folder_test() -> Result<()>{
+        let (string_path, _) = create_test_file(&TestType::Folder,  &METHOD_NAME)?;
+        let path = Path::new(&string_path);
+        assert!(path.exists());
+        Gutmann.delete(&string_path)?;
+        assert!(!path.exists());
         Ok(())
     }
 }
