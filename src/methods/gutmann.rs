@@ -29,8 +29,8 @@ const OVERWRITE_PATTERN: [[u8; 3]; 27] = [
 ];
 
 #[cfg(not(feature = "error-stack"))]
-use crate::error::{Error, Result};
-use crate::methods::Method;
+use crate::{Error, Result};
+use crate::Method;
 use crate::models::SecureDelete;
 
 #[cfg(not(feature = "error-stack"))]
@@ -80,8 +80,9 @@ mod std_test {
     use super::overwrite_file;
     use crate::tests::standard::{create_test_file, get_bytes};
     use crate::tests::TestType;
-    use crate::methods::Method::Gutmann as EraseMethod;
+    use crate::Method::Gutmann as EraseMethod;
     use crate::{Error, Result};
+    use crate::error::standard::FSProblem;
 
     use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 
@@ -96,7 +97,7 @@ mod std_test {
         let bytes = get_bytes(&path)?;
         assert_eq!(bytes.len(), lorem.as_bytes().len());
         assert_ne!(bytes, lorem.as_bytes());
-        std::fs::remove_file(&string_path).map_err(|_| Error::FileDeletionError(string_path.to_string()))?;
+        std::fs::remove_file(&string_path).map_err(|_| Error::SystemProblem(FSProblem::Delete,string_path.to_string()))?;
         Ok(())
     }
 
