@@ -1,10 +1,13 @@
 // Libraries use in this library
 mod error;
 #[cfg(test)]
-pub mod tests;
-pub mod methods; 
-pub mod models;
+mod tests;
+mod methods; 
+mod models;
 
-#[cfg(not(feature = "error-stack"))]
-use crate::error::{Error, Result};
-use crate::methods::Method;
+pub use crate::models::SecureDelete;
+
+#[cfg(not(feature="error-stack"))]
+pub use crate::error::standard::{Error, Result};
+
+pub use crate::methods::Method;
