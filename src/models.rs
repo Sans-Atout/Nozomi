@@ -1,11 +1,12 @@
+#[cfg(not(feature = "error-stack"))]
+use crate::{Error, Result};
+use crate::error::standard::FSProblem;
 use std::{
-    fs,
+    fs::{self, OpenOptions},
+    io::{BufWriter, Write},
+    os::unix::fs::MetadataExt,
     path::{self, Path},
 };
-
-use crate::error::Error;
-#[cfg(not(feature = "error-stack"))]
-use crate::Result;
 
 #[derive(Debug, Clone)]
 #[cfg_attr(test, derive(PartialEq, Eq))]
@@ -13,20 +14,20 @@ pub struct SecureDelete {
     path: String,
     pattern: Option<[u8; 3]>,
     byte: Option<u8>,
-    buffer_size : usize
+    buffer_size: usize,
 }
 
 #[cfg(not(feature = "error-stack"))]
 impl SecureDelete {
     pub fn new(path: &str) -> Result<Self> {
         if !Path::new(&path).exists() {
-            return Err(crate::Error::FileNotFound(path.to_string()));
+            return Err(Error::SystemProblem(FSProblem::NotFound, path.to_string()));
         }
         Ok(SecureDelete {
             path: path.to_string(),
             pattern: None,
             byte: None,
-            buffer_size : 4096
+            buffer_size: 4096,
         })
     }
 
@@ -44,12 +45,16 @@ impl SecureDelete {
             new_path.set_file_name(&new_file_name);
             self.rename(&new_path)?;
         }
-        fs::remove_file(&self.path).map_err(|_| Error::FileDeletionError(self.path.clone()))?;
+        if Path::new(&self.path).is_dir() {
+            fs::remove_dir(&self.path).map_err(|_| Error::SystemProblem(FSProblem::Delete, self.path.clone()))?;
+            return Ok(());
+        }
+        fs::remove_file(&self.path).map_err(|_| Error::SystemProblem(FSProblem::Delete, self.path.clone()))?;
         Ok(())
     }
 
     pub fn rename(&mut self, new_name: &Path) -> Result<()> {
-        fs::rename(&self.path, new_name).map_err(|_| Error::RenameError(self.path.clone()))?;
+        fs::rename(&self.path, new_name).map_err(|_| Error::SystemProblem(FSProblem::Rename, self.path.clone()))?;
         self.path = new_name
             .to_str()
             .ok_or(Error::StringConversionError)?
@@ -57,8 +62,33 @@ impl SecureDelete {
         Ok(())
     }
 
-    pub fn overwrite(&mut self) -> Result<()> {
-        Ok(())
+    pub fn overwrite(&mut self) -> Result<&mut Self> {
+        let file_to_overwrite = OpenOptions::new()
+            .write(true)
+            .open(&self.path)
+            .map_err(|_| Error::SystemProblem(FSProblem::Opening, self.path.clone()))?;
+        let file_size = file_to_overwrite
+            .metadata()
+            .map_err(|_| Error::SystemProblem(FSProblem::Opening, self.path.clone()))?
+            .size();
+        let mut overwrited_length: u64 = 0;
+        let mut overwritting_buffer = BufWriter::new(file_to_overwrite);
+
+        while overwrited_length < file_size {
+            overwrited_length += self.buffer_size as u64;
+            if file_size <= overwrited_length {
+                let special_buffer_size =
+                    file_size as usize + self.buffer_size - overwrited_length as usize;
+                overwritting_buffer
+                    .write(&self.get_buffer(special_buffer_size))
+                    .map_err(|_| Error::SystemProblem(FSProblem::Write, self.path.clone()))?;
+                break;
+            }
+            overwritting_buffer
+                .write(&self.get_buffer(self.buffer_size))
+                .map_err(|_| Error::SystemProblem(FSProblem::Write, self.path.clone()))?;
+        }
+        Ok(self)
     }
 
     fn zero_name(&self) -> Result<String> {
@@ -68,19 +98,19 @@ impl SecureDelete {
         let new_name = (0..name.len()).map(|_| "0").collect::<String>();
         Ok(new_name)
     }
-
 }
 
 #[cfg(feature = "error-stack")]
 impl SecureDelete {
     pub fn new(path: &str) -> Result<Self> {
         if !Path::new(&path).exists() {
-            return Err(crate::Error::FileNotFound(path.to_string()));
+            return Err(Report::new(Error::SystemProblem(FSProblem::NotFound, &path.to_string())));
         }
         Ok(SecureDelete {
             path: path.to_string(),
             pattern: None,
             byte: None,
+            buffer_size: 4096,
         })
     }
 }
@@ -98,9 +128,33 @@ impl SecureDelete {
         self
     }
 
-    pub fn buffer(&mut self, new_buffer_size : usize) -> &mut Self{
+    pub fn buffer(&mut self, new_buffer_size: usize) -> &mut Self {
         self.buffer_size = new_buffer_size;
         self
+    }
+
+    fn get_buffer(&self, size: usize) -> Vec<u8> {
+        let mut buffer = Vec::<u8>::new();
+        if self.byte.is_some() {
+            let byte = &self.byte.unwrap();
+            for _ in 0..size {
+                buffer.push(byte.clone());
+            }
+            return buffer;
+        }
+        if self.pattern.is_some() {
+            let bytes_pattern = &self.pattern.unwrap();
+            for i in 0..size {
+                let pattern_index = i % 3;
+                buffer.push(bytes_pattern[pattern_index].clone());
+            }
+            return buffer;
+        }
+        for _ in 0..size {
+            let random_byte: u8 = rand::random();
+            buffer.push(random_byte);
+        }
+        buffer
     }
 
 }
@@ -112,40 +166,40 @@ mod std_test {
 
     use crate::Error;
     use crate::Result;
-    use pretty_assertions::{assert_eq, assert_str_eq};
+    use pretty_assertions::assert_eq;
 
     use super::SecureDelete;
 
     #[test]
     fn creation() -> Result<()> {
-        let mut basic_creation = SecureDelete::new("README.md")?;
+        let mut basic_creation = SecureDelete::new("README")?;
         assert_eq!(
             basic_creation,
             SecureDelete {
-                path: "README.md".to_string(),
+                path: "README".to_string(),
                 byte: None,
                 pattern: None,
-                buffer_size : 4096
+                buffer_size: 4096,
             }
         );
         basic_creation.pattern(&[0x00_u8, 0x00_u8, 0x00_u8]);
         assert_eq!(
             basic_creation,
             SecureDelete {
-                path: "README.md".to_string(),
+                path: "README".to_string(),
                 byte: None,
                 pattern: Some([0x00_u8, 0x00_u8, 0x00_u8]),
-                buffer_size : 4096
+                buffer_size: 4096,
             }
         );
         basic_creation.byte(&0x00_u8);
         assert_eq!(
             basic_creation,
             SecureDelete {
-                path: "README.md".to_string(),
+                path: "README".to_string(),
                 byte: Some(0x00_u8),
                 pattern: None,
-                buffer_size : 4096
+                buffer_size: 4096,
             }
         );
         Ok(())
@@ -153,8 +207,8 @@ mod std_test {
 
     #[test]
     fn zero_string() -> Result<()> {
-        let tested = SecureDelete::new("README.md")?.zero_name()?;
-        assert_eq!("000000000", &tested);
+        let tested = SecureDelete::new("README")?.zero_name()?;
+        assert_eq!("000000", &tested);
         assert_ne!("0000000", &tested);
 
         let folder_test = SecureDelete::new("images/AFSSI_5020.png")?.zero_name()?;
@@ -189,7 +243,7 @@ mod std_test {
                 path: wanted_path.to_string(),
                 pattern: None,
                 byte: None,
-                buffer_size : 4096
+                buffer_size: 4096,
             }
         );
         Ok(())
@@ -209,40 +263,45 @@ mod std_test {
         secure_delete.delete()?;
         let mut file_to_rename = std::env::temp_dir();
         file_to_rename.push("0");
-        assert_eq!(secure_delete,             SecureDelete {
-            path:             file_to_rename
-            .to_str()
-            .ok_or(Error::StringConversionError)?.to_string(),
-            pattern: None,
-            byte: None,
-            buffer_size : 4096
-        });
+        assert_eq!(
+            secure_delete,
+            SecureDelete {
+                path: file_to_rename
+                    .to_str()
+                    .ok_or(Error::StringConversionError)?
+                    .to_string(),
+                pattern: None,
+                byte: None,
+                buffer_size: 4096,
+            }
+        );
         assert!(!file_to_rename_path.exists());
         Ok(())
     }
 
     #[test]
     fn resize_buffer() -> Result<()> {
-        let mut basic_creation = SecureDelete::new("README.md")?;
+        let mut basic_creation = SecureDelete::new("README")?;
         assert_eq!(
             basic_creation,
             SecureDelete {
-                path: "README.md".to_string(),
+                path: "README".to_string(),
                 byte: None,
                 pattern: None,
-                buffer_size : 4096
+                buffer_size: 4096,
             }
         );
         basic_creation.buffer(1024);
         assert_eq!(
             basic_creation,
             SecureDelete {
-                path: "README.md".to_string(),
+                path: "README".to_string(),
                 byte: None,
                 pattern: None,
-                buffer_size : 1024
+                buffer_size: 1024,
             }
         );
         Ok(())
     }
+
 }
