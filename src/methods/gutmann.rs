@@ -34,7 +34,7 @@ use crate::methods::Method;
 use crate::models::SecureDelete;
 
 #[cfg(not(feature = "error-stack"))]
-pub fn gutmann_overwrite_file(path: &str) -> Result<SecureDelete> {
+pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
     let mut secure_deletion = SecureDelete::new(path)?;
     secure_deletion
         .overwrite()
