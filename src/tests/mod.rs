@@ -1,8 +1,5 @@
 #[cfg(feature="error-stack")]
-pub mod enhanced;
-
-#[cfg(feature="error-stack")]
-pub use enhanced as utils;
+pub mod ehanced;
 
 #[cfg(not(feature="error-stack"))]
 pub mod standard;

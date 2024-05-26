@@ -89,5 +89,25 @@ mod std_test {
         assert!(!path.exists());
         Ok(())
     }
-
+    #[test]
+    fn permission_denied() -> Result<()>{
+        let (string_path, _) = create_test_file(&TestType::WrittingError, &METHOD_NAME)?;
+        let path = Path::new(&string_path);
+        assert!(path.exists());
+        let result =EraseMethod.delete(&string_path);
+        println!("{:?}",result);
+        assert!(result.is_err());
+        let mut perms = path.metadata().unwrap().permissions();
+        perms.set_readonly(false);
+        std::fs::set_permissions(&string_path, perms).map_err(|_| Error::SystemProblem(FSProblem::Permissions, string_path.clone()))?;
+        EraseMethod.delete(&string_path)?;
+        assert!(!path.exists());
+        Ok(())
+    }
+}
+        assert!(!path.exists());
+        assert!(!path.exists());
+        assert!(!path.exists());
+        assert!(!path.exists());
+    }
 }

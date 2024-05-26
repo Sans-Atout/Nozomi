@@ -20,13 +20,13 @@ mod std_test {
     use super::overwrite_file;
     use crate::tests::standard::{create_test_file, get_bytes};
     use crate::tests::TestType;
-    use crate::Method::PseudoRandom;
     use crate::{Error, Result};
     use crate::error::FSProblem;
 
     use pretty_assertions::{assert_eq, assert_ne};
 
     const METHOD_NAME: &str = "pseudo_random";
+    use crate::Method::PseudoRandom as EraseMethod;
 
     #[test]
     fn basic_overwrite() -> Result<()> {
@@ -46,7 +46,7 @@ mod std_test {
         let (string_path, _) = create_test_file(&TestType::SmallFile, &METHOD_NAME)?;
         let path = Path::new(&string_path);
         assert!(path.exists());
-        PseudoRandom.delete(&string_path)?;
+        EraseMethod.delete(&string_path)?;
         assert!(!path.exists());
         Ok(())
     }
@@ -56,7 +56,50 @@ mod std_test {
         let (string_path, _) = create_test_file(&TestType::MediumFile, &METHOD_NAME)?;
         let path = Path::new(&string_path);
         assert!(path.exists());
-        PseudoRandom.delete(&string_path)?;
+        EraseMethod.delete(&string_path)?;
+        assert!(!Path::new(&string_path).exists());
+        Ok(())
+    }
+
+    #[test]
+    #[ignore = "test too long"]
+    fn large_deletion() -> Result<()> {
+        let (string_path, _) = create_test_file(&TestType::LargeFile, &METHOD_NAME)?;
+        let path = Path::new(&string_path);
+        assert!(path.exists());
+        EraseMethod.delete(&string_path)?;
+        assert!(!path.exists());
+        Ok(())
+    }
+    
+    #[test]
+    fn folder_test() -> Result<()>{
+        let (string_path, _) = create_test_file(&TestType::Folder,  &METHOD_NAME)?;
+        let path = Path::new(&string_path);
+        assert!(path.exists());
+        EraseMethod.delete(&string_path)?;
+        assert!(!path.exists());
+        Ok(())
+    }
+
+    #[test]
+    fn permission_denied() -> Result<()>{
+        let (string_path, _) = create_test_file(&TestType::WrittingError, &METHOD_NAME)?;
+        let path = Path::new(&string_path);
+        assert!(path.exists());
+        let result =EraseMethod.delete(&string_path);
+        println!("{:?}",result);
+        assert!(result.is_err());
+        let mut perms = path.metadata().unwrap().permissions();
+        perms.set_readonly(false);
+        std::fs::set_permissions(&string_path, perms).map_err(|_| Error::SystemProblem(FSProblem::Permissions, string_path.clone()))?;
+        EraseMethod.delete(&string_path)?;
+        assert!(!path.exists());
+        Ok(())
+    }
+}
+
+// * Feature error-stack code base
         assert!(!Path::new(&string_path).exists());
         Ok(())
     }

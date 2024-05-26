@@ -27,13 +27,13 @@ mod std_test {
     use super::overwrite_file;
     use crate::tests::standard::{create_test_file, get_bytes};
     use crate::tests::TestType;
-    use crate::Method::HmgiS5 as EraseMethod;
     use crate::{Error, Result};
     use crate::error::FSProblem;
 
     use pretty_assertions::{assert_eq, assert_ne};
 
     const METHOD_NAME: &str = "hmgi_s5";
+    use crate::Method::HmgiS5 as EraseMethod;
 
     #[test]
     fn basic_overwrite() -> Result<()> {
@@ -89,5 +89,25 @@ mod std_test {
         Ok(())
     }
 
+    #[test]
+    fn permission_denied() -> Result<()>{
+        let (string_path, _) = create_test_file(&TestType::WrittingError, &METHOD_NAME)?;
+        let path = Path::new(&string_path);
+        assert!(path.exists());
+        let result =EraseMethod.delete(&string_path);
+        println!("{:?}",result);
+        assert!(result.is_err());
+        let mut perms = path.metadata().unwrap().permissions();
+        perms.set_readonly(false);
+        std::fs::set_permissions(&string_path, perms).map_err(|_| Error::SystemProblem(FSProblem::Permissions, string_path.clone()))?;
+        EraseMethod.delete(&string_path)?;
+        assert!(!path.exists());
+        Ok(())
+    }
+
 
 }
+        assert!(!path.exists());
+        Ok(())
+    }
+    }
