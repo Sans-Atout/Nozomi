@@ -1,4 +1,4 @@
-use crate::error::standard::FSProblem;
+use crate::error::FSProblem;
 use crate::{Error, Result};
 use std::fs::create_dir_all;
 use std::io::prelude::*;

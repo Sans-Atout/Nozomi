@@ -30,7 +30,7 @@ mod std_test {
     use crate::tests::TestType;
     use crate::Method::Afssi5020 as EraseMethod;
     use crate::{Error, Result};
-    use crate::error::standard::FSProblem;
+    use crate::error::FSProblem;
 
     use pretty_assertions::{assert_eq, assert_ne};
 

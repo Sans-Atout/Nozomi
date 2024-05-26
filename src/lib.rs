@@ -9,5 +9,7 @@ pub use crate::models::SecureDelete;
 
 #[cfg(not(feature="error-stack"))]
 pub use crate::error::standard::{Error, Result};
+#[cfg(feature="error-stack")]
+pub use crate::error::ehanced::{Error, Result};
 
 pub use crate::methods::Method;
