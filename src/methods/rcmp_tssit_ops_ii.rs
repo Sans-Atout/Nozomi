@@ -1,25 +1,75 @@
+use crate::models::SecureDelete;
+use crate::Method;
 #[cfg(not(feature = "error-stack"))]
 use crate::{Error, Result};
-use crate::Method;
-use crate::models::SecureDelete;
-
+#[cfg(feature = "log")]
+use log::info;
 #[cfg(not(feature = "error-stack"))]
 pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
     let mut secure_deletion = SecureDelete::new(path)?;
-    for i in 0..3{
+    for i in 0..3 {
         secure_deletion
-        .byte(&0x00_u8)
-        .overwrite()
-        .map_err(|_| Error::OverwriteError(Method::RcmpTssitOpsII, i*2+1))?;
-    secure_deletion
-        .byte(&0xFF_u8)
-        .overwrite()
-        .map_err(|_| Error::OverwriteError(Method::RcmpTssitOpsII, i*2+2))?;
-
+            .byte(&0x00_u8)
+            .overwrite()
+            .map_err(|_| Error::OverwriteError(Method::RcmpTssitOpsII, i * 2 + 1))?;
+        #[cfg(all(feature = "log", not(feature = "secure_log")))]
+        info!("[{}][{path}]\t{:2}/7",Method::RcmpTssitOpsII,i * 2 + 1);
+        #[cfg(all(feature = "log", feature = "secure_log"))]
+        info!("[{}][{:x}]\t{:2}/7",Method::RcmpTssitOpsII, &secure_deletion.md5, i * 2 + 1);
+        secure_deletion
+            .byte(&0xFF_u8)
+            .overwrite()
+            .map_err(|_| Error::OverwriteError(Method::RcmpTssitOpsII, i * 2 + 2))?;
+        #[cfg(all(feature = "log", not(feature = "secure_log")))]
+        info!("[{}][{path}]\t{:2}/7",Method::RcmpTssitOpsII,i * 2 + 2);
+        #[cfg(all(feature = "log", feature = "secure_log"))]
+        info!("[{}][{:x}]\t{:2}/7",Method::RcmpTssitOpsII, &secure_deletion.md5, i * 2 + 2);
     }
     secure_deletion
         .overwrite()
         .map_err(|_| Error::OverwriteError(Method::RcmpTssitOpsII, 7))?;
+    #[cfg(all(feature = "log", not(feature = "secure_log")))]
+    info!("[{}][{path}]\t7/7",Method::RcmpTssitOpsII);
+    #[cfg(all(feature = "log", feature = "secure_log"))]
+    info!("[{}][{:x}]\t7/7",Method::RcmpTssitOpsII, &secure_deletion.md5);
+    Ok(secure_deletion)
+}
+
+// * Feature error-stack code base
+
+#[cfg(feature = "error-stack")]
+use crate::{Error, Result};
+#[cfg(feature = "error-stack")]
+use error_stack::ResultExt;
+
+#[cfg(feature = "error-stack")]
+pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
+    let mut secure_deletion = SecureDelete::new(path)?;
+    for i in 0..3 {
+        secure_deletion
+            .byte(&0x00_u8)
+            .overwrite()
+            .change_context(Error::OverwriteError(Method::RcmpTssitOpsII, i * 2 + 1))?;
+        #[cfg(all(feature = "log", not(feature = "secure_log")))]
+        info!("[{}][{path}]\t{:2}/7",Method::RcmpTssitOpsII,i * 2 + 1);
+        #[cfg(all(feature = "log", feature = "secure_log"))]
+        info!("[{}][{:x}]\t{:2}/7",Method::RcmpTssitOpsII, &secure_deletion.md5, i * 2 + 1);
+        secure_deletion
+            .byte(&0xFF_u8)
+            .overwrite()
+            .change_context(Error::OverwriteError(Method::RcmpTssitOpsII, i * 2 + 2))?;
+        #[cfg(all(feature = "log", not(feature = "secure_log")))]
+        info!("[{}][{path}]\t{:2}/7",Method::RcmpTssitOpsII,i * 2 + 2);
+        #[cfg(all(feature = "log", feature = "secure_log"))]
+        info!("[{}][{:x}]\t{:2}/7",Method::RcmpTssitOpsII, &secure_deletion.md5, i * 2 + 2);
+    }
+    secure_deletion
+        .overwrite()
+        .change_context(Error::OverwriteError(Method::RcmpTssitOpsII, 7))?;
+    #[cfg(all(feature = "log", not(feature = "secure_log")))]
+    info!("[{}][{path}]\t7/7",Method::RcmpTssitOpsII);
+    #[cfg(all(feature = "log", feature = "secure_log"))]
+    info!("[{}][{:x}]\t7/7",Method::RcmpTssitOpsII, &secure_deletion.md5);
     Ok(secure_deletion)
 }
 

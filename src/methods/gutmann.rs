@@ -28,27 +28,46 @@ const OVERWRITE_PATTERN: [[u8; 3]; 27] = [
     [0xDB_u8, 0x6D_u8, 0xB6_u8],
 ];
 
+use crate::models::SecureDelete;
+use crate::Method;
 #[cfg(not(feature = "error-stack"))]
 use crate::{Error, Result};
-use crate::Method;
-use crate::models::SecureDelete;
+
+#[cfg(feature = "log")]
+use log::info;
 
 #[cfg(not(feature = "error-stack"))]
 pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
     let mut secure_deletion = SecureDelete::new(path)?;
+
     secure_deletion
         .overwrite()
         .map_err(|_| Error::OverwriteError(Method::Gutmann, 1))?;
+    #[cfg(all(feature = "log", not(feature = "secure_log")))]
+    info!("[{}] [{path}]\t 1/35",Method::Gutmann);
+    #[cfg(all(feature = "log", feature = "secure_log"))]
+    info!("[{}][{:x}]\t 1/35",Method::Gutmann, &secure_deletion.md5);
     secure_deletion
         .overwrite()
         .map_err(|_| Error::OverwriteError(Method::Gutmann, 2))?;
+    #[cfg(all(feature = "log", not(feature = "secure_log")))]
+    info!("[{}] [{path}]\t 2/35",Method::Gutmann);
+    #[cfg(all(feature = "log", feature = "secure_log"))]
+    info!("[{}][{:x}]\t 2/35",Method::Gutmann, &secure_deletion.md5);
     secure_deletion
         .overwrite()
         .map_err(|_| Error::OverwriteError(Method::Gutmann, 3))?;
+    #[cfg(all(feature = "log", not(feature = "secure_log")))]
+    info!("[{}] [{path}]\t 3/35",Method::Gutmann);
+    #[cfg(all(feature = "log", feature = "secure_log"))]
+    info!("[{}][{:x}]\t 3/35",Method::Gutmann, &secure_deletion.md5);
     secure_deletion
         .overwrite()
         .map_err(|_| Error::OverwriteError(Method::Gutmann, 4))?;
-
+    #[cfg(all(feature = "log", not(feature = "secure_log")))]
+    info!("[{}] [{path}]\t 3/35",Method::Gutmann);
+    #[cfg(all(feature = "log", feature = "secure_log"))]
+    info!("[{}][{:x}]\t 4/35",Method::Gutmann, &secure_deletion.md5);
     let mut step = 4;
     for pattern in &OVERWRITE_PATTERN {
         step += 1;
@@ -56,19 +75,121 @@ pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
             .pattern(pattern)
             .overwrite()
             .map_err(|_| Error::OverwriteError(Method::Gutmann, step))?;
+        #[cfg(all(feature = "log", not(feature = "secure_log")))]
+        info!("[{}] [{path}]\t{step:2}/35",Method::Gutmann);
+        #[cfg(all(feature = "log", feature = "secure_log"))]
+        info!("[{}][{:x}]\t{step:2}/35",Method::Gutmann, &secure_deletion.md5);
     }
     secure_deletion
         .overwrite()
         .map_err(|_| Error::OverwriteError(Method::Gutmann, step + 1))?;
+    #[cfg(all(feature = "log", not(feature = "secure_log")))]
+    info!("[{}] [{path}]\t{:2}/35",Method::Gutmann, step + 1);
+    #[cfg(all(feature = "log", feature = "secure_log"))]
+    info!("[{}][{:x}]\t{:2}/35",Method::Gutmann, &secure_deletion.md5, step + 1);
     secure_deletion
         .overwrite()
         .map_err(|_| Error::OverwriteError(Method::Gutmann, step + 2))?;
+    #[cfg(all(feature = "log", not(feature = "secure_log")))]
+    info!("[{}] [{path}]\t{:2}/35",Method::Gutmann, step + 2);
+    #[cfg(all(feature = "log", feature = "secure_log"))]
+    info!("[{}][{:x}]\t{:2}/35",Method::Gutmann, &secure_deletion.md5, step + 2);
     secure_deletion
         .overwrite()
         .map_err(|_| Error::OverwriteError(Method::Gutmann, step + 3))?;
+    #[cfg(all(feature = "log", not(feature = "secure_log")))]
+    info!("[{}] [{path}]\t{:2}/35",Method::Gutmann, step + 3);
+    #[cfg(all(feature = "log", feature = "secure_log"))]
+    info!("[{}][{:x}]\t{:2}/35",Method::Gutmann, &secure_deletion.md5, step + 3);
     secure_deletion
         .overwrite()
         .map_err(|_| Error::OverwriteError(Method::Gutmann, step + 4))?;
+    #[cfg(all(feature = "log", not(feature = "secure_log")))]
+    info!("[{}] [{path}]\t{:2}/35",Method::Gutmann, step + 4);
+    #[cfg(all(feature = "log", feature = "secure_log"))]
+    info!("[{}][{:x}]\t{:2}/35",Method::Gutmann, &secure_deletion.md5, step + 4);
+    Ok(secure_deletion)
+}
+
+// * Feature error-stack code base
+
+#[cfg(feature = "error-stack")]
+use crate::{Error, Result};
+#[cfg(feature = "error-stack")]
+use error_stack::ResultExt;
+
+#[cfg(feature = "error-stack")]
+pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
+    let mut secure_deletion = SecureDelete::new(path)?;
+    secure_deletion
+        .overwrite()
+        .change_context(Error::OverwriteError(Method::Gutmann, 1))?;
+    #[cfg(all(feature = "log", not(feature = "secure_log")))]
+    info!("[{}] [{path}]\t 1/35",Method::Gutmann);
+    #[cfg(all(feature = "log", feature = "secure_log"))]
+    info!("[{}][{:x}]\t 1/35",Method::Gutmann, &secure_deletion.md5);
+    secure_deletion
+        .overwrite()
+        .change_context(Error::OverwriteError(Method::Gutmann, 2))?;
+    #[cfg(all(feature = "log", not(feature = "secure_log")))]
+    info!("[{}] [{path}]\t 2/35",Method::Gutmann);
+    #[cfg(all(feature = "log", feature = "secure_log"))]
+    info!("[{}][{:x}]\t 2/35",Method::Gutmann, &secure_deletion.md5);
+    secure_deletion
+        .overwrite()
+        .change_context(Error::OverwriteError(Method::Gutmann, 3))?;
+    #[cfg(all(feature = "log", not(feature = "secure_log")))]
+    info!("[{}] [{path}]\t 3/35",Method::Gutmann);
+    #[cfg(all(feature = "log", feature = "secure_log"))]
+    info!("[{}][{:x}]\t 3/35",Method::Gutmann, &secure_deletion.md5);
+    secure_deletion
+        .overwrite()
+        .change_context(Error::OverwriteError(Method::Gutmann, 4))?;
+    #[cfg(all(feature = "log", not(feature = "secure_log")))]
+    info!("[{}] [{path}]\t 3/35",Method::Gutmann);
+    #[cfg(all(feature = "log", feature = "secure_log"))]
+    info!("[{}][{:x}]\t 4/35",Method::Gutmann, &secure_deletion.md5);
+
+    let mut step = 4;
+    for pattern in &OVERWRITE_PATTERN {
+        step += 1;
+        secure_deletion
+            .pattern(pattern)
+            .overwrite()
+            .change_context(Error::OverwriteError(Method::Gutmann, step))?;
+        #[cfg(all(feature = "log", not(feature = "secure_log")))]
+        info!("[{}] [{path}]\t{step:2}/35",Method::Gutmann);
+        #[cfg(all(feature = "log", feature = "secure_log"))]
+        info!("[{}][{:x}]\t{step:2}/35",Method::Gutmann, &secure_deletion.md5);
+    }
+    secure_deletion
+        .overwrite()
+        .change_context(Error::OverwriteError(Method::Gutmann, step + 1))?;
+    #[cfg(all(feature = "log", not(feature = "secure_log")))]
+    info!("[{}] [{path}]\t{:2}/35",Method::Gutmann, step + 1);
+    #[cfg(all(feature = "log", feature = "secure_log"))]
+    info!("[{}][{:x}]\t{:2}/35",Method::Gutmann, &secure_deletion.md5, step + 1);
+    secure_deletion
+        .overwrite()
+        .change_context(Error::OverwriteError(Method::Gutmann, step + 2))?;
+    #[cfg(all(feature = "log", not(feature = "secure_log")))]
+    info!("[{}] [{path}]\t{:2}/35",Method::Gutmann, step + 2);
+    #[cfg(all(feature = "log", feature = "secure_log"))]
+    info!("[{}][{:x}]\t{:2}/35",Method::Gutmann, &secure_deletion.md5, step + 2);
+    secure_deletion
+        .overwrite()
+        .change_context(Error::OverwriteError(Method::Gutmann, step + 3))?;
+    #[cfg(all(feature = "log", not(feature = "secure_log")))]
+    info!("[{}] [{path}]\t{:2}/35",Method::Gutmann, step + 3);
+    #[cfg(all(feature = "log", feature = "secure_log"))]
+    info!("[{}][{:x}]\t{:2}/35",Method::Gutmann, &secure_deletion.md5, step + 3);
+    secure_deletion
+        .overwrite()
+        .change_context(Error::OverwriteError(Method::Gutmann, step + 4))?;
+    #[cfg(all(feature = "log", not(feature = "secure_log")))]
+    info!("[{}] [{path}]\t{:2}/35",Method::Gutmann, step + 4);
+    #[cfg(all(feature = "log", feature = "secure_log"))]
+    info!("[{}][{:x}]\t{:2}/35",Method::Gutmann, &secure_deletion.md5, step + 4);
     Ok(secure_deletion)
 }
 

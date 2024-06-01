@@ -13,6 +13,9 @@ use std::{fs::read_dir, path::Path};
 #[cfg(not(feature = "error-stack"))]
 use crate::{Error, Result};
 
+#[cfg(feature = "log")]
+use log::{error, info, warn};
+
 /// Nozomi Eraser method enumeration based on Eraser for Windows main method
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub enum Method {
@@ -39,6 +42,10 @@ impl Method {
         let path_to_delete = Path::new(path);
 
         if !path_to_delete.exists() {
+            #[cfg(all(feature = "log", not(feature = "secure_log")))]
+            error!("[{path}]\t did not exist");
+            #[cfg(all(feature = "log", feature = "secure_log"))]
+            error!("[{:x}]\tdid not exist",md5::compute(&path));
             return Err(Error::SystemProblem(FSProblem::NotFound, path.to_string()));
         }
         if !path_to_delete.is_dir() {
@@ -59,7 +66,18 @@ impl Method {
     }
 
     fn delete_folder(&self, path: &Path) -> Result<SecureDelete> {
+        #[cfg(all(feature = "log", feature = "secure_log"))]
+        let md5_value = md5::compute(
+            path.as_os_str()
+                .to_str()
+                .ok_or(Error::StringConversionError)?
+                .to_string(),
+        );
         if !path.is_dir() {
+            #[cfg(all(feature = "log", not(feature = "secure_log")))]
+            error!("[{:#?}]\t is neither a folder or a file", path);
+            #[cfg(all(feature = "log", feature = "secure_log"))]
+            error!("[{:x}]\t is neither a folder or a file", md5_value);
             return Err(Error::SystemProblem(
                 FSProblem::NotFound,
                 path.as_os_str()
@@ -68,7 +86,11 @@ impl Method {
                     .to_string(),
             ));
         }
-        let files = read_dir(&path).map_err(|_| {
+        #[cfg(all(feature = "log", not(feature = "secure_log")))]
+        warn!("[{:#?}]\t is a folder", path);
+        #[cfg(all(feature = "log", feature = "secure_log"))]
+        warn!("[{:x}]\t is a folder", md5_value);
+        let files = read_dir(path).map_err(|_| {
             Error::SystemProblem(
                 FSProblem::ReadFolder,
                 path.as_os_str()
@@ -80,6 +102,10 @@ impl Method {
         })?;
         for file in files {
             if file.is_err() {
+                #[cfg(all(feature = "log", not(feature = "secure_log")))]
+                error!("[{:#?}]\t error during file reading", path);
+                #[cfg(all(feature = "log", feature = "secure_log"))]
+                error!("[{:x}]\t error during file reading", md5_value);
                 continue;
             }
             let dir_entry = file
@@ -116,6 +142,10 @@ impl Method {
         let path_to_delete = Path::new(path);
 
         if !path_to_delete.exists() {
+            #[cfg(all(feature = "log", not(feature = "secure_log")))]
+            error!("[{path}]\t did not exist");
+            #[cfg(all(feature = "log", feature = "secure_log"))]
+            error!("[{:x}]\tdid not exist",md5::compute(&path));
             return Err(Report::new(Error::SystemProblem(
                 FSProblem::NotFound,
                 path.to_string(),
@@ -139,7 +169,20 @@ impl Method {
     }
 
     fn delete_folder(&self, path: &Path) -> Result<SecureDelete> {
+        #[cfg(all(feature = "log", feature = "secure_log"))]
+        let md5_value = md5::compute(
+            path.as_os_str()
+                .to_str()
+                .ok_or(Error::StringConversionError)?
+                .to_string(),
+        );
+
         if !path.is_dir() {
+            #[cfg(all(feature = "log", not(feature = "secure_log")))]
+            error!("[{:#?}]\t is neither a folder or a file", path);
+            #[cfg(all(feature = "log", feature = "secure_log"))]
+            error!("[{:x}]\t is neither a folder or a file", md5_value);
+
             return Err(Report::new(Error::SystemProblem(
                 FSProblem::NotFound,
                 path.as_os_str()
@@ -148,7 +191,12 @@ impl Method {
                     .to_string(),
             )));
         }
-        let files = read_dir(&path).change_context(Error::SystemProblem(
+        #[cfg(all(feature = "log", not(feature = "secure_log")))]
+        warn!("[{:#?}]\t is a folder", path);
+        #[cfg(all(feature = "log", feature = "secure_log"))]
+        warn!("[{:x}]\t is a folder", md5_value);
+
+        let files = read_dir(path).change_context(Error::SystemProblem(
             FSProblem::ReadFolder,
             path.as_os_str()
                 .to_str()
@@ -158,6 +206,10 @@ impl Method {
         ))?;
         for file in files {
             if file.is_err() {
+                #[cfg(all(feature = "log", not(feature = "secure_log")))]
+                error!("[{:#?}]\t error during file reading", path);
+                #[cfg(all(feature = "log", feature = "secure_log"))]
+                error!("[{:x}]\t error during file reading", md5_value);
                 continue;
             }
             let dir_entry = file

@@ -2,13 +2,38 @@
 use crate::{Error, Result};
 use crate::Method;
 use crate::models::SecureDelete;
-
+#[cfg(feature = "log")]
+use log::info;
 #[cfg(not(feature = "error-stack"))]
 pub fn overwrite_file(path: &str) -> Result<SecureDelete>{
     let mut secure_deletion = SecureDelete::new(path)?;
     secure_deletion
         .overwrite()
         .map_err(|_| Error::OverwriteError(Method::PseudoRandom, 1))?;
+    #[cfg(all(feature = "log", not(feature = "secure_log")))]
+    info!("[{}][{path}]\t1/1",Method::PseudoRandom);
+    #[cfg(all(feature = "log", feature = "secure_log"))]
+    info!("[{}][{:x}]\t1/1",Method::PseudoRandom, &secure_deletion.md5);
+    Ok(secure_deletion)
+}
+
+// * Feature error-stack code base
+
+#[cfg(feature = "error-stack")]
+use crate::{Error, Result};
+#[cfg(feature = "error-stack")]
+use error_stack::ResultExt;
+
+#[cfg(feature = "error-stack")]
+pub fn overwrite_file(path: &str) -> Result<SecureDelete>{
+    let mut secure_deletion = SecureDelete::new(path)?;
+    secure_deletion
+        .overwrite()
+        .change_context(Error::OverwriteError(Method::PseudoRandom, 1))?;
+    #[cfg(all(feature = "log", not(feature = "secure_log")))]
+    info!("[{}][{path}]\t1/1",Method::PseudoRandom);
+    #[cfg(all(feature = "log", feature = "secure_log"))]
+    info!("[{}][{:x}]\t1/1",Method::PseudoRandom, &secure_deletion.md5);
     Ok(secure_deletion)
 }
 

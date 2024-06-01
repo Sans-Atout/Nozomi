@@ -5,6 +5,8 @@ use crate::{Error, Result};
 use crate::error::FSProblem;
 #[cfg(feature = "error-stack")]
 use error_stack::{Report,ResultExt};
+#[cfg(feature="log")]
+use log::trace;
 use std::{
     fs::{self, OpenOptions},
     io::{BufWriter, Write},
@@ -19,22 +21,38 @@ pub struct SecureDelete {
     pattern: Option<[u8; 3]>,
     byte: Option<u8>,
     buffer_size: usize,
+    #[cfg(feature="secure_log")]
+    pub md5 : md5::Digest
 }
 
 impl SecureDelete {
     pub fn byte(&mut self, byte: &u8) -> &mut Self {
+        #[cfg(feature="log")]
+        trace!("[{}]\tbyte [{:x}]\tpattern [None]",&self.path,byte);
+        #[cfg(feature="secure_log")]
+        trace!("[{:x}]\tbyte [{:x}]\tpattern [None]",&self.md5,byte);
+        
         self.byte = Some(*byte);
         self.pattern = None;
         self
     }
 
     pub fn pattern(&mut self, pattern: &[u8; 3]) -> &mut Self {
+        #[cfg(feature="log")]
+        trace!("[{}]\tbyte [None]\tpatern [{:x}{:x}{:x}]",&self.path,&pattern[0],&pattern[1],&pattern[2]);
+        #[cfg(feature="secure_log")]
+        trace!("[{:x}]\tbyte [None]\tpatern [{:x}{:x}{:x}]",&self.md5,&pattern[0],&pattern[1],&pattern[2]);
         self.pattern = Some(*pattern);
         self.byte = None;
         self
     }
 
     pub fn buffer(&mut self, new_buffer_size: usize) -> &mut Self {
+        #[cfg(feature="log")]
+        trace!("[{}]\tbuffer size [{}]",&self.path,new_buffer_size);
+        #[cfg(feature="secure_log")]
+        trace!("[{:x}]\tbuffer size [{}]",&self.md5,new_buffer_size);
+
         self.buffer_size = new_buffer_size;
         self
     }
@@ -72,16 +90,29 @@ impl SecureDelete {
         if !Path::new(&path).exists() {
             return Err(Error::SystemProblem(FSProblem::NotFound, path.to_string()));
         }
+        #[cfg(feature="log")]
+        trace!("[{}]\tSecure deletion object creation",&path);
+        #[cfg(feature="secure_log")]
+        let computed_md5 = md5::compute(&path);
+        #[cfg(feature="secure_log")]
+        trace!("[{:x}]\tSecure deletion object creation",&computed_md5);
+
         Ok(SecureDelete {
             path: path.to_string(),
             pattern: None,
             byte: None,
             buffer_size: 4096,
+            #[cfg(feature="secure_log")]
+            md5 : computed_md5.clone(),
         })
     }
 
     pub fn delete(&mut self) -> Result<()> {
         let zero_name = self.zero_name()?;
+        #[cfg(feature="log")]
+        trace!("[{}]\tBeginning of deletion",&self.path);
+        #[cfg(feature="secure_log")]
+        trace!("[{:x}]\tBeginning of deletion",&self.md5);
 
         let mut new_path = Path::new(&self.path).to_path_buf();
         new_path.set_file_name(&zero_name);
@@ -99,6 +130,12 @@ impl SecureDelete {
             return Ok(());
         }
         fs::remove_file(&self.path).map_err(|_| Error::SystemProblem(FSProblem::Delete, self.path.clone()))?;
+
+        #[cfg(feature="log")]
+        trace!("[{}]\tEnding of deletion",&self.path);
+        #[cfg(feature="secure_log")]
+        trace!("[{:x}]\tEnding of deletion",&self.md5);
+
         Ok(())
     }
 
@@ -108,10 +145,20 @@ impl SecureDelete {
             .to_str()
             .ok_or(Error::StringConversionError)?
             .to_string();
+        #[cfg(feature="log")]
+        trace!("[{}]\tRenaming",&self.path);
+        #[cfg(feature="secure_log")]
+        trace!("[{:x}]\tRenaming to {:x}",&self.md5,md5::compute(&self.path));
+
         Ok(())
     }
 
     pub fn overwrite(&mut self) -> Result<&mut Self> {
+        #[cfg(feature="log")]
+        trace!("[{}]\tBegging of overwritting phase",&self.path);
+        #[cfg(feature="secure_log")]
+        trace!("[{:x}]\tBegging of overwritting phase",&self.md5);
+
         let file_to_overwrite = OpenOptions::new()
             .write(true)
             .open(&self.path)
@@ -137,6 +184,10 @@ impl SecureDelete {
                 .write(&self.get_buffer(self.buffer_size))
                 .map_err(|_| Error::SystemProblem(FSProblem::Write, self.path.clone()))?;
         }
+        #[cfg(feature="log")]
+        trace!("[{}]\tEnding of overwritting phase",&self.path);
+        #[cfg(feature="secure_log")]
+        trace!("[{:x}]\tEnding of overwritting phase",&self.md5);
         Ok(self)
     }
 
@@ -303,16 +354,32 @@ impl SecureDelete {
         if !Path::new(&path).exists() {
             return Err(Report::new(Error::SystemProblem(FSProblem::NotFound, path.to_string())));
         }
+
+        #[cfg(feature="log")]
+        trace!("[{}]\tSecure deletion object creation",&path);
+        #[cfg(feature="secure_log")]
+        let computed_md5 = md5::compute(&path);
+        #[cfg(feature="secure_log")]
+        trace!("[{:x}]\tSecure deletion object creation",&computed_md5);
+
         Ok(SecureDelete {
             path: path.to_string(),
             pattern: None,
             byte: None,
             buffer_size: 4096,
+            #[cfg(feature="secure_log")]
+            md5 : computed_md5,
         })
     }
 
     pub fn delete(&mut self) -> Result<()> {
         let zero_name = self.zero_name()?;
+
+        #[cfg(feature="log")]
+        trace!("[{}]\tBeginning of deletion",&self.path);
+        #[cfg(feature="secure_log")]
+        trace!("[{:x}]\tBeginning of deletion",&self.md5);
+
 
         let mut new_path = Path::new(&self.path).to_path_buf();
         new_path.set_file_name(&zero_name);
@@ -330,6 +397,11 @@ impl SecureDelete {
             return Ok(());
         }
         fs::remove_file(&self.path).change_context(Error::SystemProblem(FSProblem::Delete, self.path.clone()))?;
+        #[cfg(feature="log")]
+        trace!("[{}]\tEnding of deletion",&self.path);
+        #[cfg(feature="secure_log")]
+        trace!("[{:x}]\tEnding of deletion",&self.md5);
+
         Ok(())
     }
 
@@ -339,10 +411,18 @@ impl SecureDelete {
             .to_str()
             .ok_or(Error::StringConversionError)?
             .to_string();
+        #[cfg(feature="log")]
+        trace!("[{}]\tRenaming",&self.path);
+        #[cfg(feature="secure_log")]
+        trace!("[{:x}]\tRenaming to {:x}",&self.md5,md5::compute(&self.path));
         Ok(())
     }
 
     pub fn overwrite(&mut self) -> Result<&mut Self> {
+        #[cfg(feature="log")]
+        trace!("[{}]\tBegging of overwritting phase",&self.path);
+        #[cfg(feature="secure_log")]
+        trace!("[{:x}]\tBegging of overwritting phase",&self.md5);
         let file_to_overwrite = OpenOptions::new()
             .write(true)
             .open(&self.path)
@@ -368,6 +448,10 @@ impl SecureDelete {
                 .write(&self.get_buffer(self.buffer_size))
                 .change_context(Error::SystemProblem(FSProblem::Write, self.path.clone()))?;
         }
+        #[cfg(feature="log")]
+        trace!("[{}]\tEnding of overwritting phase",&self.path);
+        #[cfg(feature="secure_log")]
+        trace!("[{:x}]\tEnding of overwritting phase",&self.md5);
         Ok(self)
     }
 
