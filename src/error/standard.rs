@@ -1,5 +1,5 @@
-use crate::{Method, models::SecureDelete};
 use crate::error::FSProblem;
+use crate::{models::SecureDelete, Method};
 
 #[cfg(not(feature = "error-stack"))]
 pub type Result<T> = core::result::Result<T, Error>;

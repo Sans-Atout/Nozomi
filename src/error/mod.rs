@@ -1,9 +1,8 @@
-#[cfg(not(feature="error-stack"))]
+#[cfg(not(feature = "error-stack"))]
 pub mod standard;
 
-#[cfg(feature="error-stack")]
+#[cfg(feature = "error-stack")]
 pub mod ehanced;
-
 
 #[derive(Debug)]
 pub enum FSProblem {
@@ -13,7 +12,7 @@ pub enum FSProblem {
     Delete,
     ReadFolder,
     NotFound,
-    Permissions
+    Permissions,
 }
 
 impl core::fmt::Display for FSProblem {

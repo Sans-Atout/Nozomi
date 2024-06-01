@@ -1,7 +1,7 @@
+use crate::models::SecureDelete;
+use crate::Method;
 #[cfg(not(feature = "error-stack"))]
 use crate::{Error, Result};
-use crate::Method;
-use crate::models::SecureDelete;
 #[cfg(feature = "log")]
 use log::info;
 #[cfg(not(feature = "error-stack"))]
@@ -12,47 +12,71 @@ pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
         .overwrite()
         .map_err(|_| Error::OverwriteError(Method::Dod522022MECE, 1))?;
     #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t1/6",Method::Dod522022MECE);
+    info!("[{}][{path}]\t1/6", Method::Dod522022MECE);
     #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t1/6",Method::Dod522022MECE, &secure_deletion.md5);
+    info!(
+        "[{}][{:x}]\t1/6",
+        Method::Dod522022MECE,
+        &secure_deletion.md5
+    );
     secure_deletion
         .byte(&0xFF_u8)
         .overwrite()
         .map_err(|_| Error::OverwriteError(Method::Dod522022MECE, 2))?;
     #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t2/6",Method::Dod522022MECE);
+    info!("[{}][{path}]\t2/6", Method::Dod522022MECE);
     #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t2/6",Method::Dod522022MECE, &secure_deletion.md5);
+    info!(
+        "[{}][{:x}]\t2/6",
+        Method::Dod522022MECE,
+        &secure_deletion.md5
+    );
     secure_deletion
         .overwrite()
         .map_err(|_| Error::OverwriteError(Method::Dod522022MECE, 3))?;
     #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t3/6",Method::Dod522022MECE);
+    info!("[{}][{path}]\t3/6", Method::Dod522022MECE);
     #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t3/6",Method::Dod522022MECE, &secure_deletion.md5);
+    info!(
+        "[{}][{:x}]\t3/6",
+        Method::Dod522022MECE,
+        &secure_deletion.md5
+    );
     secure_deletion
         .byte(&0x00_u8)
         .overwrite()
         .map_err(|_| Error::OverwriteError(Method::Dod522022MECE, 4))?;
     #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t4/6",Method::Dod522022MECE);
+    info!("[{}][{path}]\t4/6", Method::Dod522022MECE);
     #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t4/6",Method::Dod522022MECE, &secure_deletion.md5);
+    info!(
+        "[{}][{:x}]\t4/6",
+        Method::Dod522022MECE,
+        &secure_deletion.md5
+    );
     secure_deletion
         .byte(&0xFF_u8)
         .overwrite()
         .map_err(|_| Error::OverwriteError(Method::Dod522022MECE, 5))?;
     #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t5/6",Method::Dod522022MECE);
+    info!("[{}][{path}]\t5/6", Method::Dod522022MECE);
     #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t5/6",Method::Dod522022MECE, &secure_deletion.md5);
+    info!(
+        "[{}][{:x}]\t5/6",
+        Method::Dod522022MECE,
+        &secure_deletion.md5
+    );
     secure_deletion
         .overwrite()
         .map_err(|_| Error::OverwriteError(Method::Dod522022MECE, 6))?;
     #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t6/6",Method::Dod522022MECE);
+    info!("[{}][{path}]\t6/6", Method::Dod522022MECE);
     #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t6/6",Method::Dod522022MECE, &secure_deletion.md5);
+    info!(
+        "[{}][{:x}]\t6/6",
+        Method::Dod522022MECE,
+        &secure_deletion.md5
+    );
     Ok(secure_deletion)
 }
 
@@ -71,50 +95,73 @@ pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
         .overwrite()
         .change_context(Error::OverwriteError(Method::Dod522022MECE, 1))?;
     #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t1/6",Method::Dod522022MECE);
+    info!("[{}][{path}]\t1/6", Method::Dod522022MECE);
     #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t1/6",Method::Dod522022MECE, &secure_deletion.md5);
+    info!(
+        "[{}][{:x}]\t1/6",
+        Method::Dod522022MECE,
+        &secure_deletion.md5
+    );
     secure_deletion
         .byte(&0xFF_u8)
         .overwrite()
         .change_context(Error::OverwriteError(Method::Dod522022MECE, 2))?;
     #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t2/6",Method::Dod522022MECE);
+    info!("[{}][{path}]\t2/6", Method::Dod522022MECE);
     #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t2/6",Method::Dod522022MECE, &secure_deletion.md5);
+    info!(
+        "[{}][{:x}]\t2/6",
+        Method::Dod522022MECE,
+        &secure_deletion.md5
+    );
     secure_deletion
         .overwrite()
         .change_context(Error::OverwriteError(Method::Dod522022MECE, 3))?;
     #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t3/6",Method::Dod522022MECE);
+    info!("[{}][{path}]\t3/6", Method::Dod522022MECE);
     #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t3/6",Method::Dod522022MECE, &secure_deletion.md5);
+    info!(
+        "[{}][{:x}]\t3/6",
+        Method::Dod522022MECE,
+        &secure_deletion.md5
+    );
     secure_deletion
         .byte(&0x00_u8)
         .overwrite()
         .change_context(Error::OverwriteError(Method::Dod522022MECE, 4))?;
     #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t4/6",Method::Dod522022MECE);
+    info!("[{}][{path}]\t4/6", Method::Dod522022MECE);
     #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t4/6",Method::Dod522022MECE, &secure_deletion.md5);
+    info!(
+        "[{}][{:x}]\t4/6",
+        Method::Dod522022MECE,
+        &secure_deletion.md5
+    );
     secure_deletion
         .byte(&0xFF_u8)
         .overwrite()
         .change_context(Error::OverwriteError(Method::Dod522022MECE, 5))?;
     #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t5/6",Method::Dod522022MECE);
+    info!("[{}][{path}]\t5/6", Method::Dod522022MECE);
     #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t5/6",Method::Dod522022MECE, &secure_deletion.md5);
+    info!(
+        "[{}][{:x}]\t5/6",
+        Method::Dod522022MECE,
+        &secure_deletion.md5
+    );
     secure_deletion
         .overwrite()
         .change_context(Error::OverwriteError(Method::Dod522022MECE, 6))?;
     #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t6/6",Method::Dod522022MECE);
+    info!("[{}][{path}]\t6/6", Method::Dod522022MECE);
     #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t6/6",Method::Dod522022MECE, &secure_deletion.md5);
+    info!(
+        "[{}][{:x}]\t6/6",
+        Method::Dod522022MECE,
+        &secure_deletion.md5
+    );
     Ok(secure_deletion)
 }
-
 
 #[cfg(test)]
 mod test {
@@ -258,9 +305,9 @@ mod test {
 
         #[cfg(not(any(feature = "log", feature = "secure_log")))]
         mod no_log {
+            use error_stack::ResultExt;
             use pretty_assertions::{assert_eq, assert_ne};
             use std::path::Path;
-            use error_stack::ResultExt;
 
             use super::*;
 

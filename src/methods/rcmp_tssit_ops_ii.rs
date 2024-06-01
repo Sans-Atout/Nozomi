@@ -13,25 +13,39 @@ pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
             .overwrite()
             .map_err(|_| Error::OverwriteError(Method::RcmpTssitOpsII, i * 2 + 1))?;
         #[cfg(all(feature = "log", not(feature = "secure_log")))]
-        info!("[{}][{path}]\t{:2}/7",Method::RcmpTssitOpsII,i * 2 + 1);
+        info!("[{}][{path}]\t{:2}/7", Method::RcmpTssitOpsII, i * 2 + 1);
         #[cfg(all(feature = "log", feature = "secure_log"))]
-        info!("[{}][{:x}]\t{:2}/7",Method::RcmpTssitOpsII, &secure_deletion.md5, i * 2 + 1);
+        info!(
+            "[{}][{:x}]\t{:2}/7",
+            Method::RcmpTssitOpsII,
+            &secure_deletion.md5,
+            i * 2 + 1
+        );
         secure_deletion
             .byte(&0xFF_u8)
             .overwrite()
             .map_err(|_| Error::OverwriteError(Method::RcmpTssitOpsII, i * 2 + 2))?;
         #[cfg(all(feature = "log", not(feature = "secure_log")))]
-        info!("[{}][{path}]\t{:2}/7",Method::RcmpTssitOpsII,i * 2 + 2);
+        info!("[{}][{path}]\t{:2}/7", Method::RcmpTssitOpsII, i * 2 + 2);
         #[cfg(all(feature = "log", feature = "secure_log"))]
-        info!("[{}][{:x}]\t{:2}/7",Method::RcmpTssitOpsII, &secure_deletion.md5, i * 2 + 2);
+        info!(
+            "[{}][{:x}]\t{:2}/7",
+            Method::RcmpTssitOpsII,
+            &secure_deletion.md5,
+            i * 2 + 2
+        );
     }
     secure_deletion
         .overwrite()
         .map_err(|_| Error::OverwriteError(Method::RcmpTssitOpsII, 7))?;
     #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t7/7",Method::RcmpTssitOpsII);
+    info!("[{}][{path}]\t7/7", Method::RcmpTssitOpsII);
     #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t7/7",Method::RcmpTssitOpsII, &secure_deletion.md5);
+    info!(
+        "[{}][{:x}]\t7/7",
+        Method::RcmpTssitOpsII,
+        &secure_deletion.md5
+    );
     Ok(secure_deletion)
 }
 
@@ -51,25 +65,39 @@ pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
             .overwrite()
             .change_context(Error::OverwriteError(Method::RcmpTssitOpsII, i * 2 + 1))?;
         #[cfg(all(feature = "log", not(feature = "secure_log")))]
-        info!("[{}][{path}]\t{:2}/7",Method::RcmpTssitOpsII,i * 2 + 1);
+        info!("[{}][{path}]\t{:2}/7", Method::RcmpTssitOpsII, i * 2 + 1);
         #[cfg(all(feature = "log", feature = "secure_log"))]
-        info!("[{}][{:x}]\t{:2}/7",Method::RcmpTssitOpsII, &secure_deletion.md5, i * 2 + 1);
+        info!(
+            "[{}][{:x}]\t{:2}/7",
+            Method::RcmpTssitOpsII,
+            &secure_deletion.md5,
+            i * 2 + 1
+        );
         secure_deletion
             .byte(&0xFF_u8)
             .overwrite()
             .change_context(Error::OverwriteError(Method::RcmpTssitOpsII, i * 2 + 2))?;
         #[cfg(all(feature = "log", not(feature = "secure_log")))]
-        info!("[{}][{path}]\t{:2}/7",Method::RcmpTssitOpsII,i * 2 + 2);
+        info!("[{}][{path}]\t{:2}/7", Method::RcmpTssitOpsII, i * 2 + 2);
         #[cfg(all(feature = "log", feature = "secure_log"))]
-        info!("[{}][{:x}]\t{:2}/7",Method::RcmpTssitOpsII, &secure_deletion.md5, i * 2 + 2);
+        info!(
+            "[{}][{:x}]\t{:2}/7",
+            Method::RcmpTssitOpsII,
+            &secure_deletion.md5,
+            i * 2 + 2
+        );
     }
     secure_deletion
         .overwrite()
         .change_context(Error::OverwriteError(Method::RcmpTssitOpsII, 7))?;
     #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t7/7",Method::RcmpTssitOpsII);
+    info!("[{}][{path}]\t7/7", Method::RcmpTssitOpsII);
     #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t7/7",Method::RcmpTssitOpsII, &secure_deletion.md5);
+    info!(
+        "[{}][{:x}]\t7/7",
+        Method::RcmpTssitOpsII,
+        &secure_deletion.md5
+    );
     Ok(secure_deletion)
 }
 
@@ -179,7 +207,7 @@ mod test {
             use std::path::Path;
 
             #[test]
-            fn test() -> Result<()>{
+            fn test() -> Result<()> {
                 let (string_path, _) = create_test_file(&TestType::LogMini, &METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
@@ -195,7 +223,7 @@ mod test {
             use std::path::Path;
 
             #[test]
-            fn test() -> Result<()>{
+            fn test() -> Result<()> {
                 let (string_path, _) = create_test_file(&TestType::SecureLog, &METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
@@ -215,9 +243,9 @@ mod test {
 
         #[cfg(not(any(feature = "log", feature = "secure_log")))]
         mod no_log {
+            use error_stack::ResultExt;
             use pretty_assertions::{assert_eq, assert_ne};
             use std::path::Path;
-            use error_stack::ResultExt;
 
             use super::*;
 
@@ -320,7 +348,7 @@ mod test {
             use std::path::Path;
 
             #[test]
-            fn test() -> Result<()>{
+            fn test() -> Result<()> {
                 let (string_path, _) = create_test_file(&TestType::SecureLog, &METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());

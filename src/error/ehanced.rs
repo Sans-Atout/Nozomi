@@ -1,8 +1,8 @@
-use error_stack::Context;
 use crate::error::FSProblem;
-use crate::{Method, models::SecureDelete};
+use crate::{models::SecureDelete, Method};
+use error_stack::Context;
 
-pub type Result <T> = error_stack::Result<T,Error>;
+pub type Result<T> = error_stack::Result<T, Error>;
 
 #[derive(Debug)]
 pub enum Error {
@@ -30,7 +30,10 @@ impl core::fmt::Display for Error {
                 write!(fmt, "Problem during String conversion processus")
             }
             #[cfg(test)]
-            Error::FileCreationError => write!(fmt, "File Creation : Error during test file generation process"),
+            Error::FileCreationError => write!(
+                fmt,
+                "File Creation : Error during test file generation process"
+            ),
         }
     }
 }

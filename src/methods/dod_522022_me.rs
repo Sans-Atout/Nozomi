@@ -1,7 +1,7 @@
+use crate::models::SecureDelete;
+use crate::Method;
 #[cfg(not(feature = "error-stack"))]
 use crate::{Error, Result};
-use crate::Method;
-use crate::models::SecureDelete;
 #[cfg(feature = "log")]
 use log::info;
 #[cfg(not(feature = "error-stack"))]
@@ -12,24 +12,24 @@ pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
         .overwrite()
         .map_err(|_| Error::OverwriteError(Method::Dod522022ME, 1))?;
     #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t1/3",Method::Dod522022ME);
+    info!("[{}][{path}]\t1/3", Method::Dod522022ME);
     #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t1/3",Method::Dod522022ME, &secure_deletion.md5);
+    info!("[{}][{:x}]\t1/3", Method::Dod522022ME, &secure_deletion.md5);
     secure_deletion
         .byte(&0xFF_u8)
         .overwrite()
         .map_err(|_| Error::OverwriteError(Method::Dod522022ME, 2))?;
     #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t2/3",Method::Dod522022ME);
+    info!("[{}][{path}]\t2/3", Method::Dod522022ME);
     #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t2/3",Method::Dod522022ME, &secure_deletion.md5);
+    info!("[{}][{:x}]\t2/3", Method::Dod522022ME, &secure_deletion.md5);
     secure_deletion
         .overwrite()
         .map_err(|_| Error::OverwriteError(Method::Dod522022ME, 3))?;
     #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t3/3",Method::Dod522022ME);
+    info!("[{}][{path}]\t3/3", Method::Dod522022ME);
     #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t3/3",Method::Dod522022ME, &secure_deletion.md5);
+    info!("[{}][{:x}]\t3/3", Method::Dod522022ME, &secure_deletion.md5);
     Ok(secure_deletion)
 }
 
@@ -48,27 +48,26 @@ pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
         .overwrite()
         .change_context(Error::OverwriteError(Method::Dod522022ME, 1))?;
     #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t1/3",Method::Dod522022ME);
+    info!("[{}][{path}]\t1/3", Method::Dod522022ME);
     #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t1/3",Method::Dod522022ME, &secure_deletion.md5);
+    info!("[{}][{:x}]\t1/3", Method::Dod522022ME, &secure_deletion.md5);
     secure_deletion
         .byte(&0xFF_u8)
         .overwrite()
         .change_context(Error::OverwriteError(Method::Dod522022ME, 2))?;
     #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t2/3",Method::Dod522022ME);
+    info!("[{}][{path}]\t2/3", Method::Dod522022ME);
     #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t2/3",Method::Dod522022ME, &secure_deletion.md5);
+    info!("[{}][{:x}]\t2/3", Method::Dod522022ME, &secure_deletion.md5);
     secure_deletion
         .overwrite()
         .change_context(Error::OverwriteError(Method::Dod522022ME, 3))?;
     #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t3/3",Method::Dod522022ME);
+    info!("[{}][{path}]\t3/3", Method::Dod522022ME);
     #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t3/3",Method::Dod522022ME, &secure_deletion.md5);
+    info!("[{}][{:x}]\t3/3", Method::Dod522022ME, &secure_deletion.md5);
     Ok(secure_deletion)
 }
-
 
 #[cfg(test)]
 mod test {
@@ -212,9 +211,9 @@ mod test {
 
         #[cfg(not(any(feature = "log", feature = "secure_log")))]
         mod no_log {
+            use error_stack::ResultExt;
             use pretty_assertions::{assert_eq, assert_ne};
             use std::path::Path;
-            use error_stack::ResultExt;
 
             use super::*;
 

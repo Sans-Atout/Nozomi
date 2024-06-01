@@ -12,17 +12,17 @@ pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
         .overwrite()
         .map_err(|_| Error::OverwriteError(Method::HmgiS5, 1))?;
     #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t1/2",Method::HmgiS5);
+    info!("[{}][{path}]\t1/2", Method::HmgiS5);
     #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t1/2",Method::HmgiS5, &secure_deletion.md5);
+    info!("[{}][{:x}]\t1/2", Method::HmgiS5, &secure_deletion.md5);
     secure_deletion
         .byte(&0x00_u8)
         .overwrite()
         .map_err(|_| Error::OverwriteError(Method::HmgiS5, 2))?;
     #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t2/2",Method::HmgiS5);
+    info!("[{}][{path}]\t2/2", Method::HmgiS5);
     #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t2/2",Method::HmgiS5, &secure_deletion.md5);
+    info!("[{}][{:x}]\t2/2", Method::HmgiS5, &secure_deletion.md5);
 
     Ok(secure_deletion)
 }
@@ -42,17 +42,17 @@ pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
         .overwrite()
         .change_context(Error::OverwriteError(Method::HmgiS5, 1))?;
     #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t1/2",Method::HmgiS5);
+    info!("[{}][{path}]\t1/2", Method::HmgiS5);
     #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t1/2",Method::HmgiS5, &secure_deletion.md5);
+    info!("[{}][{:x}]\t1/2", Method::HmgiS5, &secure_deletion.md5);
     secure_deletion
         .byte(&0x00_u8)
         .overwrite()
         .change_context(Error::OverwriteError(Method::HmgiS5, 2))?;
     #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t2/2",Method::HmgiS5);
+    info!("[{}][{path}]\t2/2", Method::HmgiS5);
     #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t2/2",Method::HmgiS5, &secure_deletion.md5);
+    info!("[{}][{:x}]\t2/2", Method::HmgiS5, &secure_deletion.md5);
 
     Ok(secure_deletion)
 }

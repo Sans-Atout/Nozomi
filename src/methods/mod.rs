@@ -45,7 +45,7 @@ impl Method {
             #[cfg(all(feature = "log", not(feature = "secure_log")))]
             error!("[{path}]\t did not exist");
             #[cfg(all(feature = "log", feature = "secure_log"))]
-            error!("[{:x}]\tdid not exist",md5::compute(&path));
+            error!("[{:x}]\tdid not exist", md5::compute(&path));
             return Err(Error::SystemProblem(FSProblem::NotFound, path.to_string()));
         }
         if !path_to_delete.is_dir() {
@@ -127,7 +127,7 @@ impl Method {
             self.delete(path)?;
         }
         let folder_to_delete = path.to_str().ok_or(Error::StringConversionError)?;
-        Ok(SecureDelete::new(folder_to_delete)?)
+        SecureDelete::new(folder_to_delete)
     }
 }
 
@@ -145,7 +145,7 @@ impl Method {
             #[cfg(all(feature = "log", not(feature = "secure_log")))]
             error!("[{path}]\t did not exist");
             #[cfg(all(feature = "log", feature = "secure_log"))]
-            error!("[{:x}]\tdid not exist",md5::compute(&path));
+            error!("[{:x}]\tdid not exist", md5::compute(&path));
             return Err(Report::new(Error::SystemProblem(
                 FSProblem::NotFound,
                 path.to_string(),
@@ -229,7 +229,7 @@ impl Method {
             self.delete(path)?;
         }
         let folder_to_delete = path.to_str().ok_or(Error::StringConversionError)?;
-        Ok(SecureDelete::new(folder_to_delete)?)
+        SecureDelete::new(folder_to_delete)
     }
 }
 

@@ -1,15 +1,16 @@
+use super::TestType;
+use super::LOREM_IPSUM;
 use crate::error::FSProblem;
 use crate::{Error, Result};
-use error_stack::{ResultExt,Context};
+use error_stack::{Context, ResultExt};
 use std::fs::create_dir_all;
 use std::io::prelude::*;
 use std::{fs::File, io::Write, path::Path};
-use super::TestType;
-use super::LOREM_IPSUM;
 
 pub fn file(path: &Path, lorem: &str) -> Result<()> {
     let mut file = File::create(path).change_context(Error::FileCreationError)?;
-    file.write_all(lorem.as_bytes()).change_context(Error::FileCreationError)?;
+    file.write_all(lorem.as_bytes())
+        .change_context(Error::FileCreationError)?;
     Ok(())
 }
 
@@ -23,9 +24,8 @@ pub fn get_bytes(path: &Path) -> Result<Vec<u8>> {
 }
 
 pub fn create_test_file(test_type: &TestType, method_name: &str) -> Result<(String, String)> {
-
     let mut tmp_file = std::env::temp_dir();
-    tmp_file.push(format!("{}_ehanced",method_name));
+    tmp_file.push(format!("{}_ehanced", method_name));
     if !tmp_file.as_path().exists() {
         create_dir_all(&tmp_file).change_context(Error::FileCreationError)?
     }
@@ -53,13 +53,18 @@ pub fn create_test_file(test_type: &TestType, method_name: &str) -> Result<(Stri
         }
         TestType::WrittingError => {
             let permission_error_file = format!("{test_folder}/permission_error.txt");
-            let mut file =File::create(&permission_error_file).change_context(Error::FileCreationError)?;
+            let mut file =
+                File::create(&permission_error_file).change_context(Error::FileCreationError)?;
             file.write(LOREM_IPSUM.as_bytes())
-                    .change_context(Error::FileCreationError)?;
-            let metadata = file.metadata().map_err(|_| Error::SystemProblem(FSProblem::Permissions, permission_error_file.clone()))?;
+                .change_context(Error::FileCreationError)?;
+            let metadata = file.metadata().map_err(|_| {
+                Error::SystemProblem(FSProblem::Permissions, permission_error_file.clone())
+            })?;
             let mut permissions = metadata.permissions();
             permissions.set_readonly(true);
-            std::fs::set_permissions(&permission_error_file, permissions).map_err(|_| Error::SystemProblem(FSProblem::Permissions, permission_error_file.clone()))?;
+            std::fs::set_permissions(&permission_error_file, permissions).map_err(|_| {
+                Error::SystemProblem(FSProblem::Permissions, permission_error_file.clone())
+            })?;
             return Ok((permission_error_file, LOREM_IPSUM.to_string()));
         }
         TestType::Folder => {
@@ -90,7 +95,7 @@ pub fn create_test_file(test_type: &TestType, method_name: &str) -> Result<(Stri
             }
             return Ok((file_name, LOREM_IPSUM.to_string()));
         }
-        #[cfg(feature="log")]
+        #[cfg(feature = "log")]
         TestType::LogMini => {
             let file_name = format!("{test_folder}/{method_name}_log_mini.txt");
             let lorem = "Hello, world!".to_string();
@@ -99,7 +104,7 @@ pub fn create_test_file(test_type: &TestType, method_name: &str) -> Result<(Stri
                 .change_context(Error::FileCreationError)?;
             return Ok((file_name, lorem));
         }
-        #[cfg(feature="secure_log")]
+        #[cfg(feature = "secure_log")]
         TestType::SecureLog => {
             let file_name = format!("{test_folder}/{method_name}_secure_log.txt");
             let lorem = "Hello, world!".to_string();

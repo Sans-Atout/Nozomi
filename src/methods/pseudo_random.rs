@@ -1,19 +1,23 @@
+use crate::models::SecureDelete;
+use crate::Method;
 #[cfg(not(feature = "error-stack"))]
 use crate::{Error, Result};
-use crate::Method;
-use crate::models::SecureDelete;
 #[cfg(feature = "log")]
 use log::info;
 #[cfg(not(feature = "error-stack"))]
-pub fn overwrite_file(path: &str) -> Result<SecureDelete>{
+pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
     let mut secure_deletion = SecureDelete::new(path)?;
     secure_deletion
         .overwrite()
         .map_err(|_| Error::OverwriteError(Method::PseudoRandom, 1))?;
     #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t1/1",Method::PseudoRandom);
+    info!("[{}][{path}]\t1/1", Method::PseudoRandom);
     #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t1/1",Method::PseudoRandom, &secure_deletion.md5);
+    info!(
+        "[{}][{:x}]\t1/1",
+        Method::PseudoRandom,
+        &secure_deletion.md5
+    );
     Ok(secure_deletion)
 }
 
@@ -25,15 +29,19 @@ use crate::{Error, Result};
 use error_stack::ResultExt;
 
 #[cfg(feature = "error-stack")]
-pub fn overwrite_file(path: &str) -> Result<SecureDelete>{
+pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
     let mut secure_deletion = SecureDelete::new(path)?;
     secure_deletion
         .overwrite()
         .change_context(Error::OverwriteError(Method::PseudoRandom, 1))?;
     #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t1/1",Method::PseudoRandom);
+    info!("[{}][{path}]\t1/1", Method::PseudoRandom);
     #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t1/1",Method::PseudoRandom, &secure_deletion.md5);
+    info!(
+        "[{}][{:x}]\t1/1",
+        Method::PseudoRandom,
+        &secure_deletion.md5
+    );
     Ok(secure_deletion)
 }
 
@@ -41,7 +49,7 @@ pub fn overwrite_file(path: &str) -> Result<SecureDelete>{
 mod test {
     const METHOD_NAME: &str = "pseudo_random";
     use crate::Method::PseudoRandom as EraseMethod;
-    
+
     // ! NO CHANGE BEYOND THIS LINE PLEASE
     use super::overwrite_file;
     use crate::error::FSProblem;
@@ -143,7 +151,7 @@ mod test {
             use std::path::Path;
 
             #[test]
-            fn test() -> Result<()>{
+            fn test() -> Result<()> {
                 let (string_path, _) = create_test_file(&TestType::LogMini, &METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
@@ -159,7 +167,7 @@ mod test {
             use std::path::Path;
 
             #[test]
-            fn test() -> Result<()>{
+            fn test() -> Result<()> {
                 let (string_path, _) = create_test_file(&TestType::SecureLog, &METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
@@ -179,9 +187,9 @@ mod test {
 
         #[cfg(not(any(feature = "log", feature = "secure_log")))]
         mod no_log {
+            use error_stack::ResultExt;
             use pretty_assertions::{assert_eq, assert_ne};
             use std::path::Path;
-            use error_stack::ResultExt;
 
             use super::*;
 
@@ -284,7 +292,7 @@ mod test {
             use std::path::Path;
 
             #[test]
-            fn test() -> Result<()>{
+            fn test() -> Result<()> {
                 let (string_path, _) = create_test_file(&TestType::SecureLog, &METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
