@@ -90,6 +90,24 @@ pub fn create_test_file(test_type: &TestType, method_name: &str) -> Result<(Stri
             }
             return Ok((file_name, LOREM_IPSUM.to_string()));
         }
+        #[cfg(feature="log")]
+        TestType::LogMini => {
+            let file_name = format!("{test_folder}/{method_name}_log_mini.txt");
+            let lorem = "Hello, world!".to_string();
+            let mut file = File::create(&file_name).change_context(Error::FileCreationError)?;
+            file.write_all(lorem.as_bytes())
+                .change_context(Error::FileCreationError)?;
+            return Ok((file_name, lorem));
+        }
+        #[cfg(feature="secure_log")]
+        TestType::SecureLog => {
+            let file_name = format!("{test_folder}/{method_name}_secure_log.txt");
+            let lorem = "Hello, world!".to_string();
+            let mut file = File::create(&file_name).change_context(Error::FileCreationError)?;
+            file.write_all(lorem.as_bytes())
+                .change_context(Error::FileCreationError)?;
+            return Ok((file_name, lorem));
+        }
     }
 }
 

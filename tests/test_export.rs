@@ -9,4 +9,6 @@ fn api_export() {
 
     Method::Dod522022ME;
     nozomi::Method::Afssi5020;
+
+    //SecureDelete::new("README.md").unwrap().overwrite().unwrap();
 }

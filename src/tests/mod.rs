@@ -24,5 +24,9 @@ pub enum TestType {
     LargeFile,
     WrittingError,
     Folder,
-    OverwriteOnly
+    OverwriteOnly,
+    #[cfg(feature="log")]
+    LogMini,
+    #[cfg(feature="secure_log")]
+    SecureLog
 }
