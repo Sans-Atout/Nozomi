@@ -151,7 +151,7 @@ impl SecureDelete {
 }
 
 #[cfg(test)]
-#[cfg(not(feature = "error-stack"))]
+#[cfg(not(any(feature = "error-stack", feature="log",feature="secure_log")))]
 mod std_test {
     use std::fs::File;
 
@@ -163,11 +163,11 @@ mod std_test {
 
     #[test]
     fn creation() -> Result<()> {
-        let mut basic_creation = SecureDelete::new("README")?;
+        let mut basic_creation = SecureDelete::new("README.md")?;
         assert_eq!(
             basic_creation,
             SecureDelete {
-                path: "README".to_string(),
+                path: "README.md".to_string(),
                 byte: None,
                 pattern: None,
                 buffer_size: 4096,
@@ -177,7 +177,7 @@ mod std_test {
         assert_eq!(
             basic_creation,
             SecureDelete {
-                path: "README".to_string(),
+                path: "README.md".to_string(),
                 byte: None,
                 pattern: Some([0x00_u8, 0x00_u8, 0x00_u8]),
                 buffer_size: 4096,
@@ -187,7 +187,7 @@ mod std_test {
         assert_eq!(
             basic_creation,
             SecureDelete {
-                path: "README".to_string(),
+                path: "README.md".to_string(),
                 byte: Some(0x00_u8),
                 pattern: None,
                 buffer_size: 4096,
@@ -198,8 +198,8 @@ mod std_test {
 
     #[test]
     fn zero_string() -> Result<()> {
-        let tested = SecureDelete::new("README")?.zero_name()?;
-        assert_eq!("000000", &tested);
+        let tested = SecureDelete::new("README.md")?.zero_name()?;
+        assert_eq!("000000000", &tested);
         assert_ne!("0000000", &tested);
 
         let folder_test = SecureDelete::new("images/AFSSI_5020.png")?.zero_name()?;
@@ -272,11 +272,11 @@ mod std_test {
 
     #[test]
     fn resize_buffer() -> Result<()> {
-        let mut basic_creation = SecureDelete::new("README")?;
+        let mut basic_creation = SecureDelete::new("README.md")?;
         assert_eq!(
             basic_creation,
             SecureDelete {
-                path: "README".to_string(),
+                path: "README.md".to_string(),
                 byte: None,
                 pattern: None,
                 buffer_size: 4096,
@@ -286,7 +286,7 @@ mod std_test {
         assert_eq!(
             basic_creation,
             SecureDelete {
-                path: "README".to_string(),
+                path: "README.md".to_string(),
                 byte: None,
                 pattern: None,
                 buffer_size: 1024,
@@ -382,8 +382,7 @@ impl SecureDelete {
 
 }
 
-#[cfg(test)]
-#[cfg(feature = "error-stack")]
+#[cfg(all(test, feature = "error-stack", not(feature="log"),not(feature="secure_log")))]
 mod ehanced_test {
     use std::fs::File;
 
@@ -395,11 +394,11 @@ mod ehanced_test {
 
     #[test]
     fn creation() -> Result<()> {
-        let mut basic_creation = SecureDelete::new("README")?;
+        let mut basic_creation = SecureDelete::new("README.md")?;
         assert_eq!(
             basic_creation,
             SecureDelete {
-                path: "README".to_string(),
+                path: "README.md".to_string(),
                 byte: None,
                 pattern: None,
                 buffer_size: 4096,
@@ -409,7 +408,7 @@ mod ehanced_test {
         assert_eq!(
             basic_creation,
             SecureDelete {
-                path: "README".to_string(),
+                path: "README.md".to_string(),
                 byte: None,
                 pattern: Some([0x00_u8, 0x00_u8, 0x00_u8]),
                 buffer_size: 4096,
@@ -419,7 +418,7 @@ mod ehanced_test {
         assert_eq!(
             basic_creation,
             SecureDelete {
-                path: "README".to_string(),
+                path: "README.md".to_string(),
                 byte: Some(0x00_u8),
                 pattern: None,
                 buffer_size: 4096,
@@ -430,8 +429,8 @@ mod ehanced_test {
 
     #[test]
     fn zero_string() -> Result<()> {
-        let tested = SecureDelete::new("README")?.zero_name()?;
-        assert_eq!("000000", &tested);
+        let tested = SecureDelete::new("README.md")?.zero_name()?;
+        assert_eq!("000000000", &tested);
         assert_ne!("0000000", &tested);
 
         let folder_test = SecureDelete::new("images/AFSSI_5020.png")?.zero_name()?;
@@ -504,11 +503,11 @@ mod ehanced_test {
 
     #[test]
     fn resize_buffer() -> Result<()> {
-        let mut basic_creation = SecureDelete::new("README")?;
+        let mut basic_creation = SecureDelete::new("README.md")?;
         assert_eq!(
             basic_creation,
             SecureDelete {
-                path: "README".to_string(),
+                path: "README.md".to_string(),
                 byte: None,
                 pattern: None,
                 buffer_size: 4096,
@@ -518,7 +517,7 @@ mod ehanced_test {
         assert_eq!(
             basic_creation,
             SecureDelete {
-                path: "README".to_string(),
+                path: "README.md".to_string(),
                 byte: None,
                 pattern: None,
                 buffer_size: 1024,

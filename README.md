@@ -10,16 +10,13 @@ nozomi = "3.0.0"
 ```
 
 ## Test libraries
-### Prerequisites 
-```shell
-cargo install cargo-nextest --locked 
-```
+### Prerequis (optional)
 
-### Library test
+### Test
 ```shell
 git clone https://github.com/Sans-Atout/Nozomi.git
 cd Nozomi
-cargo test
+cargo nextest run
 ```
 
 ## Code example
@@ -49,6 +46,7 @@ fn main() {
 }
 ```
 # Support
+A ce jour, trois versions de la librairie sont disponibles.
 
 # [Changelog](CHANGELOG)
 # [Contributing](CONTRIBUTING)

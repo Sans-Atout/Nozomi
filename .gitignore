@@ -16,3 +16,4 @@ Cargo.lock
 .env
 
 /supply-chain
+test.sh

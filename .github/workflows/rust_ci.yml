@@ -9,6 +9,27 @@ on:
       - main 
 
 jobs:
+  test:
+    runs-on:  ubuntu-latest
+    steps:
+      - name: Install Rust
+        uses: actions/checkout@v2
+      - name: Install nextest
+        uses: cargo install cargo-nextest    
+      - name: Test normal
+        run: cargo nextest run
+      - name: Test error-stack features
+        run: cargo nextest run --features error-stack
+      - name: Test log + error-stack features
+        run: cargo nextest run --features error-stack,log
+      - name: Test secure_log + error-stack features
+        run: cargo nextest run --features error-stack,secure_log
+      - name: Test secure_log features
+        run: cargo nextest run --features secure_log
+      - name: Test log features
+        run: cargo nextest run --features log
+        
+
   build:
     runs-on: ubuntu-latest
     steps:
@@ -22,6 +43,4 @@ jobs:
         run: cargo clippy --verbose -- -D warnings
       - name: Audit
         run: cargo audit
-      - name: Test
-        run: cargo test
 
