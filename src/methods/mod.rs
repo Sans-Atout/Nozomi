@@ -1,3 +1,4 @@
+// -- Region : Module export
 pub mod afssi_5020;
 pub mod dod_522022_me;
 pub mod dod_522022_mece;
@@ -5,16 +6,26 @@ pub mod gutmann;
 pub mod hmgi_s5;
 pub mod pseudo_random;
 pub mod rcmp_tssit_ops_ii;
+// TODO : Add your module here
 
+// -- Region : Extern library import
 use crate::error::FSProblem;
 use crate::SecureDelete;
 use std::{fs::read_dir, path::Path};
 
+// -- Region : feature import
 #[cfg(not(feature = "error-stack"))]
 use crate::{Error, Result};
 
 #[cfg(feature = "log")]
 use log::{error, info, warn};
+
+#[cfg(feature = "error-stack")]
+use crate::{Error, Result};
+#[cfg(feature = "error-stack")]
+use error_stack::{Context, Report, ResultExt};
+
+// -- Region : Method logic
 
 /// Nozomi Eraser method enumeration based on Eraser for Windows main method
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
@@ -36,8 +47,14 @@ pub enum Method {
     PseudoRandom,
 }
 
+// -- Region : Implement logic for basic error handling.
 #[cfg(not(feature = "error-stack"))]
 impl Method {
+    /// This function is used to delete a file or folder using a predefined method using basic error handling method.
+    /// 
+    /// ## Argument :
+    /// * `self` (&Method) : Nozomi Eraser method enumeration based on Eraser for Windows main method
+    /// * `path` (&str) : path that you want to erase using the given overwrite method
     pub fn delete(&self, path: &str) -> Result<()> {
         let path_to_delete = Path::new(path);
 
@@ -65,6 +82,12 @@ impl Method {
         Ok(())
     }
 
+    /// This function is used to delete an folder using a predefined method using basic error handling method.
+    /// This is an private function only created to respect clean code principle
+    ///  
+    /// ## Argument :
+    /// * `self` (&Method) : Nozomi Eraser method enumeration based on Eraser for Windows main method
+    /// * `path` (&Path) : path that you want to erase using the given overwrite method
     fn delete_folder(&self, path: &Path) -> Result<SecureDelete> {
         #[cfg(all(feature = "log", feature = "secure_log"))]
         let md5_value = md5::compute(
@@ -131,13 +154,14 @@ impl Method {
     }
 }
 
-#[cfg(feature = "error-stack")]
-use crate::{Error, Result};
-#[cfg(feature = "error-stack")]
-use error_stack::{Context, Report, ResultExt};
-
+// -- Region : Implement logic for error-stack's error handling.
 #[cfg(feature = "error-stack")]
 impl Method {
+    /// This function is used to delete a file or folder using a predefined method using error-stack's error handling method.
+    /// 
+    /// ## Argument :
+    /// * `self` (&Method) : Nozomi Eraser method enumeration based on Eraser for Windows main method
+    /// * `path` (&str) : path that you want to erase using the given overwrite method
     pub fn delete(&self, path: &str) -> Result<()> {
         let path_to_delete = Path::new(path);
 
@@ -168,6 +192,12 @@ impl Method {
         Ok(())
     }
 
+    /// This function is used to delete an folder using a predefined method using error-stack's error handling method.
+    /// This is an private function only created to respect clean code principle
+    ///  
+    /// ## Argument :
+    /// * `self` (&Method) : Nozomi Eraser method enumeration based on Eraser for Windows main method
+    /// * `path` (&Path) : path that you want to erase using the given overwrite method
     fn delete_folder(&self, path: &Path) -> Result<SecureDelete> {
         #[cfg(all(feature = "log", feature = "secure_log"))]
         let md5_value = md5::compute(
@@ -233,6 +263,7 @@ impl Method {
     }
 }
 
+// -- Region : Implement display trait for Method enum.
 impl core::fmt::Display for Method {
     fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::result::Result<(), core::fmt::Error> {
         match self {

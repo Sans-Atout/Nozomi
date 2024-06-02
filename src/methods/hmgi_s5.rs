@@ -1,9 +1,28 @@
 use crate::models::SecureDelete;
 use crate::Method;
+
+// -- Region : feature import
 #[cfg(not(feature = "error-stack"))]
 use crate::{Error, Result};
+
 #[cfg(feature = "log")]
 use log::info;
+
+#[cfg(feature = "error-stack")]
+use crate::{Error, Result};
+#[cfg(feature = "error-stack")]
+use error_stack::ResultExt;
+
+// -- Region : HMGI S5 overwriting method for basic error handling method
+
+/// Function that implement [HMGI S5 overwrite method](https://www.bitraser.com/knowledge-series/data-destruction-standards-and-guidelines.php)
+/// ! Please note that this method does not delete the given file.
+///
+/// ## Argument :
+/// * `path` (&str) : path that you want to erase using HMGI S5 overwrite method
+///
+/// ## Return
+/// * `secure_deletion` (SecureDelete) : An SecureDelete object
 #[cfg(not(feature = "error-stack"))]
 pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
     let mut secure_deletion = SecureDelete::new(path)?;
@@ -27,13 +46,16 @@ pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
     Ok(secure_deletion)
 }
 
-// * Feature error-stack code base
+// -- Region : HMGI S5 overwriting method for error-stack error handling method
 
-#[cfg(feature = "error-stack")]
-use crate::{Error, Result};
-#[cfg(feature = "error-stack")]
-use error_stack::ResultExt;
-
+/// Function that implement [HMGI S5 overwrite method](https://www.bitraser.com/knowledge-series/data-destruction-standards-and-guidelines.php)
+/// ! Please note that this method does not delete the given file.
+///
+/// ## Argument :
+/// * `path` (&str) : path that you want to erase using HMGI S5 overwrite method
+///
+/// ## Return
+/// * `secure_deletion` (SecureDelete) : An SecureDelete object
 #[cfg(feature = "error-stack")]
 pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
     let mut secure_deletion = SecureDelete::new(path)?;
@@ -57,16 +79,17 @@ pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
     Ok(secure_deletion)
 }
 
+// -- Region : Tests 
 #[cfg(test)]
 mod test {
     const METHOD_NAME: &str = "hmgi_S5";
     use crate::Method::HmgiS5 as EraseMethod;
 
-    // ! NO CHANGE BEYOND THIS LINE PLEASE
     use super::overwrite_file;
     use crate::error::FSProblem;
     use crate::tests::TestType;
 
+    /// Module containing all the tests for the standard error handling method
     #[cfg(not(feature = "error-stack"))]
     mod standard {
         use super::*;
@@ -81,6 +104,13 @@ mod test {
 
             use super::*;
 
+            /// Test if the overwrite method for this particular erase protocol work well or not.
+            ///
+            /// Test success is all conditions are met :
+            /// * function overwrite_file is success
+            /// * file is overwritten
+            /// * file is overwritten with good method
+            /// * file is well deleted
             #[test]
             fn basic_overwrite() -> Result<()> {
                 let (string_path, lorem) =
@@ -97,6 +127,11 @@ mod test {
                 Ok(())
             }
 
+            /// This test checks whether a 1KB file is correctly rewritten and deleted for a given delete method.
+            ///
+            /// Test success is all conditions are met :
+            /// * a specific file is created
+            /// * file is delete thanks to the specific erasing method
             #[test]
             fn small_deletion() -> Result<()> {
                 let (string_path, _) = create_test_file(&TestType::SmallFile, &METHOD_NAME)?;
@@ -107,6 +142,11 @@ mod test {
                 Ok(())
             }
 
+            /// This test checks whether a 1MB file is correctly rewritten and deleted for a given delete method.
+            ///
+            /// Test success is all conditions are met :
+            /// * a specific file is created
+            /// * file is delete thanks to the specific erasing method
             #[test]
             fn medium_deletion() -> Result<()> {
                 let (string_path, _) = create_test_file(&TestType::MediumFile, &METHOD_NAME)?;
@@ -117,6 +157,11 @@ mod test {
                 Ok(())
             }
 
+            /// This test checks whether a 10MB file is correctly rewritten and deleted for a given delete method.
+            ///
+            /// Test success is all conditions are met :
+            /// * a specific file is created
+            /// * file is delete thanks to the specific erasing method
             #[test]
             #[ignore = "test too long"]
             fn large_deletion() -> Result<()> {
@@ -128,6 +173,11 @@ mod test {
                 Ok(())
             }
 
+            /// The test can be used to check whether a folder can be deleted using a particular method.
+            ///
+            /// Test success is all conditions are met :
+            /// * a specific folder with multiple files in it is created
+            /// * folder is delete thanks to the specific erasing method
             #[test]
             fn folder_test() -> Result<()> {
                 let (string_path, _) = create_test_file(&TestType::Folder, &METHOD_NAME)?;
@@ -138,6 +188,13 @@ mod test {
                 Ok(())
             }
 
+
+            /// This test checks whether an error is returned when a file is read-only and a user tries to delete it using a particular method..
+            ///
+            /// Test success is all conditions are met :
+            /// * A readonly file is created
+            /// * An error is returned
+            /// * The file is deleted at the end of the test
             #[test]
             fn permission_denied() -> Result<()> {
                 let (string_path, _) = create_test_file(&TestType::WritingError, &METHOD_NAME)?;
@@ -162,6 +219,11 @@ mod test {
             use super::*;
             use std::path::Path;
 
+            /// The test ensures that the feature log functions correctly for basic error handling.
+            ///
+            /// Test success is all conditions are met :
+            /// * A specific file is created
+            /// * The file is deleted without any error
             #[test]
             fn test() -> Result<()> {
                 let (string_path, _) = create_test_file(&TestType::LogMini, &METHOD_NAME)?;
@@ -178,6 +240,11 @@ mod test {
             use super::*;
             use std::path::Path;
 
+            /// The test ensures that the feature secure_log functions correctly for basic error handling.
+            ///
+            /// Test success is all conditions are met :
+            /// * A specific file is created
+            /// * The file is deleted without any error
             #[test]
             fn test() -> Result<()> {
                 let (string_path, _) = create_test_file(&TestType::SecureLog, &METHOD_NAME)?;
@@ -190,6 +257,7 @@ mod test {
         }
     }
 
+    /// Module containing all the tests for the error-stack handling method
     #[cfg(feature = "error-stack")]
     mod enhanced {
         use super::*;
@@ -205,6 +273,13 @@ mod test {
 
             use super::*;
 
+            /// Test if the overwrite method for this particular erase protocol work well or not.
+            ///
+            /// Test success is all conditions are met :
+            /// * function overwrite_file is success
+            /// * file is overwritten
+            /// * file is overwritten with good method
+            /// * file is well deleted
             #[test]
             fn basic_overwrite() -> Result<()> {
                 let (string_path, lorem) =
@@ -222,6 +297,11 @@ mod test {
                 Ok(())
             }
 
+            /// This test checks whether a 1KB file is correctly rewritten and deleted for a given delete method.
+            ///
+            /// Test success is all conditions are met :
+            /// * a specific file is created
+            /// * file is delete thanks to the specific erasing method
             #[test]
             fn small_deletion() -> Result<()> {
                 let (string_path, _) = create_test_file(&TestType::SmallFile, &METHOD_NAME)?;
@@ -232,6 +312,11 @@ mod test {
                 Ok(())
             }
 
+            /// This test checks whether a 1MB file is correctly rewritten and deleted for a given delete method.
+            ///
+            /// Test success is all conditions are met :
+            /// * a specific file is created
+            /// * file is delete thanks to the specific erasing method
             #[test]
             fn medium_deletion() -> Result<()> {
                 let (string_path, _) = create_test_file(&TestType::MediumFile, &METHOD_NAME)?;
@@ -242,6 +327,11 @@ mod test {
                 Ok(())
             }
 
+            /// This test checks whether a 10MB file is correctly rewritten and deleted for a given delete method.
+            ///
+            /// Test success is all conditions are met :
+            /// * a specific file is created
+            /// * file is delete thanks to the specific erasing method
             #[test]
             #[ignore = "test too long"]
             fn large_deletion() -> Result<()> {
@@ -253,6 +343,11 @@ mod test {
                 Ok(())
             }
 
+            /// The test can be used to check whether a folder can be deleted using a particular method.
+            ///
+            /// Test success is all conditions are met :
+            /// * a specific folder with multiple files in it is created
+            /// * folder is delete thanks to the specific erasing method
             #[test]
             fn folder_test() -> Result<()> {
                 let (string_path, _) = create_test_file(&TestType::Folder, &METHOD_NAME)?;
@@ -263,6 +358,12 @@ mod test {
                 Ok(())
             }
 
+            /// This test checks whether an error is returned when a file is read-only and a user tries to delete it using a particular method..
+            ///
+            /// Test success is all conditions are met :
+            /// * A readonly file is created
+            /// * An error is returned
+            /// * The file is deleted at the end of the test
             #[test]
             fn permission_denied() -> Result<()> {
                 let (string_path, _) = create_test_file(&TestType::WritingError, &METHOD_NAME)?;
@@ -287,6 +388,11 @@ mod test {
             use super::*;
             use std::path::Path;
 
+            /// The test ensures that the feature log functions correctly
+            ///
+            /// Test success is all conditions are met :
+            /// * A specific file is created
+            /// * The file is deleted without any error
             #[test]
             fn test() -> Result<()> {
                 let (string_path, _) = create_test_file(&TestType::LogMini, &METHOD_NAME)?;
@@ -303,6 +409,11 @@ mod test {
             use super::*;
             use std::path::Path;
 
+            /// The test ensures that the feature secure_log functions correctly.
+            ///
+            /// Test success is all conditions are met :
+            /// * A specific file is created
+            /// * The file is deleted without any error
             #[test]
             fn test() -> Result<()> {
                 let (string_path, _) = create_test_file(&TestType::SecureLog, &METHOD_NAME)?;
