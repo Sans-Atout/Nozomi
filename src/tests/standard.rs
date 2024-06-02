@@ -6,6 +6,11 @@ use std::fs::create_dir_all;
 use std::io::prelude::*;
 use std::{fs::File, io::Write, path::Path};
 
+/// Function for creating files for the various tests
+/// 
+/// ## Arguments
+/// * `path` (&Path) : Path to the file you want to create
+/// * `lorem` (&str) : What needs to be written to the file.
 pub fn file(path: &Path, lorem: &str) -> Result<()> {
     let mut file = File::create(path).map_err(|e| Error::FileCreationError(e))?;
     file.write_all(lorem.as_bytes())
@@ -13,9 +18,18 @@ pub fn file(path: &Path, lorem: &str) -> Result<()> {
     Ok(())
 }
 
+/// Function can be used to create temporary files for the different types of test in the library
+/// 
+/// ## Arguments
+/// * `test_type` (&TestType) : Type of test you wish to perform
+/// * `method_name` (&str)  : Name of the method you wish to test 
+/// 
+/// ## Return
+/// * (&str) : Path of the test file created 
+/// * (&str) : Data written to the temporary file specially created for test function
 pub fn create_test_file(test_type: &TestType, method_name: &str) -> Result<(String, String)> {
     let mut tmp_file = std::env::temp_dir();
-    tmp_file.push(format!("{}_std", method_name));
+    tmp_file.push(format!("nozomi/{}_std", method_name));
     if !tmp_file.as_path().exists() {
         create_dir_all(&tmp_file).map_err(|e| Error::FileCreationError(e))?;
     }
@@ -66,6 +80,15 @@ pub fn create_test_file(test_type: &TestType, method_name: &str) -> Result<(Stri
                 let small_folder = format!("{folder_to_delete}to_delete_{index}.txt");
                 file(Path::new(&small_folder), LOREM_IPSUM)?;
             }
+            let depth_1 = format!("{test_folder}/folder_to_delete/depth_1/");
+            if !Path::new(&depth_1).exists() {
+                create_dir_all(&depth_1).map_err(|e| Error::FileCreationError(e))?;
+            }
+            for index in 0..10 {
+                let small_folder = format!("{depth_1}to_delete_{index}.txt");
+                file(Path::new(&small_folder), LOREM_IPSUM)?;
+            }
+
             return Ok((folder_to_delete.to_string(), LOREM_IPSUM.to_string()));
         }
         TestType::OverwriteOnly => {
@@ -106,6 +129,13 @@ pub fn create_test_file(test_type: &TestType, method_name: &str) -> Result<(Stri
     }
 }
 
+/// Function that retrieves hexadecimal data from a given file
+/// 
+/// ## Arguments 
+/// * `path` (&Path) : Path of the file from which you wish to retrieve the data
+/// 
+/// ## Return
+/// * `data` (Vec<u8>) : Hexadecimal data vector
 pub fn get_bytes(path: &Path) -> Result<Vec<u8>> {
     let mut created_file = File::open(path).map_err(|e| Error::FileCreationError(e))?;
     let mut data = vec![];
@@ -119,6 +149,7 @@ mod test {
     use super::*;
     use pretty_assertions::assert_eq;
 
+    /// Test to check that the temporary file creation function is working correctly
     #[test]
     fn create() -> Result<()> {
         let mut tmp_file = std::env::temp_dir();
@@ -135,6 +166,7 @@ mod test {
         Ok(())
     }
 
+    /// Test to check whether the get_bytes function works
     #[test]
     fn bytes_assertion() -> Result<()> {
         let mut tmp_file = std::env::temp_dir();

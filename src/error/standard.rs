@@ -2,18 +2,26 @@ use crate::error::FSProblem;
 use crate::{models::SecureDelete, Method};
 
 #[cfg(not(feature = "error-stack"))]
+/// Reexporting Result type
 pub type Result<T> = core::result::Result<T, Error>;
 
+/// Enum used to represent errors in the library
 #[derive(Debug)]
 pub enum Error {
+    /// Represent file problems with FSProblem and String
     SystemProblem(FSProblem, String),
+    /// Represent an error during a specific overwrite method with Method and step
     OverwriteError(Method, u32),
+    /// Represent the fact that we cannot found a file/folder name for a given path
     NoFileName(SecureDelete),
+    /// Error during path to string conversion
     StringConversionError,
+    /// Wrapper for std::io:Error to help during debug phase
     #[cfg(test)]
     FileCreationError(std::io::Error),
 }
 
+/// Implementing display trait for Error enum
 impl core::fmt::Display for Error {
     fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::result::Result<(), core::fmt::Error> {
         match self {

@@ -1,4 +1,11 @@
 use crate::error::FSProblem;
+use std::{
+    fs::{self, OpenOptions},
+    io::{BufWriter, Write},
+    os::unix::fs::MetadataExt,
+    path::Path,
+};
+
 #[cfg(not(feature = "error-stack"))]
 use crate::{Error, Result};
 #[cfg(feature = "error-stack")]
@@ -7,25 +14,34 @@ use crate::{Error, Result};
 use error_stack::{Report, ResultExt};
 #[cfg(feature = "log")]
 use log::trace;
-use std::{
-    fs::{self, OpenOptions},
-    io::{BufWriter, Write},
-    os::unix::fs::MetadataExt,
-    path::Path,
-};
 
+/// Secure Delete object : backbone of
 #[derive(Debug, Clone)]
 #[cfg_attr(test, derive(PartialEq, Eq))]
 pub struct SecureDelete {
+    /// File/Folder path that you want to overwrite/delete
     path: String,
+    /// Array of 3 Bytes that can be used to overwrite a file. Is none if byte is something
     pattern: Option<[u8; 3]>,
+    /// A byte that will be used to overwrite a file. Is none if pattern is something
     byte: Option<u8>,
+    /// Used to redefine the size of the buffer that will be rewritten each time.
     buffer_size: usize,
+    /// Result of the md5 hash of the path of the file/folder you want to delete (only if feature "secure log" is activated)
     #[cfg(feature = "secure_log")]
     pub md5: md5::Digest,
 }
 
+// -- Implementation of functions that cannot return errors
 impl SecureDelete {
+    /// Define the byte variable and delete the pattern variable
+    ///
+    /// ## Argument
+    /// * `&mut self` (SecureDelete) : The object itself that can be modified
+    /// * `byte (&u8)` : An hexadecimal value that will be used to overwrite a file/folder
+    ///
+    /// ## Return
+    /// * `&mut self` (SecureDelete) : The object itself that can be used to call an other function as buffer (by example)
     pub fn byte(&mut self, byte: &u8) -> &mut Self {
         #[cfg(feature = "log")]
         trace!("[{}]\tbyte [{:x}]\tpattern [None]", &self.path, byte);
@@ -37,6 +53,14 @@ impl SecureDelete {
         self
     }
 
+    /// Define the pattern variable and delete the byte variable
+    ///
+    /// ## Argument
+    /// * `&mut self` (SecureDelete) : The object itself that can be modified
+    /// * `pattern` (&\[u8; 3\]) : An array of three Bytes used to overwrite a file/folder
+    ///
+    /// ## Return
+    /// * `&mut self` (SecureDelete) : The object itself that can be used to call an other function as buffer (by example)
     pub fn pattern(&mut self, pattern: &[u8; 3]) -> &mut Self {
         #[cfg(feature = "log")]
         trace!(
@@ -59,6 +83,14 @@ impl SecureDelete {
         self
     }
 
+    /// Set the buffer variable
+    ///
+    /// ## Argument
+    /// * `&mut self` (SecureDelete) : The object itself that can be modified
+    /// * `new_buffer_size` (usize) : Size of given buffer
+    ///
+    /// ## Return
+    /// * `&mut self` (SecureDelete) : The object itself that can be used to call an other function as byte (by example)
     pub fn buffer(&mut self, new_buffer_size: usize) -> &mut Self {
         #[cfg(feature = "log")]
         trace!("[{}]\tbuffer size [{}]", &self.path, new_buffer_size);
@@ -69,6 +101,15 @@ impl SecureDelete {
         self
     }
 
+    /// Get buffer to overwrite.
+    ///
+    /// This can be filled will a specific pattern, byte or random bytes
+    /// ## Argument
+    /// * `&self` (SecureDelete) : The object itself that can be modified
+    /// * `size` (usize) : Size of given buffer
+    ///
+    /// ## Return
+    /// * `buffer` (Vec \<u8\>) : a buffer of hexadecimal data
     fn get_buffer(&self, size: usize) -> Vec<u8> {
         let mut buffer = Vec::<u8>::new();
         if self.byte.is_some() {
@@ -96,6 +137,11 @@ impl SecureDelete {
 
 #[cfg(not(feature = "error-stack"))]
 impl SecureDelete {
+    /// SecureDelete struct constructor.
+    /// This function pre-fills all parameters.
+    ///
+    /// ## Arguments
+    /// * `path` (&str) : path that you want to overwrite/delete
     pub fn new(path: &str) -> Result<Self> {
         if !Path::new(&path).exists() {
             return Err(Error::SystemProblem(FSProblem::NotFound, path.to_string()));
@@ -117,6 +163,10 @@ impl SecureDelete {
         })
     }
 
+    /// Function for deleting the file/folder of this struct.
+    ///
+    /// ## Arguments
+    /// * `&mut self` (SecureDelete) : The object itself that can be modified
     pub fn delete(&mut self) -> Result<()> {
         let zero_name = self.zero_name()?;
         #[cfg(feature = "log")]
@@ -151,6 +201,11 @@ impl SecureDelete {
         Ok(())
     }
 
+    /// Function used to rename files/folder of this struct.
+    ///
+    /// ## Arguments
+    /// * `&mut self` (SecureDelete) : The object itself that can be modified
+    /// * `new_name` (&Path) : New file name as Path struct
     pub fn rename(&mut self, new_name: &Path) -> Result<()> {
         fs::rename(&self.path, new_name)
             .map_err(|_| Error::SystemProblem(FSProblem::Rename, self.path.clone()))?;
@@ -170,6 +225,13 @@ impl SecureDelete {
         Ok(())
     }
 
+    /// Function used to overwrite files/folder of this struct.
+    ///
+    /// ## Arguments
+    /// * `&mut self` (SecureDelete) : The object itself that can be modified
+    ///
+    /// ## Return
+    /// * `&mut self` (SecureDelete) : The object itself that can be used to call an other function as delete (by example)
     pub fn overwrite(&mut self) -> Result<&mut Self> {
         #[cfg(feature = "log")]
         trace!("[{}]\tBegging of overwriting phase", &self.path);
@@ -208,6 +270,15 @@ impl SecureDelete {
         Ok(self)
     }
 
+    /// Private function used to recover a path where the file/folder name is replaced by 0.
+    ///
+    /// This function ensures that no trace of the original file remains in the file system.
+    ///
+    /// ## Arguments
+    /// * `self` (&SecureDelete) : The object itself
+    ///
+    /// ## Return
+    /// * `new_name` (String) : The new file name filled with 0.
     fn zero_name(&self) -> Result<String> {
         let name = Path::new(&self.path)
             .file_name()
@@ -228,6 +299,12 @@ mod std_test {
 
     use super::SecureDelete;
 
+    /// Test if the constructor is functional
+    ///
+    /// Test success is all conditions are met :
+    /// * SecureDelete struct creation is successful
+    /// * Byte setter is successful
+    /// * Pattern setter is successful
     #[test]
     fn creation() -> Result<()> {
         let mut basic_creation = SecureDelete::new("README.md")?;
@@ -263,6 +340,11 @@ mod std_test {
         Ok(())
     }
 
+    /// Test if the zero_name is functional
+    ///
+    /// Test success is all conditions are met :
+    /// * zero_name function work in only file case
+    /// * zero_name function work with folder and file case
     #[test]
     fn zero_string() -> Result<()> {
         let tested = SecureDelete::new("README.md")?.zero_name()?;
@@ -274,6 +356,13 @@ mod std_test {
         Ok(())
     }
 
+    /// Test if the renaming function work correctly
+    ///
+    /// Test success is all conditions are met :
+    /// * a special file is created
+    /// * renaming logic work
+    /// * SecureDelete object is modified as planned
+    /// * File is deleted
     #[test]
     fn rename_test() -> Result<()> {
         let mut file_to_rename = std::env::temp_dir();
@@ -304,9 +393,17 @@ mod std_test {
                 buffer_size: 4096,
             }
         );
+        secure_delete.delete()?;
         Ok(())
     }
 
+    /// Test if the deletion logic work correctly
+    ///
+    /// Test success is all conditions are met :
+    /// * a special file is created
+    /// * deletion logic work
+    /// * SecureDelete object is modified as planned
+    /// * File is deleted
     #[test]
     fn deletion_test() -> Result<()> {
         let mut file_to_rename = std::env::temp_dir();
@@ -337,6 +434,11 @@ mod std_test {
         Ok(())
     }
 
+    /// Test if the buffer modification logic work correctly
+    ///
+    /// Test success is all conditions are met :
+    /// * resize buffer logic work
+    /// * SecureDelete object is modified as planned
     #[test]
     fn resize_buffer() -> Result<()> {
         let mut basic_creation = SecureDelete::new("README.md")?;
@@ -365,6 +467,11 @@ mod std_test {
 
 #[cfg(feature = "error-stack")]
 impl SecureDelete {
+    /// SecureDelete struct constructor.
+    /// This function pre-fills all parameters.
+    ///
+    /// ## Arguments
+    /// * `path` (&str) : path that you want to overwrite/delete
     pub fn new(path: &str) -> Result<Self> {
         if !Path::new(&path).exists() {
             return Err(Report::new(Error::SystemProblem(
@@ -390,6 +497,10 @@ impl SecureDelete {
         })
     }
 
+    /// Function for deleting the file/folder.
+    ///
+    /// ## Arguments
+    /// * `&mut self` (SecureDelete) : The object itself that can be modified
     pub fn delete(&mut self) -> Result<()> {
         let zero_name = self.zero_name()?;
 
@@ -424,6 +535,11 @@ impl SecureDelete {
         Ok(())
     }
 
+    /// Function used to rename files/folder in this struct.
+    ///
+    /// ## Arguments
+    /// * `&mut self` (SecureDelete) : The object itself that can be modified
+    /// * `new_name` (&Path) : New file name as Path struct
     pub fn rename(&mut self, new_name: &Path) -> Result<()> {
         fs::rename(&self.path, new_name)
             .change_context(Error::SystemProblem(FSProblem::Rename, self.path.clone()))?;
@@ -442,6 +558,13 @@ impl SecureDelete {
         Ok(())
     }
 
+    /// Function used to overwrite files/folder of this struct.
+    ///
+    /// ## Arguments
+    /// * `&mut self` (SecureDelete) : The object itself that can be modified
+    ///
+    /// ## Return
+    /// * `&mut self` (SecureDelete) : The object itself that can be used to call an other function as delete (by example)
     pub fn overwrite(&mut self) -> Result<&mut Self> {
         #[cfg(feature = "log")]
         trace!("[{}]\tBegging of overwriting phase", &self.path);
@@ -479,6 +602,15 @@ impl SecureDelete {
         Ok(self)
     }
 
+    /// Private function used to recover a path where the file/folder name is replaced by 0.
+    ///
+    /// This function ensures that no trace of the original file remains in the file system.
+    ///
+    /// ## Arguments
+    /// * `self` (&SecureDelete) : The object itself
+    ///
+    /// ## Return
+    /// * `new_name` (String) : The new file name filled with 0.
     fn zero_name(&self) -> Result<String> {
         let name = Path::new(&self.path)
             .file_name()
@@ -503,6 +635,12 @@ mod enhanced_test {
 
     use super::SecureDelete;
 
+    /// Test if the constructor is functional
+    ///
+    /// Test success is all conditions are met :
+    /// * SecureDelete struct creation is successful
+    /// * Byte setter is successful
+    /// * Pattern setter is successful
     #[test]
     fn creation() -> Result<()> {
         let mut basic_creation = SecureDelete::new("README.md")?;
@@ -538,6 +676,11 @@ mod enhanced_test {
         Ok(())
     }
 
+    /// Test if the zero_name is functional
+    ///
+    /// Test success is all conditions are met :
+    /// * zero_name function work in only file case
+    /// * zero_name function work with folder and file case
     #[test]
     fn zero_string() -> Result<()> {
         let tested = SecureDelete::new("README.md")?.zero_name()?;
@@ -549,6 +692,13 @@ mod enhanced_test {
         Ok(())
     }
 
+    /// Test if the renaming function work correctly
+    ///
+    /// Test success is all conditions are met :
+    /// * a special file is created
+    /// * renaming logic work
+    /// * SecureDelete object is modified as planned
+    /// * File is deleted
     #[test]
     fn rename_test() -> Result<()> {
         let mut file_to_rename = std::env::temp_dir();
@@ -579,9 +729,17 @@ mod enhanced_test {
                 buffer_size: 4096,
             }
         );
+        secure_delete.delete()?;
         Ok(())
     }
 
+    /// Test if the deletion logic work correctly
+    ///
+    /// Test success is all conditions are met :
+    /// * a special file is created
+    /// * deletion logic work
+    /// * SecureDelete object is modified as planned
+    /// * File is deleted
     #[test]
     fn deletion_test() -> Result<()> {
         let mut file_to_rename = std::env::temp_dir();
@@ -612,6 +770,11 @@ mod enhanced_test {
         Ok(())
     }
 
+    /// Test if the buffer modification logic work correctly
+    ///
+    /// Test success is all conditions are met :
+    /// * resize buffer logic work
+    /// * SecureDelete object is modified as planned
     #[test]
     fn resize_buffer() -> Result<()> {
         let mut basic_creation = SecureDelete::new("README.md")?;

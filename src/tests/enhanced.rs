@@ -7,6 +7,11 @@ use std::fs::create_dir_all;
 use std::io::prelude::*;
 use std::{fs::File, io::Write, path::Path};
 
+/// Function for creating files for the various tests
+/// 
+/// ## Arguments
+/// * `path` (&Path) : Path of the file you want to create
+/// * `lorem` (&str) : What needs to be written to the file.
 pub fn file(path: &Path, lorem: &str) -> Result<()> {
     let mut file = File::create(path).change_context(Error::FileCreationError)?;
     file.write_all(lorem.as_bytes())
@@ -14,6 +19,13 @@ pub fn file(path: &Path, lorem: &str) -> Result<()> {
     Ok(())
 }
 
+/// Function that retrieves hexadecimal data from a given file
+/// 
+/// ## Arguments 
+/// * `path` (&Path) : Path of the file from which you wish to retrieve the data
+/// 
+/// ## Return
+/// * `data` (Vec<u8>) : Hexadecimal data vector
 pub fn get_bytes(path: &Path) -> Result<Vec<u8>> {
     let mut created_file = File::open(path).change_context(Error::FileCreationError)?;
     let mut data = vec![];
@@ -23,9 +35,18 @@ pub fn get_bytes(path: &Path) -> Result<Vec<u8>> {
     Ok(data)
 }
 
+/// Function can be used to create temporary files for the different types of test in the library
+/// 
+/// ## Arguments
+/// * `test_type` (&TestType) : Type of test you wish to perform
+/// * `method_name` (&str)  : Name of the method you wish to test 
+/// 
+/// ## Return
+/// * (&str) : Path of the test file created 
+/// * (&str) : Data written to the temporary file specially created for test function
 pub fn create_test_file(test_type: &TestType, method_name: &str) -> Result<(String, String)> {
     let mut tmp_file = std::env::temp_dir();
-    tmp_file.push(format!("{}_enhanced", method_name));
+    tmp_file.push(format!("nozomi/{}_enhanced", method_name));
     if !tmp_file.as_path().exists() {
         create_dir_all(&tmp_file).change_context(Error::FileCreationError)?
     }
@@ -120,6 +141,7 @@ mod test {
     use super::*;
     use pretty_assertions::assert_eq;
 
+    /// Test to check that the temporary file creation function is working correctly
     #[test]
     fn create() -> Result<()> {
         let mut tmp_file = std::env::temp_dir();
@@ -136,6 +158,7 @@ mod test {
         Ok(())
     }
 
+    /// Test to check whether the get_bytes function works
     #[test]
     fn bytes_assertion() -> Result<()> {
         let mut tmp_file = std::env::temp_dir();
@@ -146,4 +169,5 @@ mod test {
         assert_eq!(get_bytes(&path)?, b"Hello, world!");
         Ok(())
     }
+
 }
