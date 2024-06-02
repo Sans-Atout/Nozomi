@@ -1,6 +1,6 @@
 [package]
 name = "nozomi"
-version = "2.0.1"
+version = "3.0.0"
 edition = "2021"
 
 authors = ["Sans-Atout <augustin.rousset-rouviere@isep.fr>"]
@@ -11,13 +11,21 @@ license = "GPL-3.0"
 repository = "https://github.com/Sans-Atout/Nozomi/"
 
 [dependencies]
-env_logger = "0.11.2"
-error-stack = "0.4.1"
-log = "0.4.20"
+error-stack = {version = "0.4.1",optional=true}
+log = { version = "0.4.21", optional=true}
 rand = "0.8.5"
+md5 = { version = "0.7.0", optional=true}
 
 [lints.rust]
 unsafe_code="forbid"
 
 [dev-dependencies]
 pretty_assertions = "1.4.0"
+
+[features]
+error-stack = ["dep:error-stack"]
+log = ["dep:log"]
+secure_log = ["log","dep:md5"]
+
+[badges]
+maintenance = { status = "actively-developed" }

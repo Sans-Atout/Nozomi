@@ -6,78 +6,63 @@ This library includes most of the secure deletion methods of the [Eraser](https:
 # Add to your project
 ```toml
 [dependencies]
-nozomi = "2.0.1"
+nozomi = "3.0.0"
 ```
 
 ## Test libraries
-### Prerequisites 
+### Prerequire (optional)
 ```shell
-cargo install cargo-nextest --locked 
+cargo install cargo-nextest
 ```
 
-### Library test
+### Test
 ```shell
 git clone https://github.com/Sans-Atout/Nozomi.git
 cd Nozomi
-chmod +x test.sh
-./test.sh
+cargo nextest run
 ```
 
 ## Code example
-### Erase one file with Pseudo Random method
 ```rust
-use nozomi;
-use nozomi::OverwriteMethod::Afssi5020;
+use nozomi::Method::Afssi5020;
 
-fn main() {
-    match nozomi::erase_file("path_to_file", Afssi5020){
-        Ok(info) => println!("{}",info),
+fn main() -> Result<(),nozomi::Error> {
+    Afssi5020::delete("path/to/file.txt")?;
+    // OR
+    match Afssi5020::delete("path/to/file.txt"){
+        Ok(info) => println!("{}",info), // If you want
         Err(error) => println!("{}",error)
     };
+
+    Ok(())
 }
 ```
 
-### Erase one folder with Pseudo Random method
-```rust
-use nozomi;
-use nozomi::OverwriteMethod::Afssi5020;
+# Support
+## End of life dates 
+| Version | Support | End of phase (dd/mm/aaaa) |
+|--|--|--|
+|3.x|Supported|  |
+|2.x|Passively supported|02-06-2029|
+|1.x|End of life process|02-06-2025|
 
-fn main() {
-    match nozomi::erase_folder("path_to_folder", Afssi5020, false){
-        Ok(info) => println!("{}",info),
-        Err(error) => println!("{}",error)
-    };
-}
-```
-# [Changelog](CHANGELOG.md)
-# [Contributing](CONTRIBUTING.md)
+## Support life cycle
+When a new major version (N) is released, it will become actively supported. Bugs will be fixed and new features will be added (new default deletion algorithm, better documentation, etc.).
+The library will be audited every week with the `cargo audit` command to ensure that no flaws persist in the solution.
 
-# Erase Method
-Here are all the methods available and an illustrative diagram for each suppression method.
+The previous major version (N-1) will enter in the passive support phase, which will last 5 years. 
+During this period, the library dependencies will be updated every three months to ensure that the project is running as up-to-date as possible. The code will also be audited, but only on a monthly basis with the `cargo audit`. If a CVE requiring a modification to the library code is discovered, a new minor version will be published. 
 
-You can see below an explanation of one brick of the scheme :
-![explanation of diagram](images/explanation.png)
+Once this passive support phase is over, the version will enter in the end-of-life process, which will last 1 year. During this phase, no more dependencies will be updated and no more issues concerning this library will be taken into account. This phase exists to give projects that may use the library additional time to make the necessary changes to their code before moving the version to ‘Yanked’ on [crates.io](https://crates.io/crates/nozomi/versions)
 
-## [Pseudo Random](https://www.lifewire.com/data-sanitization-methods-2626133#toc-random-data)
-![pseudo random erase method](images/pseudo_random.png)
+# Features
+| Features |Explanation   |
+|--|--|
+| error-stack | allows the use of the error-stack library for error handling instead of the standard Rust error handling |
+| log | Allows logs to be used within the library. However, as these logs allow the name of the deleted file / folder to be recovered. |
+| secure_log | Allows you to display logs giving an idea of the progress of the rewriting functions but keeping the overwritten file/folder ‘secret’ by using the md5 hash algorithm. |
 
-## [Gutmann](https://en.wikipedia.org/wiki/Gutmann_method)
+# [Changelog](CHANGELOG)
+# [Contributing](CONTRIBUTING)
 
-![gutmann erase method](images/gutmann.png)
-
-## [Hmgi S5](https://www.bitraser.com/knowledge-series/data-destruction-standards-and-guidelines.php)
-
-![HMGI S5 erase method](images/hmgi_s5.png)
-
-## [DOD 522022 MECE](https://www.bitraser.com/article/DoD-5220-22-m-standard-for-drive-erasure.php)
-
-![DOD 522022 MECE erase method](images/dod_522022_mece.png)
-
-## [DOD 522022 ME](https://www.bitraser.com/article/DoD-5220-22-m-standard-for-drive-erasure.php)
-![DOD 522022 ME erase method](images/DOD_522022_ME.png)
-
-## [AFSSI 5020](https://www.lifewire.com/data-sanitization-methods-2626133#toc-afssi-5020)
-![AFSSI 5020 erase method](images/AFSSI_5020.png)
-
-## [RCMP TSSIT OPS II](https://www.datadestroyers.eu/technology/rcmp_tssit_ops-2.html)
-![RCMP TSSIT OPS II](images/RCMP_TSSIT_OPS_II.png)
+# [Erase Method](ERASE_METHOD.md)

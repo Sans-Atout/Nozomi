@@ -1,4 +1,20 @@
 # Changelog
+
+## [v3.0.0](https://crates.io/crates/nozomi/3.0.0)
+```diff
++ Add log and secure log features
++ Add more standard error handling logic as default error handling method
+    reference : https://youtu.be/j-VQCYP7wyw
+
+! Simplify the library API
+! Making use of error-stack library an feature
+
+! Changes in how tests are carried out
+-   Remove test.sh file
+!   Update the test logic following the deletion of the test.sh file
++   Add more precise tests
+```
+
 ## [v2.0.1](https://crates.io/crates/nozomi/2.0.1)
 ```diff
 ! Update dependencies

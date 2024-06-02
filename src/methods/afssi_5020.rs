@@ -1,75 +1,3 @@
-# Nozomi contribution guideline
-
-This document serves as a reference and contains all the good practices to be applied if you wish to participate in the development of this project.
-
-## Tables of content
-1. [**Version control policy** *(vX.Y.Z)*](#version-control-policy-vxyz)
-    1. [**Major version** *(vX.0.0)*](#major-version-vx00)
-    2. [**Minor version** *v1.Y.0*](#minor-version-v1y0)
-    3. [**Patch** *v1.1.Z*](#patch-v11z)
-
-2. [New Erase Method](#new-erase-method)
-    1. [What to check before ask for a new erase method](#what-to-check-before-ask-for-a-new-erase-method)
-    2. [Modification process](#modification-process)
-    3. [New method file template](#new-method-file-template)
-    4. [Update in src/methods/mod.rs](#update-in-srcmethodsmodrs)
-3. [Other kind of contribution](#other-kind-of-contribution)
-    1. [Examples](#examples)
-    2. [Issues](#issues)
-    3. [Spell Check](#spell-check)
-    4. [Documenting](#documenting)
-
-# **Version control policy** *(vX.Y.Z)*
-## **Major version** *(vX.0.0)*
-```diff
-+ INFO : Each code refactorization of a new deletion method will result in a major change
-```
-A major release is a release that contains changes that are destructive to the user. So, if he changes to a more recent major version then he will have to modify his code 
-
-
-*I hope that 2.x will be my last major version...*
-### Example :
-```rust
-use nozomi::EraserEntity::PseudoRandom; // v1.0.2
-use nozomi::OverwriteMethod::PseudoRandom; //v2.0.0
-```
-
-## **Minor version** *v1.Y.0*
-```diff
-+ INFO : Each addition of a new deletion method will result in a minor change
-```
-A minor release is a release that contains changes that are not destructive to the user. So, if he changes to a more recent he will not have to modify his code.
-
-
-## **Patch** *v1.1.Z*
-```diff
-+ INFO : Each dependency update will result in a new patch version
-! INFO : Each typo or grammar correction will not result in a new patch version
-```
-A dependency or internal documentation update 
-
-# New Erase Method
-
-## What to check before ask for a new erase method
-- [ ] Does the new method I want to implement have an RFC in the issue?
-- [ ] Is the RFC not being reviewed / tested / implemented?
-- [ ] Is the name of my method in line with the code of conduct?
-- [ ] Is the name of my method unique?
-- [ ] Is my method documented somewhere (book, internet)?
-
-All good? Then great, no worries, you can add your method!
-
-## Modification process
-1) Add your methods as a rs file in [src/methods/](src/methods/) folder (cf. )
-2) Fill the template with your logic ([cf. ](#add-new-method-in-enum))
-3) Add new method in the [src/methods/mod.rs](src/methods/mod.rs) in Method enum ([cf.](#add-new-method-in-enum))
-4) Update display trait ([cf.](#update-method-display-trait))
-5) Update delete file function([cf.](#update-delete-file-function))
-5) Update delete folder function([cf.](#update-delete-folder-function))
-
-## New method file template
-
-```rust
 use crate::models::SecureDelete;
 use crate::Method;
 
@@ -85,32 +13,90 @@ use crate::{Error, Result};
 #[cfg(feature = "error-stack")]
 use error_stack::ResultExt;
 
+// -- Region : AFSSI 5020 overwriting method for basic error handling method
 
-// -- Region : Pseudo Random overwriting method for basic error handling method
-
+/// Function that implement [AFSSI 5020 overwrite method](https://www.lifewire.com/data-sanitization-methods-2626133#toc-afssi-5020)
+/// ! Please note that this method does not delete the given file.
+///
+/// ## Argument :
+/// * `path` (&str) : path that you want to erase using AFSSI 5020 overwrite method
+///
+/// ## Return
+/// * `secure_deletion` (SecureDelete) : An SecureDelete object
 #[cfg(not(feature = "error-stack"))]
 pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
-    // TODO : Add your logic here
+    let mut secure_deletion = SecureDelete::new(path)?;
+    secure_deletion
+        .byte(&0x00_u8)
+        .overwrite()
+        .map_err(|_| Error::OverwriteError(Method::Afssi5020, 1))?;
+    #[cfg(all(feature = "log", not(feature = "secure_log")))]
+    info!("[{}][{path}]\t1/3", Method::Afssi5020);
+    #[cfg(all(feature = "log", feature = "secure_log"))]
+    info!("[{}][{:x}]\t1/3", Method::Afssi5020, &secure_deletion.md5);
+    secure_deletion
+        .byte(&0xFF_u8)
+        .overwrite()
+        .map_err(|_| Error::OverwriteError(Method::Afssi5020, 2))?;
+    #[cfg(all(feature = "log", not(feature = "secure_log")))]
+    info!("[{}][{path}]\t2/3", Method::Afssi5020);
+    #[cfg(all(feature = "log", feature = "secure_log"))]
+    info!("[{}][{:x}]\t2/3", Method::Afssi5020, &secure_deletion.md5);
+    secure_deletion
+        .overwrite()
+        .map_err(|_| Error::OverwriteError(Method::Afssi5020, 3))?;
+    #[cfg(all(feature = "log", not(feature = "secure_log")))]
+    info!("[{}][{path}]\t3/3", Method::Afssi5020);
+    #[cfg(all(feature = "log", feature = "secure_log"))]
+    info!("[{}][{:x}]\t3/3", Method::Afssi5020, &secure_deletion.md5);
     Ok(secure_deletion)
 }
 
-// -- Region : Pseudo Random overwriting method for error-stack error handling method
+// -- Region : AFSSI 5020 overwriting method for error-stack error handling method
 
+/// Function that implement [AFSSI 5020 overwrite method](https://www.lifewire.com/data-sanitization-methods-2626133#toc-afssi-5020)
+/// ! Please note that this method does not delete the given file.
+///
+/// ## Argument :
+/// * `path` (&str) : path that you want to erase using AFSSI 5020 overwrite method
+///
+/// ## Return
+/// * `secure_deletion` (SecureDelete) : An SecureDelete object
 #[cfg(feature = "error-stack")]
 pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
-    // TODO : Add your logic here
+    let mut secure_deletion = SecureDelete::new(path)?;
+    secure_deletion
+        .byte(&0x00_u8)
+        .overwrite()
+        .change_context(Error::OverwriteError(Method::Afssi5020, 1))?;
+    #[cfg(all(feature = "log", not(feature = "secure_log")))]
+    info!("[{}][{path}]\t1/3", Method::Afssi5020);
+    #[cfg(all(feature = "log", feature = "secure_log"))]
+    info!("[{}][{:x}]\t1/3", Method::Afssi5020, &secure_deletion.md5);
+    secure_deletion
+        .byte(&0xFF_u8)
+        .overwrite()
+        .change_context(Error::OverwriteError(Method::Afssi5020, 2))?;
+    #[cfg(all(feature = "log", not(feature = "secure_log")))]
+    info!("[{}][{path}]\t2/3", Method::Afssi5020);
+    #[cfg(all(feature = "log", feature = "secure_log"))]
+    info!("[{}][{:x}]\t2/3", Method::Afssi5020, &secure_deletion.md5);
+    secure_deletion
+        .overwrite()
+        .change_context(Error::OverwriteError(Method::Afssi5020, 3))?;
+    #[cfg(all(feature = "log", not(feature = "secure_log")))]
+    info!("[{}][{path}]\t3/3", Method::Afssi5020);
+    #[cfg(all(feature = "log", feature = "secure_log"))]
+    info!("[{}][{:x}]\t3/3", Method::Afssi5020, &secure_deletion.md5);
     Ok(secure_deletion)
 }
 
 // -- Region : Tests 
 #[cfg(test)]
 mod test {
-    
-    const METHOD_NAME: &str = "pseudo_random"; // TODO : UPDATE HERE
+    use crate::Method::Afssi5020 as EraseMethod;
+    const METHOD_NAME: &str = "afssi_5020";
 
-    use crate::Method::PseudoRandom as EraseMethod; // TODO : UPDATE HERE
-
-    // ! DO NOT CHANGE THE CODE BELLOW THIS POINT
     use super::overwrite_file;
     use crate::error::FSProblem;
     use crate::tests::TestType;
@@ -243,6 +229,7 @@ mod test {
         mod log {
             use super::*;
             use std::path::Path;
+
 
             /// The test ensures that the feature log functions correctly for basic error handling.
             ///
@@ -451,77 +438,3 @@ mod test {
         }
     }
 }
-
-
-```
-
-## Update in [src/methods/mod.rs](src/methods/mod.rs)
-
-### Add new method in enum
-```rust
-pub enum Method {
-    /// DOD 522022 MECE erasing method <https://www.bitraser.com/article/DoD-5220-22-m-standard-for-drive-erasure.php>
-    Dod522022MECE,
-    ...
-    #[default]
-    PseudoRandom,
-    // TODO add doc with link
-    MethodName, // TODO : Update here
-}
-```
-
-### Update Method display trait
-```rust
-// -- Region : Implement display trait for Method enum.
-impl core::fmt::Display for Method {
-    fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::result::Result<(), core::fmt::Error> {
-        match self {
-            Method::Dod522022MECE => write!(fmt, "DOD 522022 MECE"),
-            ...
-            Method::PseudoRandom => write!(fmt, "Pseudo Random"),
-            // TODO Add new method display trait implementation
-        }
-    }
-}
-
-```
-### Update delete file function
-```rust
-match self {
-    Method::Dod522022MECE => dod_522022_me::overwrite_file(path)?.delete()?,
-    ...
-    Method::PseudoRandom => pseudo_random::overwrite_file(path)?.delete()?,
-    // TODO : Add your method here
-};
-
-```
-
-# Other kind of contribution
-## Examples
-Feel free to add as many different examples as you like as long as they are not redundant.
-```diff
-! In the first title of the README.md remember to put the version of the library used to make the example
-```
-```
-examples/
-  |- example_1/
-      |- README.md
-      |- Cargo.toml
-      |- src/
-          |- main.rs
-          |- ...
-```
-## Issues
-/// TODO
-
-## Spell Check
-As you may have noticed, I make a lot of grammatical and spelling mistakes. Although I do everything I can to try and correct them before I post, it is possible (even certain) that some remain.
-
-So, if you see any, please do not hesitate and thank you very much.
-
-## Documenting
-I try to do my best to ensure that the code is well documented. This also applies to README, CONTRIBUTING, etc.
-
-If you ever feel that a part of the code is not explicit enough or lacks clarity, please feel free to open a discussion. I will try to answer as soon as possible.
-
-To tell you the truth, this is the first open-source project I've published and I want to make it as professional as possible. So, of course, I'm open to any kind of criticism.
