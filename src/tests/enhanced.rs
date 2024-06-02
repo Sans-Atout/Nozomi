@@ -25,7 +25,7 @@ pub fn get_bytes(path: &Path) -> Result<Vec<u8>> {
 
 pub fn create_test_file(test_type: &TestType, method_name: &str) -> Result<(String, String)> {
     let mut tmp_file = std::env::temp_dir();
-    tmp_file.push(format!("{}_ehanced", method_name));
+    tmp_file.push(format!("{}_enhanced", method_name));
     if !tmp_file.as_path().exists() {
         create_dir_all(&tmp_file).change_context(Error::FileCreationError)?
     }
@@ -51,7 +51,7 @@ pub fn create_test_file(test_type: &TestType, method_name: &str) -> Result<(Stri
             }
             return Ok((file_name, LOREM_IPSUM.to_string()));
         }
-        TestType::WrittingError => {
+        TestType::WritingError => {
             let permission_error_file = format!("{test_folder}/permission_error.txt");
             let mut file =
                 File::create(&permission_error_file).change_context(Error::FileCreationError)?;

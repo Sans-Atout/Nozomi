@@ -1,5 +1,5 @@
 #[cfg(feature = "error-stack")]
-pub mod ehanced;
+pub mod enhanced;
 
 #[cfg(not(feature = "error-stack"))]
 pub mod standard;
@@ -22,7 +22,7 @@ pub enum TestType {
     SmallFile,
     MediumFile,
     LargeFile,
-    WrittingError,
+    WritingError,
     Folder,
     OverwriteOnly,
     #[cfg(feature = "log")]

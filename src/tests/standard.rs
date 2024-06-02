@@ -41,7 +41,7 @@ pub fn create_test_file(test_type: &TestType, method_name: &str) -> Result<(Stri
             }
             return Ok((file_name, LOREM_IPSUM.to_string()));
         }
-        TestType::WrittingError => {
+        TestType::WritingError => {
             let permission_error_file = format!("{test_folder}/permission_error.txt");
             let mut file =
                 File::create(&permission_error_file).map_err(|e| Error::FileCreationError(e))?;

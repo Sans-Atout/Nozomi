@@ -235,10 +235,10 @@ mod test {
     }
 
     #[cfg(feature = "error-stack")]
-    mod ehanced {
+    mod enhanced {
         use super::*;
 
-        use crate::tests::ehanced::{create_test_file, get_bytes};
+        use crate::tests::enhanced::{create_test_file, get_bytes};
         use crate::{Error, Result};
 
         #[cfg(not(any(feature = "log", feature = "secure_log")))]

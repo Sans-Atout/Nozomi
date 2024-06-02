@@ -8,7 +8,7 @@ mod tests;
 pub use crate::models::SecureDelete;
 
 #[cfg(feature = "error-stack")]
-pub use crate::error::ehanced::{Error, Result};
+pub use crate::error::enhanced::{Error, Result};
 #[cfg(not(feature = "error-stack"))]
 pub use crate::error::standard::{Error, Result};
 

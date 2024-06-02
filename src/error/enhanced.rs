@@ -27,7 +27,7 @@ impl core::fmt::Display for Error {
                 write!(fmt, "Given path did not have a proper filename")
             }
             Error::StringConversionError => {
-                write!(fmt, "Problem during String conversion processus")
+                write!(fmt, "Problem during String conversion process")
             }
             #[cfg(test)]
             Error::FileCreationError => write!(

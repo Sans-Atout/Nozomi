@@ -2,7 +2,7 @@
 pub mod standard;
 
 #[cfg(feature = "error-stack")]
-pub mod ehanced;
+pub mod enhanced;
 
 #[derive(Debug)]
 pub enum FSProblem {

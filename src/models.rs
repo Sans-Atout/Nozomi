@@ -40,7 +40,7 @@ impl SecureDelete {
     pub fn pattern(&mut self, pattern: &[u8; 3]) -> &mut Self {
         #[cfg(feature = "log")]
         trace!(
-            "[{}]\tbyte [None]\tpatern [{:x}{:x}{:x}]",
+            "[{}]\tbyte [None]\tpattern [{:x}{:x}{:x}]",
             &self.path,
             &pattern[0],
             &pattern[1],
@@ -48,7 +48,7 @@ impl SecureDelete {
         );
         #[cfg(feature = "secure_log")]
         trace!(
-            "[{:x}]\tbyte [None]\tpatern [{:x}{:x}{:x}]",
+            "[{:x}]\tbyte [None]\tpattern [{:x}{:x}{:x}]",
             &self.md5,
             &pattern[0],
             &pattern[1],
@@ -172,9 +172,9 @@ impl SecureDelete {
 
     pub fn overwrite(&mut self) -> Result<&mut Self> {
         #[cfg(feature = "log")]
-        trace!("[{}]\tBegging of overwritting phase", &self.path);
+        trace!("[{}]\tBegging of overwriting phase", &self.path);
         #[cfg(feature = "secure_log")]
-        trace!("[{:x}]\tBegging of overwritting phase", &self.md5);
+        trace!("[{:x}]\tBegging of overwriting phase", &self.md5);
 
         let file_to_overwrite = OpenOptions::new()
             .write(true)
@@ -184,27 +184,27 @@ impl SecureDelete {
             .metadata()
             .map_err(|_| Error::SystemProblem(FSProblem::Opening, self.path.clone()))?
             .size();
-        let mut overwrited_length: u64 = 0;
-        let mut overwritting_buffer = BufWriter::new(file_to_overwrite);
+        let mut overwrite_length: u64 = 0;
+        let mut overwriting_buffer = BufWriter::new(file_to_overwrite);
 
-        while overwrited_length < file_size {
-            overwrited_length += self.buffer_size as u64;
-            if file_size <= overwrited_length {
+        while overwrite_length < file_size {
+            overwrite_length += self.buffer_size as u64;
+            if file_size <= overwrite_length {
                 let special_buffer_size =
-                    file_size as usize + self.buffer_size - overwrited_length as usize;
-                overwritting_buffer
+                    file_size as usize + self.buffer_size - overwrite_length as usize;
+                overwriting_buffer
                     .write(&self.get_buffer(special_buffer_size))
                     .map_err(|_| Error::SystemProblem(FSProblem::Write, self.path.clone()))?;
                 break;
             }
-            overwritting_buffer
+            overwriting_buffer
                 .write(&self.get_buffer(self.buffer_size))
                 .map_err(|_| Error::SystemProblem(FSProblem::Write, self.path.clone()))?;
         }
         #[cfg(feature = "log")]
-        trace!("[{}]\tEnding of overwritting phase", &self.path);
+        trace!("[{}]\tEnding of overwriting phase", &self.path);
         #[cfg(feature = "secure_log")]
-        trace!("[{:x}]\tEnding of overwritting phase", &self.md5);
+        trace!("[{:x}]\tEnding of overwriting phase", &self.md5);
         Ok(self)
     }
 
@@ -444,9 +444,9 @@ impl SecureDelete {
 
     pub fn overwrite(&mut self) -> Result<&mut Self> {
         #[cfg(feature = "log")]
-        trace!("[{}]\tBegging of overwritting phase", &self.path);
+        trace!("[{}]\tBegging of overwriting phase", &self.path);
         #[cfg(feature = "secure_log")]
-        trace!("[{:x}]\tBegging of overwritting phase", &self.md5);
+        trace!("[{:x}]\tBegging of overwriting phase", &self.md5);
         let file_to_overwrite = OpenOptions::new()
             .write(true)
             .open(&self.path)
@@ -455,27 +455,27 @@ impl SecureDelete {
             .metadata()
             .change_context(Error::SystemProblem(FSProblem::Opening, self.path.clone()))?
             .size();
-        let mut overwrited_length: u64 = 0;
-        let mut overwritting_buffer = BufWriter::new(file_to_overwrite);
+        let mut overwrite_length: u64 = 0;
+        let mut overwriting_buffer = BufWriter::new(file_to_overwrite);
 
-        while overwrited_length < file_size {
-            overwrited_length += self.buffer_size as u64;
-            if file_size <= overwrited_length {
+        while overwrite_length < file_size {
+            overwrite_length += self.buffer_size as u64;
+            if file_size <= overwrite_length {
                 let special_buffer_size =
-                    file_size as usize + self.buffer_size - overwrited_length as usize;
-                overwritting_buffer
+                    file_size as usize + self.buffer_size - overwrite_length as usize;
+                overwriting_buffer
                     .write(&self.get_buffer(special_buffer_size))
                     .change_context(Error::SystemProblem(FSProblem::Write, self.path.clone()))?;
                 break;
             }
-            overwritting_buffer
+            overwriting_buffer
                 .write(&self.get_buffer(self.buffer_size))
                 .change_context(Error::SystemProblem(FSProblem::Write, self.path.clone()))?;
         }
         #[cfg(feature = "log")]
-        trace!("[{}]\tEnding of overwritting phase", &self.path);
+        trace!("[{}]\tEnding of overwriting phase", &self.path);
         #[cfg(feature = "secure_log")]
-        trace!("[{:x}]\tEnding of overwritting phase", &self.md5);
+        trace!("[{:x}]\tEnding of overwriting phase", &self.md5);
         Ok(self)
     }
 
@@ -494,7 +494,7 @@ impl SecureDelete {
     not(feature = "log"),
     not(feature = "secure_log")
 ))]
-mod ehanced_test {
+mod enhanced_test {
     use std::fs::File;
 
     use crate::{Error, Result};
