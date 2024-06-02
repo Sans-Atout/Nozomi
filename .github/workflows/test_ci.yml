@@ -13,9 +13,9 @@ jobs:
     runs-on:  ubuntu-latest
     steps:
       - name: Install Rust
-        uses: actions/checkout@v2
+        run: actions/checkout@v2
       - name: Install nextest
-        uses: cargo install cargo-nextest    
+        run: cargo install cargo-nextest    
       - name: Test normal
         run: cargo nextest run
       - name: Test error-stack features
