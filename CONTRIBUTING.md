@@ -10,10 +10,9 @@ This document serves as a reference and contains all the good practices to be ap
 
 2. [New Erase Method](#new-erase-method)
     1. [What to check before ask for a new erase method](#what-to-check-before-ask-for-a-new-erase-method)
-    2. [Change in src/method.rs file](#change-in-srcmethodrs-file)
-    3. [Change in src/lib.rs file](#change-in-srclibrs-file)
-    4. [Change in test.sh file](#change-in-testsh-file)
-    5. [Change in tests/overwrite.rs file](#change-in-testsoverwriters-file)
+    2. [Modification process](#modification-process)
+    3. [New method file template](#new-method-file-template)
+    4. [Update in src/methods/mod.rs](#update-in-srcmethodsmodrs)
 3. [Other kind of contribution](#other-kind-of-contribution)
     1. [Examples](#examples)
     2. [Issues](#issues)
@@ -60,159 +59,441 @@ A dependency or internal documentation update
 
 All good? Then great, no worries, you can add your method!
 
-## Change in [src/method.rs](src/method.rs) file
+## Modification process
+1) Add your methods as a rs file in [src/methods/](src/methods/) folder (cf. )
+2) Fill the template with your logic ([cf. ](#add-new-method-in-enum))
+3) Add new method in the [src/methods/mod.rs](src/methods/mod.rs) in Method enum ([cf.](#add-new-method-in-enum))
+4) Update display trait ([cf.](#update-method-display-trait))
+5) Update delete file function([cf.](#update-delete-file-function))
+5) Update delete folder function([cf.](#update-delete-folder-function))
+
+## New method file template
+
 ```rust
-/// TODO change this first line
-/// Function that implement [AFSSI 5020 overwrite method](https://www.lifewire.com/data-sanitization-methods-2626133#toc-afssi-5020)
-///
-/// Argument :
-/// * `path` (&str) : the file path you want to erase
-///
-/// Return
-/// * () : if success
-/// * Process Error : if fail (wrong path given or wrong right)
-///
-/// TODO Change example
-/// # Example :
-/// ```
-/// use nozomi::method::method_name_overwrite_file;
-///
-/// fn main(){
-///    method_name_overwrite_file("/path/to/file")?;
-/// }
-/// ```
-pub fn method_name_overwrite_file(_path: &str) -> Result<(), ProcessError> {
-    // TODO make your method here
-    Ok(())
+use crate::models::SecureDelete;
+use crate::Method;
+
+// -- Region : feature import
+#[cfg(not(feature = "error-stack"))]
+use crate::{Error, Result};
+
+#[cfg(feature = "log")]
+use log::info;
+
+#[cfg(feature = "error-stack")]
+use crate::{Error, Result};
+#[cfg(feature = "error-stack")]
+use error_stack::ResultExt;
+
+
+// -- Region : Pseudo Random overwriting method for basic error handling method
+
+#[cfg(not(feature = "error-stack"))]
+pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
+    // TODO : Add your logic here
+    Ok(secure_deletion)
 }
+
+// -- Region : Pseudo Random overwriting method for error-stack error handling method
+
+#[cfg(feature = "error-stack")]
+pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
+    // TODO : Add your logic here
+    Ok(secure_deletion)
+}
+
+// -- Region : Tests 
+#[cfg(test)]
+mod test {
+    
+    const METHOD_NAME: &str = "pseudo_random"; // TODO : UPDATE HERE
+
+    use crate::Method::PseudoRandom as EraseMethod; // TODO : UPDATE HERE
+
+    // ! DO NOT CHANGE THE CODE BELLOW THIS POINT
+    use super::overwrite_file;
+    use crate::error::FSProblem;
+    use crate::tests::TestType;
+
+    /// Module containing all the tests for the standard error handling method
+    #[cfg(not(feature = "error-stack"))]
+    mod standard {
+        use super::*;
+
+        use crate::tests::standard::{create_test_file, get_bytes};
+        use crate::{Error, Result};
+
+        #[cfg(not(any(feature = "log", feature = "secure_log")))]
+        mod no_log {
+            use pretty_assertions::{assert_eq, assert_ne};
+            use std::path::Path;
+
+            use super::*;
+
+            /// Test if the overwrite method for this particular erase protocol work well or not.
+            ///
+            /// Test success is all conditions are met :
+            /// * function overwrite_file is success
+            /// * file is overwritten
+            /// * file is overwritten with good method
+            /// * file is well deleted
+            #[test]
+            fn basic_overwrite() -> Result<()> {
+                let (string_path, lorem) =
+                    create_test_file(&TestType::OverwriteOnly, &METHOD_NAME)?;
+                let path = Path::new(&string_path);
+                assert!(path.exists());
+                overwrite_file(&string_path)?;
+                let bytes = get_bytes(&path)?;
+                assert_eq!(bytes.len(), lorem.as_bytes().len());
+                assert_ne!(bytes, lorem.as_bytes());
+                std::fs::remove_file(&string_path).map_err(|_| {
+                    Error::SystemProblem(FSProblem::Delete, string_path.to_string())
+                })?;
+                Ok(())
+            }
+
+            /// This test checks whether a 1KB file is correctly rewritten and deleted for a given delete method.
+            ///
+            /// Test success is all conditions are met :
+            /// * a specific file is created
+            /// * file is delete thanks to the specific erasing method
+            #[test]
+            fn small_deletion() -> Result<()> {
+                let (string_path, _) = create_test_file(&TestType::SmallFile, &METHOD_NAME)?;
+                let path = Path::new(&string_path);
+                assert!(path.exists());
+                EraseMethod.delete(&string_path)?;
+                assert!(!path.exists());
+                Ok(())
+            }
+
+            /// This test checks whether a 1MB file is correctly rewritten and deleted for a given delete method.
+            ///
+            /// Test success is all conditions are met :
+            /// * a specific file is created
+            /// * file is delete thanks to the specific erasing method
+            #[test]
+            fn medium_deletion() -> Result<()> {
+                let (string_path, _) = create_test_file(&TestType::MediumFile, &METHOD_NAME)?;
+                let path = Path::new(&string_path);
+                assert!(path.exists());
+                EraseMethod.delete(&string_path)?;
+                assert!(!Path::new(&string_path).exists());
+                Ok(())
+            }
+
+            /// This test checks whether a 10MB file is correctly rewritten and deleted for a given delete method.
+            ///
+            /// Test success is all conditions are met :
+            /// * a specific file is created
+            /// * file is delete thanks to the specific erasing method
+            #[test]
+            #[ignore = "test too long"]
+            fn large_deletion() -> Result<()> {
+                let (string_path, _) = create_test_file(&TestType::LargeFile, &METHOD_NAME)?;
+                let path = Path::new(&string_path);
+                assert!(path.exists());
+                EraseMethod.delete(&string_path)?;
+                assert!(!path.exists());
+                Ok(())
+            }
+
+            /// The test can be used to check whether a folder can be deleted using a particular method.
+            ///
+            /// Test success is all conditions are met :
+            /// * a specific folder with multiple files in it is created
+            /// * folder is delete thanks to the specific erasing method
+            #[test]
+            fn folder_test() -> Result<()> {
+                let (string_path, _) = create_test_file(&TestType::Folder, &METHOD_NAME)?;
+                let path = Path::new(&string_path);
+                assert!(path.exists());
+                EraseMethod.delete(&string_path)?;
+                assert!(!path.exists());
+                Ok(())
+            }
+
+            /// This test checks whether an error is returned when a file is read-only and a user tries to delete it using a particular method..
+            ///
+            /// Test success is all conditions are met :
+            /// * A readonly file is created
+            /// * An error is returned
+            /// * The file is deleted at the end of the test
+            #[test]
+            fn permission_denied() -> Result<()> {
+                let (string_path, _) = create_test_file(&TestType::WritingError, &METHOD_NAME)?;
+                let path = Path::new(&string_path);
+                assert!(path.exists());
+                let result = EraseMethod.delete(&string_path);
+                println!("{:?}", result);
+                assert!(result.is_err());
+                let mut perms = path.metadata().unwrap().permissions();
+                perms.set_readonly(false);
+                std::fs::set_permissions(&string_path, perms).map_err(|_| {
+                    Error::SystemProblem(FSProblem::Permissions, string_path.clone())
+                })?;
+                EraseMethod.delete(&string_path)?;
+                assert!(!path.exists());
+                Ok(())
+            }
+        }
+
+        #[cfg(all(feature = "log", not(feature = "secure_log")))]
+        mod log {
+            use super::*;
+            use std::path::Path;
+
+            /// The test ensures that the feature log functions correctly for basic error handling.
+            ///
+            /// Test success is all conditions are met :
+            /// * A specific file is created
+            /// * The file is deleted without any error
+            #[test]
+            fn test() -> Result<()> {
+                let (string_path, _) = create_test_file(&TestType::LogMini, &METHOD_NAME)?;
+                let path = Path::new(&string_path);
+                assert!(path.exists());
+                EraseMethod.delete(&string_path)?;
+                assert!(!path.exists());
+                Ok(())
+            }
+        }
+
+        #[cfg(feature = "secure_log")]
+        mod secure_log {
+            use super::*;
+            use std::path::Path;
+
+            /// The test ensures that the feature secure_log functions correctly for basic error handling.
+            ///
+            /// Test success is all conditions are met :
+            /// * A specific file is created
+            /// * The file is deleted without any error
+            #[test]
+            fn test() -> Result<()> {
+                let (string_path, _) = create_test_file(&TestType::SecureLog, &METHOD_NAME)?;
+                let path = Path::new(&string_path);
+                assert!(path.exists());
+                EraseMethod.delete(&string_path)?;
+                assert!(!path.exists());
+                Ok(())
+            }
+        }
+    }
+
+    /// Module containing all the tests for the error-stack handling method
+    #[cfg(feature = "error-stack")]
+    mod enhanced {
+        use super::*;
+
+        use crate::tests::enhanced::{create_test_file, get_bytes};
+        use crate::{Error, Result};
+
+        #[cfg(not(any(feature = "log", feature = "secure_log")))]
+        mod no_log {
+            use error_stack::ResultExt;
+            use pretty_assertions::{assert_eq, assert_ne};
+            use std::path::Path;
+
+            use super::*;
+
+            /// Test if the overwrite method for this particular erase protocol work well or not.
+            ///
+            /// Test success is all conditions are met :
+            /// * function overwrite_file is success
+            /// * file is overwritten
+            /// * file is overwritten with good method
+            /// * file is well deleted
+            #[test]
+            fn basic_overwrite() -> Result<()> {
+                let (string_path, lorem) =
+                    create_test_file(&TestType::OverwriteOnly, &METHOD_NAME)?;
+                let path = Path::new(&string_path);
+                assert!(path.exists());
+                overwrite_file(&string_path)?;
+                let bytes = get_bytes(&path)?;
+                assert_eq!(bytes.len(), lorem.as_bytes().len());
+                assert_ne!(bytes, lorem.as_bytes());
+                std::fs::remove_file(&string_path).change_context(Error::SystemProblem(
+                    FSProblem::Delete,
+                    string_path.to_string(),
+                ))?;
+                Ok(())
+            }
+
+            /// This test checks whether a 1KB file is correctly rewritten and deleted for a given delete method.
+            ///
+            /// Test success is all conditions are met :
+            /// * a specific file is created
+            /// * file is delete thanks to the specific erasing method
+            #[test]
+            fn small_deletion() -> Result<()> {
+                let (string_path, _) = create_test_file(&TestType::SmallFile, &METHOD_NAME)?;
+                let path = Path::new(&string_path);
+                assert!(path.exists());
+                EraseMethod.delete(&string_path)?;
+                assert!(!path.exists());
+                Ok(())
+            }
+
+            /// This test checks whether a 1MB file is correctly rewritten and deleted for a given delete method.
+            ///
+            /// Test success is all conditions are met :
+            /// * a specific file is created
+            /// * file is delete thanks to the specific erasing method
+            #[test]
+            fn medium_deletion() -> Result<()> {
+                let (string_path, _) = create_test_file(&TestType::MediumFile, &METHOD_NAME)?;
+                let path = Path::new(&string_path);
+                assert!(path.exists());
+                EraseMethod.delete(&string_path)?;
+                assert!(!Path::new(&string_path).exists());
+                Ok(())
+            }
+
+            /// This test checks whether a 10MB file is correctly rewritten and deleted for a given delete method.
+            ///
+            /// Test success is all conditions are met :
+            /// * a specific file is created
+            /// * file is delete thanks to the specific erasing method
+            #[test]
+            #[ignore = "test too long"]
+            fn large_deletion() -> Result<()> {
+                let (string_path, _) = create_test_file(&TestType::LargeFile, &METHOD_NAME)?;
+                let path = Path::new(&string_path);
+                assert!(path.exists());
+                EraseMethod.delete(&string_path)?;
+                assert!(!path.exists());
+                Ok(())
+            }
+
+            /// The test can be used to check whether a folder can be deleted using a particular method.
+            ///
+            /// Test success is all conditions are met :
+            /// * a specific folder with multiple files in it is created
+            /// * folder is delete thanks to the specific erasing method
+            #[test]
+            fn folder_test() -> Result<()> {
+                let (string_path, _) = create_test_file(&TestType::Folder, &METHOD_NAME)?;
+                let path = Path::new(&string_path);
+                assert!(path.exists());
+                EraseMethod.delete(&string_path)?;
+                assert!(!path.exists());
+                Ok(())
+            }
+
+            /// This test checks whether an error is returned when a file is read-only and a user tries to delete it using a particular method..
+            ///
+            /// Test success is all conditions are met :
+            /// * A readonly file is created
+            /// * An error is returned
+            /// * The file is deleted at the end of the test
+            #[test]
+            fn permission_denied() -> Result<()> {
+                let (string_path, _) = create_test_file(&TestType::WritingError, &METHOD_NAME)?;
+                let path = Path::new(&string_path);
+                assert!(path.exists());
+                let result = EraseMethod.delete(&string_path);
+                println!("{:?}", result);
+                assert!(result.is_err());
+                let mut perms = path.metadata().unwrap().permissions();
+                perms.set_readonly(false);
+                std::fs::set_permissions(&string_path, perms).change_context(
+                    Error::SystemProblem(FSProblem::Permissions, string_path.clone()),
+                )?;
+                EraseMethod.delete(&string_path)?;
+                assert!(!path.exists());
+                Ok(())
+            }
+        }
+
+        #[cfg(all(feature = "log", not(feature = "secure_log")))]
+        mod log {
+            use super::*;
+            use std::path::Path;
+
+            /// The test ensures that the feature log functions correctly
+            ///
+            /// Test success is all conditions are met :
+            /// * A specific file is created
+            /// * The file is deleted without any error
+            #[test]
+            fn test() -> Result<()> {
+                let (string_path, _) = create_test_file(&TestType::LogMini, &METHOD_NAME)?;
+                let path = Path::new(&string_path);
+                assert!(path.exists());
+                EraseMethod.delete(&string_path)?;
+                assert!(!path.exists());
+                Ok(())
+            }
+        }
+
+        #[cfg(feature = "secure_log")]
+        mod secure_log {
+            use super::*;
+            use std::path::Path;
+
+            /// The test ensures that the feature secure_log functions correctly.
+            ///
+            /// Test success is all conditions are met :
+            /// * A specific file is created
+            /// * The file is deleted without any error
+            #[test]
+            fn test() -> Result<()> {
+                let (string_path, _) = create_test_file(&TestType::SecureLog, &METHOD_NAME)?;
+                let path = Path::new(&string_path);
+                assert!(path.exists());
+                EraseMethod.delete(&string_path)?;
+                assert!(!path.exists());
+                Ok(())
+            }
+        }
+    }
+}
+
+
 ```
 
-## Change in [src/lib.rs](src/lib.rs) file
+## Update in [src/methods/mod.rs](src/methods/mod.rs)
+
+### Add new method in enum
 ```rust
-...
-pub enum OverwriteMethod {
+pub enum Method {
     /// DOD 522022 MECE erasing method <https://www.bitraser.com/article/DoD-5220-22-m-standard-for-drive-erasure.php>
     Dod522022MECE,
-    ...,
-    /// TODO document your Overwrite method with a link
-    MethodName,
+    ...
     #[default]
-    PseudoRandom, // NEVER change #default value for this enum
-}
-...
-pub fn erase_file(_path: &str, erase_method: OverwriteMethod) -> Result<(), ProcessError> {
-...
-    match erase_method {
-        OverwriteMethod::Gutmann => gutmann_overwrite_file(_path)?,
-        ...,
-        OverwriteMethod::Dod522022ME => dod_522022_me_overwrite_file(_path)?,
-        OverwriteMethod::MethodName => method_name_overwrite_file(_path)?,
-    }
-...
+    PseudoRandom,
+    // TODO add doc with link
+    MethodName, // TODO : Update here
 }
 ```
 
-## Change in [test.sh](test.sh) file
-```shell
-...
-generate hmgi_s5
-generate rcmp_tssit_ops_ii
-generate method_name # TODO Change this to your method name
-...
-reverse_chmod hmgi_s5
-reverse_chmod rcmp_tssit_ops_ii
-reverse_chmod method_name # TODO Change this to your method name
-...
-```
-
-## Change in [tests/overwrite.rs](tests/overwrite.rs) file
-Add this test at the end of the test file. Do not forget to update TODO.
+### Update Method display trait
 ```rust
-// TODO Change it to your method name
-mod method_name {
-    use crate::is_file_overwritten;
-    // TODO Change the function to your overwriting method but not the alias
-    use nozomi::method::method_name_overwrite_file as overwrite_method;
-    // TODO Change the entity to your overwriting method but not the alias
-    use nozomi::OverwriteMethod::MethodName as erase_entity;
-    // TODO Change it to your overwriting algorithm
-    static ERASE_METHOD_NAME: &str = "method_name";
-
-    /// Test if the overwrite method for this particular erase protocol work well or not.
-    ///
-    /// This test needs a valid file in `data` folder generate by `./test.sh` script.
-    /// This is the only method you needs to change if you want to add a proper erase method
-    ///
-    /// Test success is all three condition is met :
-    /// * function overwrite_method is success
-    /// * file is overwritten
-    /// * file is overwritten with good method
-    #[test]
-    fn overwrite() {
-        let overwrite_path = &format!("data/{ERASE_METHOD_NAME}/over_write.txt");
-        let result = overwrite_method(overwrite_path);
-        assert!(result.is_ok());
-        assert!(is_file_overwritten(overwrite_path));
-        // TODO ADD POST OVERWRITE METHOD TESTING
-    }
-
-    /// Test if the overwrite method for this particular erase protocol return an error if the file is not found.
-    ///
-    /// This test needs a valid file in `data` folder generate by `./test.sh` script.
-    ///
-    /// ! Do not change change this function if you want to test your own overwriting method
-    ///
-    /// Test success is the function returns a proper error.
-    #[test]
-    fn file_not_found() {
-        let overwrite_path = &format!("data/{ERASE_METHOD_NAME}/invalid.txt");
-        let result = overwrite_method(overwrite_path);
-        assert!(result.is_err());
-    }
-
-    /// Test if the overwrite method for this particular erase protocol return an error if the user.
-    /// does not have proper right on the file
-    ///
-    /// This test needs a valid file in `data` folder generate by `./test.sh` script.
-    ///
-    /// ! Do not change change this function if you want to test your own overwriting method
-    ///
-    /// Test success is the function returns a proper error.
-    #[test]
-    fn no_write_right() {
-        let overwrite_path = &format!("data/{ERASE_METHOD_NAME}/write_error.txt");
-        let result = overwrite_method(overwrite_path);
-        assert!(result.is_err());
-    }
-
-    /// Test if the overwrite method for this particular erase protocol is implemented in erase_file_method
-    ///
-    /// This test needs a valid file in `data` folder generate by `./test.sh` script.
-    ///
-    /// ! Do not change change this function if you want to test your own overwriting method
-    ///
-    /// Test success is the function return a success
-    #[test]
-    fn can_erase_file() {
-        let overwrite_path = &format!("data/{ERASE_METHOD_NAME}/erase_method.txt");
-        let result = nozomi::erase_file(overwrite_path, erase_entity);
-        assert!(result.is_ok());
-    }
-
-    /// Test if the overwrite method for this particular erase protocol is implemented in erase_folder_method
-    ///
-    /// This test needs a valid file in `data` folder generate by `./test.sh` script.
-    ///
-    /// ! Do not change change this function if you want to test your own overwriting method
-    ///
-    /// Test success is the function return a success
-    #[test]
-    fn erase_folder() {
-        let overwrite_path = &format!("data/{ERASE_METHOD_NAME}/folder");
-        let result = nozomi::erase_folder(overwrite_path, erase_entity, false);
-        assert!(result.is_ok());
+// -- Region : Implement display trait for Method enum.
+impl core::fmt::Display for Method {
+    fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::result::Result<(), core::fmt::Error> {
+        match self {
+            Method::Dod522022MECE => write!(fmt, "DOD 522022 MECE"),
+            ...
+            Method::PseudoRandom => write!(fmt, "Pseudo Random"),
+            // TODO Add new method display trait implementation
+        }
     }
 }
+
+```
+### Update delete file function
+```rust
+match self {
+    Method::Dod522022MECE => dod_522022_me::overwrite_file(path)?.delete()?,
+    ...
+    Method::PseudoRandom => pseudo_random::overwrite_file(path)?.delete()?,
+    // TODO : Add your method here
+};
+
 ```
 
 # Other kind of contribution

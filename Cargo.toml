@@ -1,6 +1,6 @@
 [package]
 name = "nozomi"
-version = "2.0.1"
+version = "3.0.0"
 edition = "2021"
 
 authors = ["Sans-Atout <augustin.rousset-rouviere@isep.fr>"]
@@ -26,3 +26,6 @@ pretty_assertions = "1.4.0"
 error-stack = ["dep:error-stack"]
 log = ["dep:log"]
 secure_log = ["log","dep:md5"]
+
+[badges]
+maintenance = { status = "actively-developed" }

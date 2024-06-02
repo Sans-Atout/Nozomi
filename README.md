@@ -10,7 +10,10 @@ nozomi = "3.0.0"
 ```
 
 ## Test libraries
-### Prerequis (optional)
+### Prerequire (optional)
+```shell
+cargo install cargo-nextest
+```
 
 ### Test
 ```shell
@@ -20,33 +23,44 @@ cargo nextest run
 ```
 
 ## Code example
-### Erase one file with Pseudo Random method
 ```rust
-use nozomi;
-use nozomi::OverwriteMethod::Afssi5020;
+use nozomi::Method::Afssi5020;
 
-fn main() {
-    match nozomi::erase_file("path_to_file", Afssi5020){
-        Ok(info) => println!("{}",info),
+fn main() -> Result<(),nozomi::Error> {
+    Afssi5020::delete("path/to/file.txt")?;
+    // OR
+    match Afssi5020::delete("path/to/file.txt"){
+        Ok(info) => println!("{}",info), // If you want
         Err(error) => println!("{}",error)
     };
+
+    Ok(())
 }
 ```
 
-### Erase one folder with Pseudo Random method
-```rust
-use nozomi;
-use nozomi::OverwriteMethod::Afssi5020;
-
-fn main() {
-    match nozomi::erase_folder("path_to_folder", Afssi5020, false){
-        Ok(info) => println!("{}",info),
-        Err(error) => println!("{}",error)
-    };
-}
-```
 # Support
-A ce jour, trois versions de la librairie sont disponibles.
+## End of life dates 
+| Version | Support | End of phase (dd/mm/aaaa) |
+|--|--|--|
+|3.x|Supported|  |
+|2.x|Passively supported|02-06-2029|
+|1.x|End of life process|02-06-2025|
+
+## Support life cycle
+When a new major version (N) is released, it will become actively supported. Bugs will be fixed and new features will be added (new default deletion algorithm, better documentation, etc.).
+The library will be audited every week with the `cargo audit` command to ensure that no flaws persist in the solution.
+
+The previous major version (N-1) will enter in the passive support phase, which will last 5 years. 
+During this period, the library dependencies will be updated every three months to ensure that the project is running as up-to-date as possible. The code will also be audited, but only on a monthly basis with the `cargo audit`. If a CVE requiring a modification to the library code is discovered, a new minor version will be published. 
+
+Once this passive support phase is over, the version will enter in the end-of-life process, which will last 1 year. During this phase, no more dependencies will be updated and no more issues concerning this library will be taken into account. This phase exists to give projects that may use the library additional time to make the necessary changes to their code before moving the version to ‘Yanked’ on [crates.io](https://crates.io/crates/nozomi/versions)
+
+# Features
+| Features |Explanation   |
+|--|--|
+| error-stack | allows the use of the error-stack library for error handling instead of the standard Rust error handling |
+| log | Allows logs to be used within the library. However, as these logs allow the name of the deleted file / folder to be recovered. |
+| secure_log | Allows you to display logs giving an idea of the progress of the rewriting functions but keeping the overwritten file/folder ‘secret’ by using the md5 hash algorithm. |
 
 # [Changelog](CHANGELOG)
 # [Contributing](CONTRIBUTING)
