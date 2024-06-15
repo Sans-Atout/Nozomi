@@ -1,6 +1,84 @@
-name: Bug Report
-description: File a bug report.
-title: "[BUG]: "
-labels: ["bug", "triage"]
-assignees:
-  - Sans-Atout
+name: Bug report
+description: Declare a bug inside the library
+title: '[BUG]: '
+labels:
+  - Bug
+body:
+  - type: checkboxes
+    id: version_selector
+    attributes:
+      label: For which version of the library would you like to report a bug?
+      description: To date, only versions 2.x and 3.x are officially supported.
+      options:
+        - label: 3.0.0
+          required: false
+        - label: 2.0.1
+          required: false
+        - label: 2.0.0
+          required: false
+        - label: 1.0.2
+          required: false
+        - label: 1.0.1
+          required: false
+        - label: 1.0.0
+          required: false
+  - type: checkboxes
+    id: activated_feature
+    attributes:
+      label: Which features did you use?
+      options:
+        - label: unknown
+          required: false
+        - label: error_stack
+          required: false
+        - label: log
+          required: false
+        - label: secure_log
+          required: false
+  - type: dropdown
+    id: erasing_method
+    attributes:
+      label: Did you erase a folder or a file ?
+      options:
+        - Files
+        - Folder
+    validations:
+      required: true
+  - type: input
+    id: drive_type
+    attributes:
+      label: Hard disk type
+      placeholder: SSD \ HDD
+    validations:
+      required: true
+  - type: input
+    id: os_version_type
+    attributes:
+      label: On which systems did you encounter the bug?
+      placeholder: Arch Linux 6.x
+    validations:
+      required: true
+  - type: input
+    id: file_type
+    attributes:
+      label: Type of file you tried to delete
+      placeholder: mp4
+    validations:
+      required: true
+  - type: input
+    id: file_size
+    attributes:
+      label: Size of file you tried to delete
+      placeholder: 32Go
+    validations:
+      required: true
+  - type: textarea
+    id: other_file_metadata
+    attributes:
+      label: Write here all the metadata that might be relevant to your case
+  - type: textarea
+    id: bug_step
+    attributes:
+      label: Explain the different steps that could help us reproduce the bug
+    validations:
+      required: true

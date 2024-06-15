@@ -62,7 +62,7 @@ Once this passive support phase is over, the version will enter in the end-of-li
 | log | Allows logs to be used within the library. However, as these logs allow the name of the deleted file / folder to be recovered. |
 | secure_log | Allows you to display logs giving an idea of the progress of the rewriting functions but keeping the overwritten file/folder ‘secret’ by using the md5 hash algorithm. |
 
-# [Changelog](CHANGELOG)
-# [Contributing](CONTRIBUTING)
+# [Changelog](CHANGELOG.md)
+# [Contributing](CONTRIBUTING.md)
 
 # [Erase Method](ERASE_METHOD.md)
