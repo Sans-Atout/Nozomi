@@ -31,11 +31,11 @@ fn validate_structure() {
     has_needed::<Method>();
 
     // -- error method
-    #[cfg(not(feature="error-stack"))]
+    #[cfg(not(feature = "error-stack"))]
     has_send_sync::<crate::Error>();
-    #[cfg(feature="error-stack")]
+    #[cfg(feature = "error-stack")]
     has_send_sync::<crate::Error>();
-    #[cfg(feature="error-stack")]
+    #[cfg(feature = "error-stack")]
     has_needed::<crate::Error>();
 }
 

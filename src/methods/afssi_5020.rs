@@ -91,7 +91,7 @@ pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
     Ok(secure_deletion)
 }
 
-// -- Region : Tests 
+// -- Region : Tests
 #[cfg(test)]
 mod test {
     use crate::Method::Afssi5020 as EraseMethod;
@@ -229,7 +229,6 @@ mod test {
         mod log {
             use super::*;
             use std::path::Path;
-
 
             /// The test ensures that the feature log functions correctly for basic error handling.
             ///

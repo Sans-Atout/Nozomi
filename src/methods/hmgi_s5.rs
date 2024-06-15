@@ -79,7 +79,7 @@ pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
     Ok(secure_deletion)
 }
 
-// -- Region : Tests 
+// -- Region : Tests
 #[cfg(test)]
 mod test {
     const METHOD_NAME: &str = "hmgi_S5";
@@ -187,7 +187,6 @@ mod test {
                 assert!(!path.exists());
                 Ok(())
             }
-
 
             /// This test checks whether an error is returned when a file is read-only and a user tries to delete it using a particular method..
             ///

@@ -19,7 +19,7 @@ pub enum FSProblem {
     ReadFolder,
     /// Can not found a file or a folder
     NotFound,
-    /// Problem with file/folder process 
+    /// Problem with file/folder process
     Permissions,
 }
 

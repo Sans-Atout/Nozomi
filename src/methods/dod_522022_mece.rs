@@ -185,7 +185,7 @@ pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
     Ok(secure_deletion)
 }
 
-// -- Region : Tests 
+// -- Region : Tests
 #[cfg(test)]
 mod test {
     const METHOD_NAME: &str = "dod_522022_mece";
@@ -195,7 +195,7 @@ mod test {
     use crate::error::FSProblem;
     use crate::tests::TestType;
 
-        /// Module containing all the tests for the standard error handling method
+    /// Module containing all the tests for the standard error handling method
     #[cfg(not(feature = "error-stack"))]
     mod standard {
         use super::*;

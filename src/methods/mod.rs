@@ -51,7 +51,7 @@ pub enum Method {
 #[cfg(not(feature = "error-stack"))]
 impl Method {
     /// This function is used to delete a file or folder using a predefined method using basic error handling method.
-    /// 
+    ///
     /// ## Argument :
     /// * `self` (&Method) : Nozomi Eraser method enumeration based on Eraser for Windows main method
     /// * `path` (&str) : path that you want to erase using the given overwrite method
@@ -158,7 +158,7 @@ impl Method {
 #[cfg(feature = "error-stack")]
 impl Method {
     /// This function is used to delete a file or folder using a predefined method using error-stack's error handling method.
-    /// 
+    ///
     /// ## Argument :
     /// * `self` (&Method) : Nozomi Eraser method enumeration based on Eraser for Windows main method
     /// * `path` (&str) : path that you want to erase using the given overwrite method

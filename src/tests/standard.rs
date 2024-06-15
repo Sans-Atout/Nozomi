@@ -7,7 +7,7 @@ use std::io::prelude::*;
 use std::{fs::File, io::Write, path::Path};
 
 /// Function for creating files for the various tests
-/// 
+///
 /// ## Arguments
 /// * `path` (&Path) : Path to the file you want to create
 /// * `lorem` (&str) : What needs to be written to the file.
@@ -19,13 +19,13 @@ pub fn file(path: &Path, lorem: &str) -> Result<()> {
 }
 
 /// Function can be used to create temporary files for the different types of test in the library
-/// 
+///
 /// ## Arguments
 /// * `test_type` (&TestType) : Type of test you wish to perform
-/// * `method_name` (&str)  : Name of the method you wish to test 
-/// 
+/// * `method_name` (&str)  : Name of the method you wish to test
+///
 /// ## Return
-/// * (&str) : Path of the test file created 
+/// * (&str) : Path of the test file created
 /// * (&str) : Data written to the temporary file specially created for test function
 pub fn create_test_file(test_type: &TestType, method_name: &str) -> Result<(String, String)> {
     let mut tmp_file = std::env::temp_dir();
@@ -130,10 +130,10 @@ pub fn create_test_file(test_type: &TestType, method_name: &str) -> Result<(Stri
 }
 
 /// Function that retrieves hexadecimal data from a given file
-/// 
-/// ## Arguments 
+///
+/// ## Arguments
 /// * `path` (&Path) : Path of the file from which you wish to retrieve the data
-/// 
+///
 /// ## Return
 /// * `data` (Vec<u8>) : Hexadecimal data vector
 pub fn get_bytes(path: &Path) -> Result<Vec<u8>> {

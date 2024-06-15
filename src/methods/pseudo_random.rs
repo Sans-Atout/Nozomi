@@ -13,7 +13,6 @@ use crate::{Error, Result};
 #[cfg(feature = "error-stack")]
 use error_stack::ResultExt;
 
-
 // -- Region : Pseudo Random overwriting method for basic error handling method
 
 /// Function that implement a basic pseudo random method using basic error handling method.
@@ -68,7 +67,7 @@ pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
     Ok(secure_deletion)
 }
 
-// -- Region : Tests 
+// -- Region : Tests
 #[cfg(test)]
 mod test {
     const METHOD_NAME: &str = "pseudo_random";

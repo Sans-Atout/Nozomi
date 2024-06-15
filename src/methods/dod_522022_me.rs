@@ -91,7 +91,7 @@ pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
     Ok(secure_deletion)
 }
 
-// -- Region : Tests 
+// -- Region : Tests
 #[cfg(test)]
 mod test {
     use crate::Method::Dod522022ME as EraseMethod;
@@ -246,11 +246,11 @@ mod test {
             }
         }
 
-            /// The test ensures that the feature secure_log functions correctly for basic error handling.
-            ///
-            /// Test success is all conditions are met :
-            /// * A specific file is created
-            /// * The file is deleted without any error
+        /// The test ensures that the feature secure_log functions correctly for basic error handling.
+        ///
+        /// Test success is all conditions are met :
+        /// * A specific file is created
+        /// * The file is deleted without any error
         #[cfg(feature = "secure_log")]
         mod secure_log {
             use super::*;

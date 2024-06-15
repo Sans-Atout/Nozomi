@@ -123,7 +123,7 @@ pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
     Ok(secure_deletion)
 }
 
-// -- Region : Tests 
+// -- Region : Tests
 #[cfg(test)]
 mod test {
     const METHOD_NAME: &str = "rcmp_tssit_ops_ii";
