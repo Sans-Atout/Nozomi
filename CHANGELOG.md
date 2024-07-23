@@ -1,5 +1,16 @@
 # Changelog
 
+## [v3.0.1](https://crates.io/crates/nozomi/3.0.1)
+
+```diff
+Project change :
+! log : 0.4.21 --> 0.4.22
+! error-stack : 0.4.1 --> 0.5.0
+
+Documentation update :
+! Correct typo in README file
+```
+
 ## [v3.0.0](https://crates.io/crates/nozomi/3.0.0)
 ```diff
 + Add log and secure log features
