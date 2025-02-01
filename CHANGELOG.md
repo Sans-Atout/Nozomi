@@ -1,4 +1,55 @@
 # Changelog
+
+## [v3.0.2](https://crates.io/crates/nozomi/3.0.2)
+
+```diff
+Project change :
+! log : 0.4.22 --> 0.4.25
+! rand : 0.8.5 --> 0.9.0
+! pretty_assertions : 1.4.0 --> 1.4.1
+
++ Addition of a test to check whether the error enumeration respects the RFC-1236
+! Move from std::error to core::error for better compatibility
+```
+
+## [v3.0.1](https://crates.io/crates/nozomi/3.0.1)
+
+```diff
+Project change :
+! log : 0.4.21 --> 0.4.22
+! error-stack : 0.4.1 --> 0.5.0
+
+Documentation update :
+! Correct typo in README file
+```
+
+## [v3.0.0](https://crates.io/crates/nozomi/3.0.0)
+```diff
++ Add log and secure log features
++ Add more standard error handling logic as default error handling method
+    reference : https://youtu.be/j-VQCYP7wyw
+
+! Simplify the library API
+! Making use of error-stack library an feature
+
+! Changes in how tests are carried out
+-   Remove test.sh file
+!   Update the test logic following the deletion of the test.sh file
++   Add more precise tests
+```
+## [v2.0.3](https://crates.io/crates/nozomi/2.0.3)
+
+```diff
+Project change :
+! log : 0.4.22 --> 0.4.25
+! rand : 0.8.5 --> 0.9.0
+```
+## [v2.0.2](https://crates.io/crates/nozomi/2.0.2)
+
+```diff
+Project change :
+!  Update error-stack from 0.4.1 to 0.5.0
+```
 ## [v2.0.1](https://crates.io/crates/nozomi/2.0.1)
 ```diff
 ! Update dependencies
