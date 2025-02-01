@@ -37,13 +37,19 @@ Documentation update :
 !   Update the test logic following the deletion of the test.sh file
 +   Add more precise tests
 ```
-## [v2.0.2](https://crates.io/crates/nozomi/2.0.2)
+## [v2.0.3](https://crates.io/crates/nozomi/2.0.3)
 
 ```diff
 Project change :
 ! log : 0.4.22 --> 0.4.25
 ! rand : 0.8.5 --> 0.9.0
 ```
+## [v2.0.2](https://crates.io/crates/nozomi/2.0.2)
+
+```diff
+Project change :
+!  Update error-stack from 0.4.1 to 0.5.0
+c```
 
 ## [v2.0.1](https://crates.io/crates/nozomi/2.0.1)
 ```diff
