@@ -49,7 +49,7 @@ Project change :
 ```diff
 Project change :
 !  Update error-stack from 0.4.1 to 0.5.0
-c```
+```
 
 ## [v2.0.1](https://crates.io/crates/nozomi/2.0.1)
 ```diff
