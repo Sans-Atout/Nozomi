@@ -15,5 +15,21 @@ Cargo.lock
 /target
 .env
 
+# Due to security auditing tool
 /supply-chain
-test.sh
+
+# Due to personal preference on diverse editor
+.vscode/
+*.vscode
+.idea/
+*.idea
+.fleet/
+*.fleet
+.sublime-project
+*.sublime-workspace
+*.sublime-project
+*.sublime-workspace
+.vs/
+*.vs
+.code-workspace
+*.code-workspace
