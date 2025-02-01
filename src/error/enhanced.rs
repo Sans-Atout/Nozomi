@@ -47,3 +47,15 @@ impl core::fmt::Display for Error {
 }
 
 impl Context for Error {}
+
+
+#[cfg(test)]
+mod test {
+    
+    use crate::error::rfc1236;
+    
+    #[test]
+    fn test_rfc1236(){
+        rfc1236::<super::Error>();
+    }
+}
