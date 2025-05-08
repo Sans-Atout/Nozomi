@@ -1,5 +1,17 @@
 # Changelog
 
+## [v3.0.3](https://crates.io/crates/nozomi/3.0.3)
+
+```diff
+Project change :
+! log : 0.4.25 --> 0.4.27
+! rand : 0.9.0 --> 0.9.1
+
+! Rust version change from 2021 to 2024
+- Removal of the GPLv3 licence
++ Addition of the more standard MIT and Apache licences for libraries
+```
+
 ## [v3.0.2](https://crates.io/crates/nozomi/3.0.2)
 
 ```diff
@@ -37,6 +49,19 @@ Documentation update :
 !   Update the test logic following the deletion of the test.sh file
 +   Add more precise tests
 ```
+
+## [v2.0.4](https://crates.io/crates/nozomi/2.0.4)
+
+```diff
+Project change :
+! rand : 0.9.0 --> 0.9.1
+- Remove unused librairie log
+
+! Rust version change from 2021 to 2024
+- Removal of the GPLv3 licence
++ Addition of the more standard MIT and Apache licences for libraries
+```
+
 ## [v2.0.3](https://crates.io/crates/nozomi/2.0.3)
 
 ```diff

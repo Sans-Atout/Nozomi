@@ -1,5 +1,5 @@
-use crate::models::SecureDelete;
 use crate::Method;
+use crate::models::SecureDelete;
 
 // -- Region : feature import
 #[cfg(not(feature = "error-stack"))]

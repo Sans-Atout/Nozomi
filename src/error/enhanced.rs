@@ -1,5 +1,5 @@
 use crate::error::FSProblem;
-use crate::{models::SecureDelete, Method};
+use crate::{Method, models::SecureDelete};
 use error_stack::Context;
 
 /// Reexporting Result type

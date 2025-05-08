@@ -29,8 +29,8 @@ const OVERWRITE_PATTERN: [[u8; 3]; 27] = [
     [0xDB_u8, 0x6D_u8, 0xB6_u8],
 ];
 
-use crate::models::SecureDelete;
 use crate::Method;
+use crate::models::SecureDelete;
 
 // -- Region : feature import
 #[cfg(not(feature = "error-stack"))]
