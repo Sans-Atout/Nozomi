@@ -54,8 +54,8 @@ Documentation update :
 
 ```diff
 Project change :
-! log : 0.4.25 --> 0.4.27
 ! rand : 0.9.0 --> 0.9.1
+- Remove unused librairie log
 
 ! Rust version change from 2021 to 2024
 - Removal of the GPLv3 licence
