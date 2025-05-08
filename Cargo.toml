@@ -1,7 +1,7 @@
 [package]
 name = "nozomi"
 version = "2.0.3"
-edition = "2021"
+edition = "2024"
 
 authors = ["Sans-Atout <augustin.rousset-rouviere@isep.fr>"]
 description = "Equivalent of the Linux shred command but in rust and library. Allows you to securely erase data from a hard drive."
