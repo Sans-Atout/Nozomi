@@ -1,5 +1,5 @@
-use super::TestType;
 use super::LOREM_IPSUM;
+use super::TestType;
 use crate::error::FSProblem;
 use crate::{Error, Result};
 use std::fs::create_dir_all;

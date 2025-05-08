@@ -40,4 +40,3 @@ impl core::fmt::Display for FSProblem {
 
 #[cfg(test)]
 pub(crate) fn rfc1236<T: core::error::Error + Send + Sync + 'static>() {}
-

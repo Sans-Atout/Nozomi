@@ -65,18 +65,12 @@ impl SecureDelete {
         #[cfg(feature = "log")]
         trace!(
             "[{}]\tbyte [None]\tpattern [{:x}{:x}{:x}]",
-            &self.path,
-            &pattern[0],
-            &pattern[1],
-            &pattern[2]
+            &self.path, &pattern[0], &pattern[1], &pattern[2]
         );
         #[cfg(feature = "secure_log")]
         trace!(
             "[{:x}]\tbyte [None]\tpattern [{:x}{:x}{:x}]",
-            &self.md5,
-            &pattern[0],
-            &pattern[1],
-            &pattern[2]
+            &self.md5, &pattern[0], &pattern[1], &pattern[2]
         );
         self.pattern = Some(*pattern);
         self.byte = None;

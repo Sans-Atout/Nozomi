@@ -1,5 +1,5 @@
 use crate::error::FSProblem;
-use crate::{models::SecureDelete, Method};
+use crate::{Method, models::SecureDelete};
 
 #[cfg(not(feature = "error-stack"))]
 /// Reexporting Result type
