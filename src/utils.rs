@@ -260,7 +260,7 @@ pub fn rename_file(_path: String, size: u32) -> Result<String, InputError> {
         Some(file) => file,
         None => {
             return Err(Report::new(InputError)
-                .attach_printable(format!("Cannot retrieve file name : {_path}")))
+                .attach_printable(format!("Cannot retrieve file name : {_path}")));
         }
     };
     let dir = _p.parent().unwrap().to_str().unwrap();
@@ -304,7 +304,7 @@ fn get_file_name_size(path: &String) -> Result<u32, InputError> {
         Some(file) => file,
         None => {
             return Err(Report::new(InputError)
-                .attach_printable(format!("Cannot retrieve file name : {path}")))
+                .attach_printable(format!("Cannot retrieve file name : {path}")));
         }
     };
     Ok(file_name.len() as u32)

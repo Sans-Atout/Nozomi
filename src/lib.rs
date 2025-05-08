@@ -13,7 +13,7 @@ use method::{
     gutmann_overwrite_file, hmgi_s5_overwrite_file, rcmp_tssit_ops_ii_overwrite_file,
 };
 
-use utils::{delete_file, Overwrite};
+use utils::{Overwrite, delete_file};
 
 /// Nozomi Eraser method enumeration based on Eraser for Windows main method
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
@@ -68,7 +68,7 @@ pub fn erase_folder(
                 return Err(Report::new(InputError)
                     .attach_printable(format!("Cannot retrieve file name : {_path}"))
                     .change_context(ProcessError)
-                    .attach_printable("Process Error : erase folder fail"))
+                    .attach_printable("Process Error : erase folder fail"));
             }
         };
         let is_folder = Path::new(_file_name).is_dir();

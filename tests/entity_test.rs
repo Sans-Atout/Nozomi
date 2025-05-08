@@ -1,8 +1,8 @@
 use std::fmt::Debug;
 
 use nozomi::{
-    error::{InputError, ProcessError},
     OverwriteMethod,
+    error::{InputError, ProcessError},
 };
 
 fn has_send_sync<T: Sized + Send + Sync + Unpin>() {}

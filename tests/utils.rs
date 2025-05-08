@@ -1,7 +1,7 @@
 use std::path::Path;
 
-use nozomi::utils;
 use nozomi::OverwriteMethod::PseudoRandom;
+use nozomi::utils;
 use nozomi::{
     erase_file, erase_folder,
     utils::{delete_file, generate_zero_string},
