@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::Path;
 use std::io::{Seek, SeekFrom, Write};
 use crate::engine::overwrite::common::prepare_overwrite;
 use crate::Method;
@@ -19,12 +19,12 @@ use log::info;
 /// ! Please note that this method does not delete the given file.
 ///
 /// ## Argument :
-/// * `path` (&PathBuf) : path that you want to erase using HMGI S5 overwrite method
+/// * `path` (&Path) : path that you want to erase using HMGI S5 overwrite method
 ///
 /// ## Return
 /// * `()`
 #[cfg(not(feature = "error-stack"))]
-pub(crate) fn overwrite_file(path: &PathBuf) -> Result<()> {
+pub(crate) fn overwrite_file(path: &Path) -> Result<()> {
 	let (mut file, file_size, _,mut buffer) = prepare_overwrite(path)?;
 	for pattern in 0..2 {
 		file.seek(SeekFrom::Start(0)).map_err(|_| Error::OverwriteError(Method::HmgiS5, &pattern+1 ))?;
@@ -48,12 +48,12 @@ pub(crate) fn overwrite_file(path: &PathBuf) -> Result<()> {
 /// ! Please note that this method does not delete the given file.
 ///
 /// ## Argument :
-/// * `path` (&PathBuf) : path that you want to erase using HMGI S5 overwrite method
+/// * `path` (&Path) : path that you want to erase using HMGI S5 overwrite method
 ///
 /// ## Return
 /// * `()`
 #[cfg(feature = "error-stack")]
-pub(crate) fn overwrite_file(path: &PathBuf) -> Result<()> {
+pub(crate) fn overwrite_file(path: &Path) -> Result<()> {
 	let (mut file, file_size, _,mut buffer) = prepare_overwrite(path)?;
 	for pattern in 0..2 {
 		file.seek(SeekFrom::Start(0)).change_context(Error::OverwriteError(Method::HmgiS5, &pattern+1 ))?;

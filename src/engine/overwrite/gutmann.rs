@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::Path;
 use std::io::{Seek, SeekFrom, Write};
 use rand::Rng;
 use crate::engine::overwrite::common::prepare_overwrite;
@@ -51,12 +51,12 @@ const FIXED_PATTERNS: &[[u8; 3]] = &[
 /// ! Please note that this method does not delete the given file.
 ///
 /// ## Argument :
-/// * `path` (&PathBuf) : path that you want to erase using basic pseudo random method overwrite method
+/// * `path` (&Path) : path that you want to erase using basic pseudo random method overwrite method
 ///
 /// ## Return
 /// * `()`
 #[cfg(not(feature = "error-stack"))]
-pub(crate) fn overwrite_file(path: &PathBuf) -> Result<()> {
+pub(crate) fn overwrite_file(path: &Path) -> Result<()> {
     let (mut file, file_size, mut rng,mut buffer) = prepare_overwrite(path)?;
 
     // Total passes = 35
@@ -64,7 +64,7 @@ pub(crate) fn overwrite_file(path: &PathBuf) -> Result<()> {
         file.seek(SeekFrom::Start(0)).map_err(|_| Error::OverwriteError(Method::Gutmann, pass as u32))?;
         let mut remaining = file_size;
 
-        let is_random = pass < 4 || pass >= 31;
+        let is_random = !(4..31).contains(&pass);
 
         while remaining > 0 {
             let write_size = std::cmp::min(remaining, buffer.len() as u64) as usize;
@@ -94,12 +94,12 @@ pub(crate) fn overwrite_file(path: &PathBuf) -> Result<()> {
 /// ! Please note that this method does not delete the given file.
 ///
 /// ## Argument :
-/// * `path` (&PathBuf) : path that you want to erase using basic pseudo random method overwrite method
+/// * `path` (&Path) : path that you want to erase using basic pseudo random method overwrite method
 ///
 /// ## Return
 /// * `()`
 #[cfg(feature = "error-stack")]
-pub(crate) fn overwrite_file(path: &PathBuf) -> Result<()> {
+pub(crate) fn overwrite_file(path: &Path) -> Result<()> {
     let (mut file, file_size, mut rng,mut buffer) = prepare_overwrite(path)?;
 
     // Total passes = 35
@@ -107,7 +107,7 @@ pub(crate) fn overwrite_file(path: &PathBuf) -> Result<()> {
         file.seek(SeekFrom::Start(0)).change_context(Error::OverwriteError(Method::Gutmann, pass as u32))?;
         let mut remaining = file_size;
 
-        let is_random = pass < 4 || pass >= 31;
+        let is_random = !(4..31).contains(&pass);
 
         while remaining > 0 {
             let write_size = std::cmp::min(remaining, buffer.len() as u64) as usize;

@@ -1,5 +1,5 @@
-use std::path::PathBuf;
-use std::io::{Seek, SeekFrom, Write};
+use std::path::Path;
+use std::io::Write;
 use rand::Rng;
 use crate::engine::overwrite::common::prepare_overwrite;
 use crate::Method;
@@ -20,12 +20,12 @@ use log::info;
 /// ! Please note that this method does not delete the given file.
 ///
 /// ## Argument :
-/// * `path` (&PathBuf) : path that you want to erase using basic pseudo random method overwrite method
+/// * `path` (&Path) : path that you want to erase using basic pseudo random method overwrite method
 ///
 /// ## Return
 /// * `()`
 #[cfg(not(feature = "error-stack"))]
-pub(crate) fn overwrite_file(path: &PathBuf) -> Result<()> {
+pub(crate) fn overwrite_file(path: &Path) -> Result<()> {
 	#[cfg(feature = "secure_log")]
 	let computed_md5 = md5::compute(format!("{}", path.to_string_lossy()));
 
@@ -61,12 +61,12 @@ pub(crate) fn overwrite_file(path: &PathBuf) -> Result<()> {
 /// ! Please note that this method does not delete the given file.
 ///
 /// ## Argument :
-/// * `path` (&PathBuf) : path that you want to erase using basic pseudo random method overwrite method
+/// * `path` (&Path) : path that you want to erase using basic pseudo random method overwrite method
 ///
 /// ## Return
 /// * `()`
 #[cfg(feature = "error-stack")]
-pub(crate) fn overwrite_file(path: &PathBuf) -> Result<()> {
+pub(crate) fn overwrite_file(path: &Path) -> Result<()> {
 	#[cfg(feature = "secure_log")]
 	let computed_md5 = md5::compute(format!("{}", path.to_string_lossy()));
 

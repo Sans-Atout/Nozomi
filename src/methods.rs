@@ -1,11 +1,9 @@
 // -- Region : Extern library import
-use crate::SecureDelete;
-use crate::error::FSProblem;
-use std::{fs::read_dir, path::Path};
+use std::path::Path;
 
 // -- Region : feature import
 #[cfg(not(feature = "error-stack"))]
-use crate::{Error, Result};
+use crate::Result;
 
 #[cfg(feature = "log")]
 use log::{error, info, warn};

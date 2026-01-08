@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::Path;
 use std::io::{Seek, SeekFrom, Write};
 use rand::Rng;
 use crate::engine::overwrite::common::prepare_overwrite;
@@ -22,12 +22,12 @@ const  FIXED_PATTERNS: &[u8; 6] = &[0x00,0xFF,0x00,0xFF,0x00,0xFF];
 /// ! Please note that this method does not delete the given file.
 ///
 /// ## Argument :
-/// * `path` (&PathBuf) : path that you want to erase using RCMP TSSIT OPS II overwrite method
+/// * `path` (&Path) : path that you want to erase using RCMP TSSIT OPS II overwrite method
 ///
 /// ## Return
 /// * `()
 #[cfg(not(feature = "error-stack"))]
-pub(crate) fn overwrite_file(path: &PathBuf) -> Result<()> {
+pub(crate) fn overwrite_file(path: &Path) -> Result<()> {
 
 	let (mut file, file_size, mut rng,mut buffer) = prepare_overwrite(path)?;
 	for pattern in 0..6 {
@@ -69,12 +69,12 @@ pub(crate) fn overwrite_file(path: &PathBuf) -> Result<()> {
 /// ! Please note that this method does not delete the given file.
 ///
 /// ## Argument :
-/// * `path` (&PathBuf) : path that you want to erase using RCMP TSSIT OPS II overwrite method
+/// * `path` (&Path) : path that you want to erase using RCMP TSSIT OPS II overwrite method
 ///
 /// ## Return
 /// * `()
 #[cfg(feature = "error-stack")]
-pub(crate) fn overwrite_file(path: &PathBuf) -> Result<()> {
+pub(crate) fn overwrite_file(path: &Path) -> Result<()> {
 
 	let (mut file, file_size, mut rng,mut buffer) = prepare_overwrite(path)?;
 	for pattern in 0..6 {

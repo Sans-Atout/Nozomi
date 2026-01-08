@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::Path;
 use std::io::{Seek, SeekFrom, Write};
 use rand::Rng;
 use crate::engine::overwrite::common::prepare_overwrite;
@@ -28,15 +28,15 @@ const FIXED_PATTERNS: &[Option<u8>] = &[
 /// ! Please note that this method does not delete the given file.
 ///
 /// ## Argument :
-/// * `path` (&PathBuf) : path that you want to erase using AFSSI 5020 overwrite method
+/// * `path` (&Path) : path that you want to erase using AFSSI 5020 overwrite method
 ///
 /// ## Return
 /// * `()`
 #[cfg(not(feature = "error-stack"))]
-pub(crate) fn overwrite_file(path: &PathBuf) -> Result<()> {
+pub(crate) fn overwrite_file(path: &Path) -> Result<()> {
     let (mut file, file_size, mut rng,mut buffer) = prepare_overwrite(path)?;
 
-    for pass in 0..FIXED_PATTERNS.len() {
+    for (pass, patterns) in FIXED_PATTERNS.iter().enumerate() {
         // rewind start of file
         file.seek(SeekFrom::Start(0)).map_err(|_| Error::OverwriteError(Method::Afssi5020, pass as u32))?;
 
@@ -44,9 +44,9 @@ pub(crate) fn overwrite_file(path: &PathBuf) -> Result<()> {
         while remaining > 0 {
             let write_size = std::cmp::min(remaining, buffer.len() as u64) as usize;
 
-            match FIXED_PATTERNS[pass] {
+            match patterns {
                 Some(b) => {
-                    buffer[..write_size].fill(b);
+                    buffer[..write_size].fill(*b);
                 }
                 None => {
                     rng.fill(&mut buffer[..write_size]);
@@ -68,15 +68,15 @@ pub(crate) fn overwrite_file(path: &PathBuf) -> Result<()> {
 /// ! Please note that this method does not delete the given file.
 ///
 /// ## Argument :
-/// * `path` (&PathBuf) : path that you want to erase using AFSSI 5020 overwrite method
+/// * `path` (&Path) : path that you want to erase using AFSSI 5020 overwrite method
 ///
 /// ## Return
 /// * `()`
 #[cfg(feature = "error-stack")]
-pub(crate) fn overwrite_file(path: &PathBuf) -> Result<()> {
+pub(crate) fn overwrite_file(path: &Path) -> Result<()> {
     let (mut file, file_size, mut rng,mut buffer) = prepare_overwrite(path)?;
 
-    for pass in 0..FIXED_PATTERNS.len() {
+    for (pass, patterns) in FIXED_PATTERNS.iter().enumerate() {
         // rewind start of file
         file.seek(SeekFrom::Start(0)).change_context(Error::OverwriteError(Method::Afssi5020, pass as u32))?;
 
@@ -84,9 +84,9 @@ pub(crate) fn overwrite_file(path: &PathBuf) -> Result<()> {
         while remaining > 0 {
             let write_size = std::cmp::min(remaining, buffer.len() as u64) as usize;
 
-            match FIXED_PATTERNS[pass] {
+            match patterns {
                 Some(b) => {
-                    buffer[..write_size].fill(b);
+                    buffer[..write_size].fill(*b);
                 }
                 None => {
                     rng.fill(&mut buffer[..write_size]);

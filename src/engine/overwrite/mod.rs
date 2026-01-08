@@ -9,7 +9,7 @@ mod pseudo_random;
 mod rcmp_tssit_ops_ii;
 mod common;
 
-use std::path::PathBuf;
+use std::path::Path;
 use crate::Method;
 
 #[cfg(not(feature = "error-stack"))]
@@ -21,7 +21,7 @@ use crate::{Error, Result};
 use error_stack::ResultExt;
 
 #[cfg(not(feature = "error-stack"))]
-pub(crate) fn overwrite_file(method: &Method, path : &PathBuf) -> Result<()> {
+pub(crate) fn overwrite_file(method: &Method, path : &Path) -> Result<()> {
 	match method {
 		Method::Dod522022MECE => dod_522022_me::overwrite_file(path)?,
 		Method::Dod522022ME => dod_522022_mece::overwrite_file(path)?,
@@ -35,7 +35,7 @@ pub(crate) fn overwrite_file(method: &Method, path : &PathBuf) -> Result<()> {
 }
 
 #[cfg(feature = "error-stack")]
-pub(crate) fn overwrite_file(method: &Method, path : &PathBuf) -> Result<()> {
+pub(crate) fn overwrite_file(method: &Method, path : &Path) -> Result<()> {
 	match method {
 		Method::Dod522022MECE => dod_522022_me::overwrite_file(path)?,
 		Method::Dod522022ME => dod_522022_mece::overwrite_file(path)?,
