@@ -1,89 +1,121 @@
 use crate::Method;
-use crate::models::SecureDelete;
+use crate::engine::overwrite::common::prepare_overwrite;
+use rand::Rng;
+use std::io::{Seek, SeekFrom, Write};
+use std::path::Path;
 
-// -- Region : feature import
+use crate::error::FSProblem;
 #[cfg(not(feature = "error-stack"))]
 use crate::{Error, Result};
-
-#[cfg(feature = "log")]
-use log::info;
 
 #[cfg(feature = "error-stack")]
 use crate::{Error, Result};
 #[cfg(feature = "error-stack")]
 use error_stack::ResultExt;
 
-// -- Region : HMGI S5 overwriting method for basic error handling method
+#[cfg(feature = "log")]
+use log::info;
 
-/// Function that implement [HMGI S5 overwrite method](https://www.bitraser.com/knowledge-series/data-destruction-standards-and-guidelines.php)
+const FIXED_PATTERNS: &[Option<u8>] = &[Some(0x00), Some(0xFF), None];
+
+// -- Region : AFSSI 5020 overwriting method for basic error handling method
+
+/// Function that implement [AFSSI 5020 overwrite method](https://www.lifewire.com/data-sanitization-methods-2626133#toc-afssi-5020)
 /// ! Please note that this method does not delete the given file.
 ///
 /// ## Argument :
-/// * `path` (&str) : path that you want to erase using HMGI S5 overwrite method
+/// * `path` (&Path) : path that you want to erase using AFSSI 5020 overwrite method
 ///
 /// ## Return
-/// * `secure_deletion` (SecureDelete) : An SecureDelete object
+/// * `()`
 #[cfg(not(feature = "error-stack"))]
-pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
-    let mut secure_deletion = SecureDelete::new(path)?;
-    secure_deletion
-        .byte(&0x00_u8)
-        .overwrite()
-        .map_err(|_| Error::OverwriteError(Method::HmgiS5, 1))?;
-    #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t1/2", Method::HmgiS5);
-    #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t1/2", Method::HmgiS5, &secure_deletion.md5);
-    secure_deletion
-        .byte(&0x00_u8)
-        .overwrite()
-        .map_err(|_| Error::OverwriteError(Method::HmgiS5, 2))?;
-    #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t2/2", Method::HmgiS5);
-    #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t2/2", Method::HmgiS5, &secure_deletion.md5);
+pub(crate) fn overwrite_file(path: &Path) -> Result<()> {
+    let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
 
-    Ok(secure_deletion)
+    for (pass, patterns) in FIXED_PATTERNS.iter().enumerate() {
+        // rewind start of file
+        file.seek(SeekFrom::Start(0))
+            .map_err(|_| Error::OverwriteError(Method::Afssi5020, pass as u32))?;
+
+        let mut remaining = file_size;
+        while remaining > 0 {
+            let write_size = std::cmp::min(remaining, buffer.len() as u64) as usize;
+
+            match patterns {
+                Some(b) => {
+                    buffer[..write_size].fill(*b);
+                }
+                None => {
+                    rng.fill(&mut buffer[..write_size]);
+                }
+            }
+
+            file.write_all(&buffer[..write_size])
+                .map_err(|_| Error::OverwriteError(Method::Afssi5020, pass as u32))?;
+            remaining -= write_size as u64;
+        }
+
+        file.flush()
+            .map_err(|_| Error::OverwriteError(Method::Afssi5020, pass as u32))?;
+    }
+    file.sync_all().map_err(|_| {
+        Error::SystemProblem(FSProblem::Write, format!("{}", path.to_string_lossy()))
+    })?;
+
+    Ok(())
 }
 
-// -- Region : HMGI S5 overwriting method for error-stack error handling method
-
-/// Function that implement [HMGI S5 overwrite method](https://www.bitraser.com/knowledge-series/data-destruction-standards-and-guidelines.php)
+/// Function that implement [AFSSI 5020 overwrite method](https://www.lifewire.com/data-sanitization-methods-2626133#toc-afssi-5020)
 /// ! Please note that this method does not delete the given file.
 ///
 /// ## Argument :
-/// * `path` (&str) : path that you want to erase using HMGI S5 overwrite method
+/// * `path` (&Path) : path that you want to erase using AFSSI 5020 overwrite method
 ///
 /// ## Return
-/// * `secure_deletion` (SecureDelete) : An SecureDelete object
+/// * `()`
 #[cfg(feature = "error-stack")]
-pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
-    let mut secure_deletion = SecureDelete::new(path)?;
-    secure_deletion
-        .byte(&0x00_u8)
-        .overwrite()
-        .change_context(Error::OverwriteError(Method::HmgiS5, 1))?;
-    #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t1/2", Method::HmgiS5);
-    #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t1/2", Method::HmgiS5, &secure_deletion.md5);
-    secure_deletion
-        .byte(&0x00_u8)
-        .overwrite()
-        .change_context(Error::OverwriteError(Method::HmgiS5, 2))?;
-    #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t2/2", Method::HmgiS5);
-    #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t2/2", Method::HmgiS5, &secure_deletion.md5);
+pub(crate) fn overwrite_file(path: &Path) -> Result<()> {
+    let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
 
-    Ok(secure_deletion)
+    for (pass, patterns) in FIXED_PATTERNS.iter().enumerate() {
+        // rewind start of file
+        file.seek(SeekFrom::Start(0))
+            .change_context(Error::OverwriteError(Method::Afssi5020, pass as u32))?;
+
+        let mut remaining = file_size;
+        while remaining > 0 {
+            let write_size = std::cmp::min(remaining, buffer.len() as u64) as usize;
+
+            match patterns {
+                Some(b) => {
+                    buffer[..write_size].fill(*b);
+                }
+                None => {
+                    rng.fill(&mut buffer[..write_size]);
+                }
+            }
+
+            file.write_all(&buffer[..write_size])
+                .change_context(Error::OverwriteError(Method::Afssi5020, pass as u32))?;
+            remaining -= write_size as u64;
+        }
+
+        file.flush()
+            .change_context(Error::OverwriteError(Method::Afssi5020, pass as u32))?;
+    }
+    file.sync_all().change_context(Error::SystemProblem(
+        FSProblem::Write,
+        format!("{}", path.to_string_lossy()),
+    ))?;
+
+    Ok(())
 }
 
 // -- Region : Tests
 #[cfg(test)]
 mod test {
-    const METHOD_NAME: &str = "hmgi_S5";
-    use crate::Method::HmgiS5 as EraseMethod;
+    use crate::Method::Afssi5020 as EraseMethod;
+    const METHOD_NAME: &str = "afssi_5020";
 
     use super::overwrite_file;
     use crate::error::FSProblem;
@@ -117,7 +149,7 @@ mod test {
                     create_test_file(&TestType::OverwriteOnly, &METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
-                overwrite_file(&string_path)?;
+                overwrite_file(&path.to_path_buf())?;
                 let bytes = get_bytes(&path)?;
                 assert_eq!(bytes.len(), lorem.as_bytes().len());
                 assert_ne!(bytes, lorem.as_bytes());
@@ -285,7 +317,7 @@ mod test {
                     create_test_file(&TestType::OverwriteOnly, &METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
-                overwrite_file(&string_path)?;
+                overwrite_file(&path.to_path_buf())?;
                 let bytes = get_bytes(&path)?;
                 assert_eq!(bytes.len(), lorem.as_bytes().len());
                 assert_ne!(bytes, lorem.as_bytes());

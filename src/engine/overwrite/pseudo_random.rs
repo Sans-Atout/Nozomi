@@ -1,101 +1,113 @@
 use crate::Method;
-use crate::models::SecureDelete;
+use crate::engine::overwrite::common::prepare_overwrite;
+use rand::Rng;
+use std::io::Write;
+use std::path::Path;
 
-// -- Region : feature import
+use crate::error::FSProblem;
 #[cfg(not(feature = "error-stack"))]
 use crate::{Error, Result};
-
-#[cfg(feature = "log")]
-use log::info;
 
 #[cfg(feature = "error-stack")]
 use crate::{Error, Result};
 #[cfg(feature = "error-stack")]
 use error_stack::ResultExt;
 
-// -- Region : AFSSI 5020 overwriting method for basic error handling method
+#[cfg(feature = "log")]
+use log::info;
 
-/// Function that implement [AFSSI 5020 overwrite method](https://www.lifewire.com/data-sanitization-methods-2626133#toc-afssi-5020)
+/// Function that implement a basic pseudo random method using basic error handling method.
 /// ! Please note that this method does not delete the given file.
 ///
 /// ## Argument :
-/// * `path` (&str) : path that you want to erase using AFSSI 5020 overwrite method
+/// * `path` (&Path) : path that you want to erase using basic pseudo random method overwrite method
 ///
 /// ## Return
-/// * `secure_deletion` (SecureDelete) : An SecureDelete object
+/// * `()`
 #[cfg(not(feature = "error-stack"))]
-pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
-    let mut secure_deletion = SecureDelete::new(path)?;
-    secure_deletion
-        .byte(&0x00_u8)
-        .overwrite()
-        .map_err(|_| Error::OverwriteError(Method::Afssi5020, 1))?;
+pub(crate) fn overwrite_file(path: &Path) -> Result<()> {
+    #[cfg(feature = "secure_log")]
+    let computed_md5 = md5::compute(format!("{}", path.to_string_lossy()));
+
     #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t1/3", Method::Afssi5020);
+    info!(
+        "[{}][{}]\t1/1",
+        &path.to_string_lossy(),
+        Method::PseudoRandom
+    );
     #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t1/3", Method::Afssi5020, &secure_deletion.md5);
-    secure_deletion
-        .byte(&0xFF_u8)
-        .overwrite()
-        .map_err(|_| Error::OverwriteError(Method::Afssi5020, 2))?;
-    #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t2/3", Method::Afssi5020);
-    #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t2/3", Method::Afssi5020, &secure_deletion.md5);
-    secure_deletion
-        .overwrite()
-        .map_err(|_| Error::OverwriteError(Method::Afssi5020, 3))?;
-    #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t3/3", Method::Afssi5020);
-    #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t3/3", Method::Afssi5020, &secure_deletion.md5);
-    Ok(secure_deletion)
+    info!("[{}][{:x}]\t1/1", Method::PseudoRandom, computed_md5);
+
+    let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
+
+    let mut remaining = file_size;
+
+    while remaining > 0 {
+        rng.fill(&mut buffer);
+        let write_size = std::cmp::min(remaining, buffer.len() as u64) as usize;
+        file.write_all(&buffer[..write_size])
+            .map_err(|_| Error::OverwriteError(Method::PseudoRandom, 1))?;
+        remaining -= write_size as u64;
+    }
+
+    file.flush()
+        .map_err(|_| Error::OverwriteError(Method::PseudoRandom, 1))?;
+    file.sync_all().map_err(|_| {
+        Error::SystemProblem(FSProblem::Write, format!("{}", path.to_string_lossy()))
+    })?;
+
+    Ok(())
 }
 
-// -- Region : AFSSI 5020 overwriting method for error-stack error handling method
-
-/// Function that implement [AFSSI 5020 overwrite method](https://www.lifewire.com/data-sanitization-methods-2626133#toc-afssi-5020)
+/// Function that implement a basic pseudo random method using basic error handling method.
 /// ! Please note that this method does not delete the given file.
 ///
 /// ## Argument :
-/// * `path` (&str) : path that you want to erase using AFSSI 5020 overwrite method
+/// * `path` (&Path) : path that you want to erase using basic pseudo random method overwrite method
 ///
 /// ## Return
-/// * `secure_deletion` (SecureDelete) : An SecureDelete object
+/// * `()`
 #[cfg(feature = "error-stack")]
-pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
-    let mut secure_deletion = SecureDelete::new(path)?;
-    secure_deletion
-        .byte(&0x00_u8)
-        .overwrite()
-        .change_context(Error::OverwriteError(Method::Afssi5020, 1))?;
+pub(crate) fn overwrite_file(path: &Path) -> Result<()> {
+    #[cfg(feature = "secure_log")]
+    let computed_md5 = md5::compute(format!("{}", path.to_string_lossy()));
+
     #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t1/3", Method::Afssi5020);
+    info!(
+        "[{}][{}]\t1/1",
+        &path.to_string_lossy(),
+        Method::PseudoRandom
+    );
     #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t1/3", Method::Afssi5020, &secure_deletion.md5);
-    secure_deletion
-        .byte(&0xFF_u8)
-        .overwrite()
-        .change_context(Error::OverwriteError(Method::Afssi5020, 2))?;
-    #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t2/3", Method::Afssi5020);
-    #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t2/3", Method::Afssi5020, &secure_deletion.md5);
-    secure_deletion
-        .overwrite()
-        .change_context(Error::OverwriteError(Method::Afssi5020, 3))?;
-    #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t3/3", Method::Afssi5020);
-    #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t3/3", Method::Afssi5020, &secure_deletion.md5);
-    Ok(secure_deletion)
+    info!("[{}][{:x}]\t1/1", Method::PseudoRandom, computed_md5);
+
+    let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
+
+    let mut remaining = file_size;
+
+    while remaining > 0 {
+        rng.fill(&mut buffer);
+        let write_size = std::cmp::min(remaining, buffer.len() as u64) as usize;
+        file.write_all(&buffer[..write_size])
+            .change_context(Error::OverwriteError(Method::PseudoRandom, 1))?;
+        remaining -= write_size as u64;
+    }
+
+    file.flush()
+        .change_context(Error::OverwriteError(Method::PseudoRandom, 1))?;
+    file.sync_all().change_context(Error::SystemProblem(
+        FSProblem::Write,
+        format!("{}", path.to_string_lossy()),
+    ))?;
+
+    Ok(())
 }
 
 // -- Region : Tests
 #[cfg(test)]
 mod test {
-    use crate::Method::Afssi5020 as EraseMethod;
-    const METHOD_NAME: &str = "afssi_5020";
+    const METHOD_NAME: &str = "pseudo_random";
+    use crate::Method::PseudoRandom as EraseMethod;
 
     use super::overwrite_file;
     use crate::error::FSProblem;
@@ -129,7 +141,7 @@ mod test {
                     create_test_file(&TestType::OverwriteOnly, &METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
-                overwrite_file(&string_path)?;
+                overwrite_file(&path.to_path_buf())?;
                 let bytes = get_bytes(&path)?;
                 assert_eq!(bytes.len(), lorem.as_bytes().len());
                 assert_ne!(bytes, lorem.as_bytes());
@@ -297,7 +309,7 @@ mod test {
                     create_test_file(&TestType::OverwriteOnly, &METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
-                overwrite_file(&string_path)?;
+                overwrite_file(&path.to_path_buf())?;
                 let bytes = get_bytes(&path)?;
                 assert_eq!(bytes.len(), lorem.as_bytes().len());
                 assert_ne!(bytes, lorem.as_bytes());

@@ -1,101 +1,131 @@
 use crate::Method;
-use crate::models::SecureDelete;
+use crate::engine::overwrite::common::prepare_overwrite;
+use rand::Rng;
+use std::io::{Seek, SeekFrom, Write};
+use std::path::Path;
 
-// -- Region : feature import
+use crate::error::FSProblem;
 #[cfg(not(feature = "error-stack"))]
 use crate::{Error, Result};
-
-#[cfg(feature = "log")]
-use log::info;
 
 #[cfg(feature = "error-stack")]
 use crate::{Error, Result};
 #[cfg(feature = "error-stack")]
 use error_stack::ResultExt;
 
-// -- Region : DOD 522 022 ME overwriting method for basic error handling method
+#[cfg(feature = "log")]
+use log::info;
 
-/// Function that implement [DOD 522022 ME overwrite method](https://www.bitraser.com/article/DoD-5220-22-m-standard-for-drive-erasure.php)
+const FIXED_PATTERNS: &[Option<u8>] = &[
+    Some(0x00),
+    Some(0xFF),
+    None,
+    Some(0x00),
+    Some(0x00),
+    Some(0xFF),
+    None,
+];
+
+// -- Region : DOD 522 022 MECE overwriting method for basic error handling method
+
+/// Function that implement [DOD 522022 MECE overwrite method](https://www.bitraser.com/article/DoD-5220-22-m-standard-for-drive-erasure.php)
 /// ! Please note that this method does not delete the given file.
 ///
 /// ## Argument :
-/// * `path` (&str) : path that you want to erase using DOD 522 022 ME overwrite method
+/// * `path` (&Path) : path that you want to erase using DOD 522022 MECE overwrite method
 ///
 /// ## Return
 /// * `secure_deletion` (SecureDelete) : An SecureDelete object
 #[cfg(not(feature = "error-stack"))]
-pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
-    let mut secure_deletion = SecureDelete::new(path)?;
-    secure_deletion
-        .byte(&0x00_u8)
-        .overwrite()
-        .map_err(|_| Error::OverwriteError(Method::Dod522022ME, 1))?;
-    #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t1/3", Method::Dod522022ME);
-    #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t1/3", Method::Dod522022ME, &secure_deletion.md5);
-    secure_deletion
-        .byte(&0xFF_u8)
-        .overwrite()
-        .map_err(|_| Error::OverwriteError(Method::Dod522022ME, 2))?;
-    #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t2/3", Method::Dod522022ME);
-    #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t2/3", Method::Dod522022ME, &secure_deletion.md5);
-    secure_deletion
-        .overwrite()
-        .map_err(|_| Error::OverwriteError(Method::Dod522022ME, 3))?;
-    #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t3/3", Method::Dod522022ME);
-    #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t3/3", Method::Dod522022ME, &secure_deletion.md5);
-    Ok(secure_deletion)
+pub(crate) fn overwrite_file(path: &Path) -> Result<()> {
+    let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
+
+    for (pass, patterns) in FIXED_PATTERNS.iter().enumerate() {
+        // rewind start of file
+        file.seek(SeekFrom::Start(0))
+            .map_err(|_| Error::OverwriteError(Method::Dod522022MECE, pass as u32))?;
+
+        let mut remaining = file_size;
+        while remaining > 0 {
+            let write_size = std::cmp::min(remaining, buffer.len() as u64) as usize;
+
+            match patterns {
+                Some(b) => {
+                    buffer[..write_size].fill(*b);
+                }
+                None => {
+                    rng.fill(&mut buffer[..write_size]);
+                }
+            }
+
+            file.write_all(&buffer[..write_size])
+                .map_err(|_| Error::OverwriteError(Method::Dod522022MECE, pass as u32))?;
+            remaining -= write_size as u64;
+        }
+
+        // flush after each pass (best-effort)
+        file.flush()
+            .map_err(|_| Error::OverwriteError(Method::Dod522022MECE, pass as u32))?;
+    }
+    file.sync_all().map_err(|_| {
+        Error::SystemProblem(FSProblem::Write, format!("{}", path.to_string_lossy()))
+    })?;
+
+    Ok(())
 }
 
-// -- Region : DOD 522 022 ME overwriting method for error-stack error handling method
-
-/// Function that implement [DOD 522022 ME overwrite method](https://www.bitraser.com/article/DoD-5220-22-m-standard-for-drive-erasure.php)
+/// Function that implement [DOD 522022 MECE overwrite method](https://www.bitraser.com/article/DoD-5220-22-m-standard-for-drive-erasure.php)
 /// ! Please note that this method does not delete the given file.
 ///
 /// ## Argument :
-/// * `path` (&str) : path that you want to erase using DOD 522 022 ME overwrite method
+/// * `path` (&Path) : path that you want to erase using DOD 522022 MECE overwrite method
 ///
 /// ## Return
 /// * `secure_deletion` (SecureDelete) : An SecureDelete object
 #[cfg(feature = "error-stack")]
-pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
-    let mut secure_deletion = SecureDelete::new(path)?;
-    secure_deletion
-        .byte(&0x00_u8)
-        .overwrite()
-        .change_context(Error::OverwriteError(Method::Dod522022ME, 1))?;
-    #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t1/3", Method::Dod522022ME);
-    #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t1/3", Method::Dod522022ME, &secure_deletion.md5);
-    secure_deletion
-        .byte(&0xFF_u8)
-        .overwrite()
-        .change_context(Error::OverwriteError(Method::Dod522022ME, 2))?;
-    #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t2/3", Method::Dod522022ME);
-    #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t2/3", Method::Dod522022ME, &secure_deletion.md5);
-    secure_deletion
-        .overwrite()
-        .change_context(Error::OverwriteError(Method::Dod522022ME, 3))?;
-    #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t3/3", Method::Dod522022ME);
-    #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t3/3", Method::Dod522022ME, &secure_deletion.md5);
-    Ok(secure_deletion)
+pub(crate) fn overwrite_file(path: &Path) -> Result<()> {
+    let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
+
+    for (pass, patterns) in FIXED_PATTERNS.iter().enumerate() {
+        // rewind start of file
+        file.seek(SeekFrom::Start(0))
+            .change_context(Error::OverwriteError(Method::Dod522022MECE, pass as u32))?;
+
+        let mut remaining = file_size;
+        while remaining > 0 {
+            let write_size = std::cmp::min(remaining, buffer.len() as u64) as usize;
+
+            match patterns {
+                Some(b) => {
+                    buffer[..write_size].fill(*b);
+                }
+                None => {
+                    rng.fill(&mut buffer[..write_size]);
+                }
+            }
+
+            file.write_all(&buffer[..write_size])
+                .change_context(Error::OverwriteError(Method::Dod522022MECE, pass as u32))?;
+            remaining -= write_size as u64;
+        }
+
+        // flush after each pass (best-effort)
+        file.flush()
+            .change_context(Error::OverwriteError(Method::Dod522022MECE, pass as u32))?;
+    }
+    file.sync_all().change_context(Error::SystemProblem(
+        FSProblem::Write,
+        format!("{}", path.to_string_lossy()),
+    ))?;
+
+    Ok(())
 }
 
 // -- Region : Tests
 #[cfg(test)]
 mod test {
-    use crate::Method::Dod522022ME as EraseMethod;
-    const METHOD_NAME: &str = "dod_522022_me";
+    const METHOD_NAME: &str = "dod_522022_mece";
+    use crate::Method::Dod522022MECE as EraseMethod;
 
     use super::overwrite_file;
     use crate::error::FSProblem;
@@ -129,7 +159,7 @@ mod test {
                     create_test_file(&TestType::OverwriteOnly, &METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
-                overwrite_file(&string_path)?;
+                overwrite_file(&path.to_path_buf())?;
                 let bytes = get_bytes(&path)?;
                 assert_eq!(bytes.len(), lorem.as_bytes().len());
                 assert_ne!(bytes, lorem.as_bytes());
@@ -246,16 +276,16 @@ mod test {
             }
         }
 
-        /// The test ensures that the feature secure_log functions correctly for basic error handling.
-        ///
-        /// Test success is all conditions are met :
-        /// * A specific file is created
-        /// * The file is deleted without any error
         #[cfg(feature = "secure_log")]
         mod secure_log {
             use super::*;
             use std::path::Path;
 
+            /// The test ensures that the feature secure_log functions correctly for basic error handling.
+            ///
+            /// Test success is all conditions are met :
+            /// * A specific file is created
+            /// * The file is deleted without any error
             #[test]
             fn test() -> Result<()> {
                 let (string_path, _) = create_test_file(&TestType::SecureLog, &METHOD_NAME)?;
@@ -297,7 +327,7 @@ mod test {
                     create_test_file(&TestType::OverwriteOnly, &METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
-                overwrite_file(&string_path)?;
+                overwrite_file(&path.to_path_buf())?;
                 let bytes = get_bytes(&path)?;
                 assert_eq!(bytes.len(), lorem.as_bytes().len());
                 assert_ne!(bytes, lorem.as_bytes());

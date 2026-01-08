@@ -1,126 +1,122 @@
 use crate::Method;
-use crate::models::SecureDelete;
+use crate::engine::overwrite::common::prepare_overwrite;
+use rand::Rng;
+use std::io::{Seek, SeekFrom, Write};
+use std::path::Path;
 
-// -- Region : feature import
+use crate::error::FSProblem;
 #[cfg(not(feature = "error-stack"))]
 use crate::{Error, Result};
-
-#[cfg(feature = "log")]
-use log::info;
 
 #[cfg(feature = "error-stack")]
 use crate::{Error, Result};
 #[cfg(feature = "error-stack")]
 use error_stack::ResultExt;
 
-// -- Region : RCMP TSSIT_OPS II overwriting method for basic error handling method
+#[cfg(feature = "log")]
+use log::info;
+
+const FIXED_PATTERNS: &[u8; 6] = &[0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF];
 
 /// Function that implement [RCMP TSSIT OPS II overwrite method](https://www.datadestroyers.eu/technology/rcmp_tssit_ops-2.html) using basic error handling method.
 /// ! Please note that this method does not delete the given file.
 ///
 /// ## Argument :
-/// * `path` (&str) : path that you want to erase using RCMP TSSIT OPS II overwrite method
+/// * `path` (&Path) : path that you want to erase using RCMP TSSIT OPS II overwrite method
 ///
 /// ## Return
-/// * `secure_deletion` (SecureDelete) : An SecureDelete object
+/// * `()
 #[cfg(not(feature = "error-stack"))]
-pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
-    let mut secure_deletion = SecureDelete::new(path)?;
-    for i in 0..3 {
-        secure_deletion
-            .byte(&0x00_u8)
-            .overwrite()
-            .map_err(|_| Error::OverwriteError(Method::RcmpTssitOpsII, i * 2 + 1))?;
-        #[cfg(all(feature = "log", not(feature = "secure_log")))]
-        info!("[{}][{path}]\t{:2}/7", Method::RcmpTssitOpsII, i * 2 + 1);
-        #[cfg(all(feature = "log", feature = "secure_log"))]
-        info!(
-            "[{}][{:x}]\t{:2}/7",
-            Method::RcmpTssitOpsII,
-            &secure_deletion.md5,
-            i * 2 + 1
-        );
-        secure_deletion
-            .byte(&0xFF_u8)
-            .overwrite()
-            .map_err(|_| Error::OverwriteError(Method::RcmpTssitOpsII, i * 2 + 2))?;
-        #[cfg(all(feature = "log", not(feature = "secure_log")))]
-        info!("[{}][{path}]\t{:2}/7", Method::RcmpTssitOpsII, i * 2 + 2);
-        #[cfg(all(feature = "log", feature = "secure_log"))]
-        info!(
-            "[{}][{:x}]\t{:2}/7",
-            Method::RcmpTssitOpsII,
-            &secure_deletion.md5,
-            i * 2 + 2
-        );
+pub(crate) fn overwrite_file(path: &Path) -> Result<()> {
+    let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
+    for pattern in 0..6 {
+        // rewind start of file
+        file.seek(SeekFrom::Start(0))
+            .map_err(|_| Error::OverwriteError(Method::RcmpTssitOpsII, &pattern + 1))?;
+
+        let mut remaining = file_size;
+        while remaining > 0 {
+            let write_size = std::cmp::min(remaining, buffer.len() as u64) as usize;
+            buffer[..write_size].fill(FIXED_PATTERNS[pattern as usize]);
+            file.write_all(&buffer[..write_size])
+                .map_err(|_| Error::OverwriteError(Method::RcmpTssitOpsII, &pattern + 1))?;
+            remaining -= write_size as u64;
+        }
+
+        // flush after each pass (best-effort)
+        file.flush()
+            .map_err(|_| Error::OverwriteError(Method::RcmpTssitOpsII, &pattern + 1))?;
     }
-    secure_deletion
-        .overwrite()
+    let mut remaining = file_size;
+    file.seek(SeekFrom::Start(0))
         .map_err(|_| Error::OverwriteError(Method::RcmpTssitOpsII, 7))?;
-    #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t7/7", Method::RcmpTssitOpsII);
-    #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!(
-        "[{}][{:x}]\t7/7",
-        Method::RcmpTssitOpsII,
-        &secure_deletion.md5
-    );
-    Ok(secure_deletion)
+
+    while remaining > 0 {
+        rng.fill(&mut buffer);
+        let write_size = std::cmp::min(remaining, buffer.len() as u64) as usize;
+        file.write_all(&buffer[..write_size])
+            .map_err(|_| Error::OverwriteError(Method::RcmpTssitOpsII, 7))?;
+        remaining -= write_size as u64;
+    }
+
+    file.flush()
+        .map_err(|_| Error::OverwriteError(Method::RcmpTssitOpsII, 7))?;
+    file.sync_all().map_err(|_| {
+        Error::SystemProblem(FSProblem::Write, format!("{}", path.to_string_lossy()))
+    })?;
+
+    Ok(())
 }
 
-// -- Region : RCMP TSSIT_OPS II overwriting method for error-stack error handling method
-
-/// Function that implement [RCMP TSSIT OPS II overwrite method](https://www.datadestroyers.eu/technology/rcmp_tssit_ops-2.html) using error-stack's error handling method.
+/// Function that implement [RCMP TSSIT OPS II overwrite method](https://www.datadestroyers.eu/technology/rcmp_tssit_ops-2.html) using basic error handling method.
 /// ! Please note that this method does not delete the given file.
 ///
 /// ## Argument :
-/// * `path` (&str) : path that you want to erase using RCMP TSSIT OPS II overwrite method
+/// * `path` (&Path) : path that you want to erase using RCMP TSSIT OPS II overwrite method
 ///
 /// ## Return
-/// * `secure_deletion` (SecureDelete) : An SecureDelete object
+/// * `()
 #[cfg(feature = "error-stack")]
-pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
-    let mut secure_deletion = SecureDelete::new(path)?;
-    for i in 0..3 {
-        secure_deletion
-            .byte(&0x00_u8)
-            .overwrite()
-            .change_context(Error::OverwriteError(Method::RcmpTssitOpsII, i * 2 + 1))?;
-        #[cfg(all(feature = "log", not(feature = "secure_log")))]
-        info!("[{}][{path}]\t{:2}/7", Method::RcmpTssitOpsII, i * 2 + 1);
-        #[cfg(all(feature = "log", feature = "secure_log"))]
-        info!(
-            "[{}][{:x}]\t{:2}/7",
-            Method::RcmpTssitOpsII,
-            &secure_deletion.md5,
-            i * 2 + 1
-        );
-        secure_deletion
-            .byte(&0xFF_u8)
-            .overwrite()
-            .change_context(Error::OverwriteError(Method::RcmpTssitOpsII, i * 2 + 2))?;
-        #[cfg(all(feature = "log", not(feature = "secure_log")))]
-        info!("[{}][{path}]\t{:2}/7", Method::RcmpTssitOpsII, i * 2 + 2);
-        #[cfg(all(feature = "log", feature = "secure_log"))]
-        info!(
-            "[{}][{:x}]\t{:2}/7",
-            Method::RcmpTssitOpsII,
-            &secure_deletion.md5,
-            i * 2 + 2
-        );
+pub(crate) fn overwrite_file(path: &Path) -> Result<()> {
+    let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
+    for pattern in 0..6 {
+        // rewind start of filels
+        file.seek(SeekFrom::Start(0))
+            .change_context(Error::OverwriteError(Method::RcmpTssitOpsII, &pattern + 1))?;
+
+        let mut remaining = file_size;
+        while remaining > 0 {
+            let write_size = std::cmp::min(remaining, buffer.len() as u64) as usize;
+            buffer[..write_size].fill(FIXED_PATTERNS[pattern as usize]);
+            file.write_all(&buffer[..write_size])
+                .change_context(Error::OverwriteError(Method::RcmpTssitOpsII, &pattern + 1))?;
+            remaining -= write_size as u64;
+        }
+
+        // flush after each pass (best-effort)
+        file.flush()
+            .change_context(Error::OverwriteError(Method::RcmpTssitOpsII, &pattern + 1))?;
     }
-    secure_deletion
-        .overwrite()
+    let mut remaining = file_size;
+    file.seek(SeekFrom::Start(0))
         .change_context(Error::OverwriteError(Method::RcmpTssitOpsII, 7))?;
-    #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t7/7", Method::RcmpTssitOpsII);
-    #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!(
-        "[{}][{:x}]\t7/7",
-        Method::RcmpTssitOpsII,
-        &secure_deletion.md5
-    );
-    Ok(secure_deletion)
+
+    while remaining > 0 {
+        rng.fill(&mut buffer);
+        let write_size = std::cmp::min(remaining, buffer.len() as u64) as usize;
+        file.write_all(&buffer[..write_size])
+            .change_context(Error::OverwriteError(Method::RcmpTssitOpsII, 7))?;
+        remaining -= write_size as u64;
+    }
+
+    file.flush()
+        .change_context(Error::OverwriteError(Method::RcmpTssitOpsII, 7))?;
+    file.sync_all().change_context(Error::SystemProblem(
+        FSProblem::Write,
+        format!("{}", path.to_string_lossy()),
+    ))?;
+
+    Ok(())
 }
 
 // -- Region : Tests
@@ -161,7 +157,7 @@ mod test {
                     create_test_file(&TestType::OverwriteOnly, &METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
-                overwrite_file(&string_path)?;
+                overwrite_file(&path.to_path_buf())?;
                 let bytes = get_bytes(&path)?;
                 assert_eq!(bytes.len(), lorem.as_bytes().len());
                 assert_ne!(bytes, lorem.as_bytes());
@@ -329,7 +325,7 @@ mod test {
                     create_test_file(&TestType::OverwriteOnly, &METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
-                overwrite_file(&string_path)?;
+                overwrite_file(&path.to_path_buf())?;
                 let bytes = get_bytes(&path)?;
                 assert_eq!(bytes.len(), lorem.as_bytes().len());
                 assert_ne!(bytes, lorem.as_bytes());

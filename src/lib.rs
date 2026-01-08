@@ -5,6 +5,8 @@ mod models;
 #[cfg(test)]
 mod tests;
 
+mod engine;
+
 // -- Export object
 pub use crate::methods::Method;
 pub use crate::models::SecureDelete;
