@@ -1,12 +1,12 @@
-use std::path::Path;
-use std::io::{Seek, SeekFrom, Write};
-use rand::Rng;
-use crate::engine::overwrite::common::prepare_overwrite;
 use crate::Method;
+use crate::engine::overwrite::common::prepare_overwrite;
+use rand::Rng;
+use std::io::{Seek, SeekFrom, Write};
+use std::path::Path;
 
-#[cfg(not(feature = "error-stack"))]
-use crate::{Result,Error};
 use crate::error::FSProblem;
+#[cfg(not(feature = "error-stack"))]
+use crate::{Error, Result};
 
 #[cfg(feature = "error-stack")]
 use crate::{Error, Result};
@@ -57,11 +57,12 @@ const FIXED_PATTERNS: &[[u8; 3]] = &[
 /// * `()`
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn overwrite_file(path: &Path) -> Result<()> {
-    let (mut file, file_size, mut rng,mut buffer) = prepare_overwrite(path)?;
+    let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
 
     // Total passes = 35
     for pass in 0..35 {
-        file.seek(SeekFrom::Start(0)).map_err(|_| Error::OverwriteError(Method::Gutmann, pass as u32))?;
+        file.seek(SeekFrom::Start(0))
+            .map_err(|_| Error::OverwriteError(Method::Gutmann, pass as u32))?;
         let mut remaining = file_size;
 
         let is_random = !(4..31).contains(&pass);
@@ -78,17 +79,21 @@ pub(crate) fn overwrite_file(path: &Path) -> Result<()> {
                 }
             }
 
-            file.write_all(&buffer[..write_size]).map_err(|_| Error::OverwriteError(Method::Gutmann, pass as u32))?;
+            file.write_all(&buffer[..write_size])
+                .map_err(|_| Error::OverwriteError(Method::Gutmann, pass as u32))?;
             remaining -= write_size as u64;
         }
 
-        file.flush().map_err(|_| Error::SystemProblem(FSProblem::Write, format!("{}", path.to_string_lossy())))?;
+        file.flush().map_err(|_| {
+            Error::SystemProblem(FSProblem::Write, format!("{}", path.to_string_lossy()))
+        })?;
     }
 
-    file.sync_all().map_err(|_| Error::SystemProblem(FSProblem::Write, format!("{}", path.to_string_lossy())))?;
+    file.sync_all().map_err(|_| {
+        Error::SystemProblem(FSProblem::Write, format!("{}", path.to_string_lossy()))
+    })?;
     Ok(())
 }
-
 
 /// Function that implement [Gutmann overwrite method](https://en.wikipedia.org/wiki/Gutmann_method)
 /// ! Please note that this method does not delete the given file.
@@ -100,11 +105,12 @@ pub(crate) fn overwrite_file(path: &Path) -> Result<()> {
 /// * `()`
 #[cfg(feature = "error-stack")]
 pub(crate) fn overwrite_file(path: &Path) -> Result<()> {
-    let (mut file, file_size, mut rng,mut buffer) = prepare_overwrite(path)?;
+    let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
 
     // Total passes = 35
     for pass in 0..35 {
-        file.seek(SeekFrom::Start(0)).change_context(Error::OverwriteError(Method::Gutmann, pass as u32))?;
+        file.seek(SeekFrom::Start(0))
+            .change_context(Error::OverwriteError(Method::Gutmann, pass as u32))?;
         let mut remaining = file_size;
 
         let is_random = !(4..31).contains(&pass);
@@ -121,17 +127,23 @@ pub(crate) fn overwrite_file(path: &Path) -> Result<()> {
                 }
             }
 
-            file.write_all(&buffer[..write_size]).change_context(Error::OverwriteError(Method::Gutmann, pass as u32))?;
+            file.write_all(&buffer[..write_size])
+                .change_context(Error::OverwriteError(Method::Gutmann, pass as u32))?;
             remaining -= write_size as u64;
         }
 
-        file.flush().change_context(Error::SystemProblem(FSProblem::Write, format!("{}", path.to_string_lossy())))?;
+        file.flush().change_context(Error::SystemProblem(
+            FSProblem::Write,
+            format!("{}", path.to_string_lossy()),
+        ))?;
     }
 
-    file.sync_all().change_context(Error::SystemProblem(FSProblem::Write, format!("{}", path.to_string_lossy())))?;
+    file.sync_all().change_context(Error::SystemProblem(
+        FSProblem::Write,
+        format!("{}", path.to_string_lossy()),
+    ))?;
     Ok(())
 }
-
 
 // -- Region : Tests
 #[cfg(test)]

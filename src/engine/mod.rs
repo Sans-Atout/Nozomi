@@ -6,8 +6,8 @@
 // exact behavior. Error decoupling is intentionally deferred.
 
 mod executor;
-mod planner;
 mod overwrite;
+mod planner;
 mod utils;
 
 pub(crate) use executor::run;

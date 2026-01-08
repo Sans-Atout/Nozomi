@@ -1,12 +1,12 @@
-use std::path::Path;
-use std::io::{Seek, SeekFrom, Write};
-use rand::Rng;
-use crate::engine::overwrite::common::prepare_overwrite;
 use crate::Method;
+use crate::engine::overwrite::common::prepare_overwrite;
+use rand::Rng;
+use std::io::{Seek, SeekFrom, Write};
+use std::path::Path;
 
-#[cfg(not(feature = "error-stack"))]
-use crate::{Result,Error};
 use crate::error::FSProblem;
+#[cfg(not(feature = "error-stack"))]
+use crate::{Error, Result};
 
 #[cfg(feature = "error-stack")]
 use crate::{Error, Result};
@@ -23,7 +23,7 @@ const FIXED_PATTERNS: &[Option<u8>] = &[
     Some(0x00),
     Some(0x00),
     Some(0xFF),
-    None
+    None,
 ];
 
 // -- Region : DOD 522 022 MECE overwriting method for basic error handling method
@@ -38,11 +38,12 @@ const FIXED_PATTERNS: &[Option<u8>] = &[
 /// * `secure_deletion` (SecureDelete) : An SecureDelete object
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn overwrite_file(path: &Path) -> Result<()> {
-    let (mut file, file_size, mut rng,mut buffer) = prepare_overwrite(path)?;
+    let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
 
     for (pass, patterns) in FIXED_PATTERNS.iter().enumerate() {
         // rewind start of file
-        file.seek(SeekFrom::Start(0)).map_err(|_| Error::OverwriteError(Method::Dod522022MECE, pass as u32))?;
+        file.seek(SeekFrom::Start(0))
+            .map_err(|_| Error::OverwriteError(Method::Dod522022MECE, pass as u32))?;
 
         let mut remaining = file_size;
         while remaining > 0 {
@@ -57,14 +58,18 @@ pub(crate) fn overwrite_file(path: &Path) -> Result<()> {
                 }
             }
 
-            file.write_all(&buffer[..write_size]).map_err(|_| Error::OverwriteError(Method::Dod522022MECE, pass as u32))?;
+            file.write_all(&buffer[..write_size])
+                .map_err(|_| Error::OverwriteError(Method::Dod522022MECE, pass as u32))?;
             remaining -= write_size as u64;
         }
 
         // flush after each pass (best-effort)
-        file.flush().map_err(|_| Error::OverwriteError(Method::Dod522022MECE, pass as u32))?;
+        file.flush()
+            .map_err(|_| Error::OverwriteError(Method::Dod522022MECE, pass as u32))?;
     }
-    file.sync_all().map_err(|_| Error::SystemProblem(FSProblem::Write, format!("{}", path.to_string_lossy())))?;
+    file.sync_all().map_err(|_| {
+        Error::SystemProblem(FSProblem::Write, format!("{}", path.to_string_lossy()))
+    })?;
 
     Ok(())
 }
@@ -79,11 +84,12 @@ pub(crate) fn overwrite_file(path: &Path) -> Result<()> {
 /// * `secure_deletion` (SecureDelete) : An SecureDelete object
 #[cfg(feature = "error-stack")]
 pub(crate) fn overwrite_file(path: &Path) -> Result<()> {
-    let (mut file, file_size, mut rng,mut buffer) = prepare_overwrite(path)?;
+    let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
 
     for (pass, patterns) in FIXED_PATTERNS.iter().enumerate() {
         // rewind start of file
-        file.seek(SeekFrom::Start(0)).change_context(Error::OverwriteError(Method::Dod522022MECE, pass as u32))?;
+        file.seek(SeekFrom::Start(0))
+            .change_context(Error::OverwriteError(Method::Dod522022MECE, pass as u32))?;
 
         let mut remaining = file_size;
         while remaining > 0 {
@@ -98,18 +104,22 @@ pub(crate) fn overwrite_file(path: &Path) -> Result<()> {
                 }
             }
 
-            file.write_all(&buffer[..write_size]).change_context(Error::OverwriteError(Method::Dod522022MECE, pass as u32))?;
+            file.write_all(&buffer[..write_size])
+                .change_context(Error::OverwriteError(Method::Dod522022MECE, pass as u32))?;
             remaining -= write_size as u64;
         }
 
         // flush after each pass (best-effort)
-        file.flush().change_context(Error::OverwriteError(Method::Dod522022MECE, pass as u32))?;
+        file.flush()
+            .change_context(Error::OverwriteError(Method::Dod522022MECE, pass as u32))?;
     }
-    file.sync_all().change_context(Error::SystemProblem(FSProblem::Write, format!("{}", path.to_string_lossy())))?;
+    file.sync_all().change_context(Error::SystemProblem(
+        FSProblem::Write,
+        format!("{}", path.to_string_lossy()),
+    ))?;
 
     Ok(())
 }
-
 
 // -- Region : Tests
 #[cfg(test)]
