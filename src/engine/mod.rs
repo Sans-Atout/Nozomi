@@ -1,9 +1,13 @@
 //! Internal execution engine.
 //!
 //! This module is not part of the public API.
+// NOTE (PR-1):
+// The engine currently propagates legacy error types to preserve
+// exact behavior. Error decoupling is intentionally deferred.
 
 mod executor;
 mod planner;
 mod overwrite;
+mod utils;
 
 pub(crate) use executor::run;
