@@ -40,7 +40,9 @@ impl core::fmt::Display for Error {
             }
             #[cfg(test)]
             Error::FileCreationError(e) => write!(fmt, "{e:?}"),
-            Error::MissingParameter(param) => {write!(fmt, "RequestDeleter : {param} params missing")}
+            Error::MissingParameter(param) => {
+                write!(fmt, "RequestDeleter : {param} params missing")
+            }
         }
     }
 }

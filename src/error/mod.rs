@@ -6,7 +6,7 @@ pub mod enhanced;
 
 /// Enum that represent different kind of file system problem that Nozomi lib can encounter
 #[derive(Debug, Clone, Copy)]
-#[cfg_attr(test,derive(PartialEq))]
+#[cfg_attr(test, derive(PartialEq))]
 pub enum FSProblem {
     /// Problem during rename process
     Rename,

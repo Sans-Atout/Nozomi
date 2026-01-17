@@ -5,12 +5,12 @@ mod models;
 #[cfg(test)]
 mod tests;
 
-mod engine;
 pub mod api;
+mod engine;
+pub use api::delete::DeleteMethod;
+pub use api::delete::DeleteReport;
 pub use api::delete::DeleteRequest;
 pub use api::delete::DeleteRequestBuilder;
-pub use api::delete::DeleteReport;
-pub use api::delete::DeleteMethod;
 
 // -- Export object
 pub use crate::methods::Method;
