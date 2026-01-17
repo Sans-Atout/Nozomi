@@ -20,7 +20,7 @@ use log::trace;
 #[cfg_attr(test, derive(PartialEq, Eq))]
 pub struct SecureDelete {
     /// File/Folder path that you want to overwrite/delete
-    path: String,
+    pub(crate) path: String,
     /// Array of 3 Bytes that can be used to overwrite a file. Is none if byte is something
     pattern: Option<[u8; 3]>,
     /// A byte that will be used to overwrite a file. Is none if pattern is something
