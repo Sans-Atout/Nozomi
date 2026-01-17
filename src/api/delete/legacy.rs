@@ -19,6 +19,11 @@ mod tests{
 	#[cfg(not(feature = "error-stack"))]
 	use crate::Result;
 
+	#[cfg(feature = "error-stack")]
+	use error_stack::{Report, ResultExt};
+	#[cfg(feature = "error-stack")]
+	use crate::Result;
+
 	#[test]
 	#[cfg(not(feature = "error-stack"))]
 	fn from() -> Result<()>{
@@ -30,4 +35,14 @@ mod tests{
 		Ok(())
 	}
 
+	#[test]
+	#[cfg(feature = "error-stack")]
+	fn from() -> Result<()>{
+		File::create("/tmp/request_builder_from").change_context(Error::FileCreationError)?;
+		let tested = SecureDelete::new("/tmp/request_builder_from")?;
+		let wanted = DeleteRequestBuilder::new().path("/tmp/request_builder_from");
+		assert_eq!(wanted,DeleteRequestBuilder::from(tested));
+		std::fs::remove_file("/tmp/request_builder_from").change_context(Error::FileCreationError)?;
+		Ok(())
+	}
 }

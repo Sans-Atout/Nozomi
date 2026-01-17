@@ -5,6 +5,8 @@ use crate::engine;
 
 #[cfg(not(feature = "error-stack"))]
 use crate::Result;
+#[cfg(feature = "error-stack")]
+use crate::Result;
 
 #[derive(Debug)]
 #[cfg_attr(test,derive(PartialEq))]
@@ -42,6 +44,22 @@ impl DeleteRequest {
 
 }
 
+#[cfg(feature = "error-stack")]
+impl DeleteRequest {
+
+	pub fn run(&self) -> Result<DeleteReport> {
+		match &self.method {
+			DeleteMethod::BuiltIn(method) => {
+				engine::run(method, &self.path)?;
+				Ok(DeleteReport {
+					path: self.path.clone(),
+					method: *method,
+				})
+			}
+		}
+	}
+
+}
 
 #[cfg(test)]
 mod test{
