@@ -19,6 +19,7 @@ pub enum Error {
     /// error to help during debug phase
     #[cfg(test)]
     FileCreationError,
+    MissingParameter(&'static str),
 }
 
 /// Implementing display trait for Error enum
@@ -42,6 +43,9 @@ impl core::fmt::Display for Error {
                 fmt,
                 "File Creation : Error during test file generation process"
             ),
+            Error::MissingParameter(param) => {
+                write!(fmt, "RequestDeleter : {param} params missing")
+            }
         }
     }
 }

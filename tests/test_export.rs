@@ -6,6 +6,9 @@ fn api_export() {
     use nozomi::Method;
     use nozomi::SecureDelete;
 
+    #[cfg(feature = "error-stack")]
+    use nozomi::DeleteRequest;
+
     Method::Dod522022ME;
     nozomi::Method::Afssi5020;
 

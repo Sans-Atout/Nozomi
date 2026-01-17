@@ -19,6 +19,7 @@ pub enum Error {
     /// Wrapper for std::io:Error to help during debug phase
     #[cfg(test)]
     FileCreationError(std::io::Error),
+    MissingParameter(&'static str),
 }
 
 /// Implementing display trait for Error enum
@@ -39,6 +40,9 @@ impl core::fmt::Display for Error {
             }
             #[cfg(test)]
             Error::FileCreationError(e) => write!(fmt, "{e:?}"),
+            Error::MissingParameter(param) => {
+                write!(fmt, "RequestDeleter : {param} params missing")
+            }
         }
     }
 }
@@ -53,5 +57,25 @@ mod test {
     #[test]
     fn test_rfc1236() {
         rfc1236::<super::Error>();
+    }
+}
+
+#[cfg(test)]
+impl PartialEq for Error {
+    fn eq(&self, other: &Self) -> bool {
+        use Error::*;
+
+        match (self, other) {
+            (SystemProblem(a1, b1), SystemProblem(a2, b2)) => a1 == a2 && b1 == b2,
+            (OverwriteError(m1, s1), OverwriteError(m2, s2)) => m1 == m2 && s1 == s2,
+            (NoFileName(_), NoFileName(_)) => true, // or false, see note below
+            (StringConversionError, StringConversionError) => true,
+            (MissingParameter(p1), MissingParameter(p2)) => p1 == p2,
+
+            // 👇 IMPORTANT: FileCreationError is never equal
+            (FileCreationError(_), FileCreationError(_)) => false,
+
+            _ => false,
+        }
     }
 }
