@@ -1,3 +1,5 @@
+mod events;
+
 #[cfg(test)]
 #[cfg_attr(test, allow(unused_imports, path_statements))]
 #[test]

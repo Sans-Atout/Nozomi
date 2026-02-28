@@ -4,7 +4,7 @@ use std::path::Path;
 // -- Region : feature import
 #[cfg(not(feature = "error-stack"))]
 use crate::Result;
-
+use crate::api::delete::request::NoopSink;
 #[cfg(feature = "log")]
 use log::{error, info, warn};
 
@@ -47,7 +47,8 @@ impl Method {
     /// * `path` (&str) : path that you want to erase using the given overwrite method
     pub fn delete(&self, path: &str) -> Result<()> {
         let path_to_delete = Path::new(path);
-        run(self, path_to_delete)
+        let mut sink = NoopSink;
+        run(self, path_to_delete, &mut sink)
     }
 }
 
@@ -61,7 +62,8 @@ impl Method {
     /// * `path` (&str) : path that you want to erase using the given overwrite method
     pub fn delete(&self, path: &str) -> Result<()> {
         let path_to_delete = Path::new(path);
-        run(self, path_to_delete)
+        let mut sink = NoopSink;
+        run(self, path_to_delete, &mut sink)
     }
 }
 

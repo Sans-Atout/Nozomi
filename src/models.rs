@@ -106,15 +106,13 @@ impl SecureDelete {
     /// * `buffer` (Vec \<u8\>) : a buffer of hexadecimal data
     fn get_buffer(&self, size: usize) -> Vec<u8> {
         let mut buffer = Vec::<u8>::new();
-        if self.byte.is_some() {
-            let byte = &self.byte.unwrap();
+        if let Some(byte) = &self.byte {
             for _ in 0..size {
                 buffer.push(*byte);
             }
             return buffer;
         }
-        if self.pattern.is_some() {
-            let bytes_pattern = &self.pattern.unwrap();
+        if let Some(bytes_pattern) = self.pattern {
             for i in 0..size {
                 let pattern_index = i % 3;
                 buffer.push(bytes_pattern[pattern_index]);
