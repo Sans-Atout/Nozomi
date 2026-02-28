@@ -12,6 +12,8 @@ pub use api::delete::DeleteReport;
 pub use api::delete::DeleteRequest;
 pub use api::delete::DeleteRequestBuilder;
 
+pub use engine::events::{DeleteEvent, EventSink};
+
 // -- Export object
 pub use crate::methods::Method;
 pub use crate::models::SecureDelete;

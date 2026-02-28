@@ -7,8 +7,9 @@
 use crate::{Error, Result};
 use std::fs;
 use std::path::Path;
+use std::panic::{catch_unwind, AssertUnwindSafe};
 
-use crate::SecureDelete;
+use crate::{DeleteEvent, EventSink, SecureDelete};
 use crate::error::FSProblem;
 #[cfg(feature = "error-stack")]
 use crate::{Error, Result};
@@ -66,6 +67,12 @@ pub(crate) fn delete_file(path: &Path) -> Result<()> {
             format!("{}", &new_path.to_string_lossy()),
         )
     })
+}
+
+pub(super) fn emit_safe<S: EventSink>(sink: &mut S, event: DeleteEvent) {
+    let _ = catch_unwind(AssertUnwindSafe(|| {
+        sink.emit(event);
+    }));
 }
 
 #[cfg(not(feature = "error-stack"))]
