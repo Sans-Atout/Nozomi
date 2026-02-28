@@ -28,7 +28,7 @@ pub(crate) fn run<S: EventSink>(method: &Method, path: &Path,sink : &mut S) -> R
     let plan = planner::execution_plan(path)?;
 
     for file_path in &plan.files {
-        overwrite::overwrite_file(method, file_path)?;
+        overwrite::overwrite_file(method, file_path, sink)?;
     }
 
     for file_path in &plan.files {
@@ -76,7 +76,7 @@ pub(crate) fn run<S: EventSink>(method: &Method, path: &Path,sink : &mut S) -> R
     let plan = planner::execution_plan(path)?;
 
     for file_path in &plan.files {
-        overwrite::overwrite_file(method, file_path)?;
+        overwrite::overwrite_file(method, file_path, sink)?;
     }
 
     for file_path in &plan.files {
