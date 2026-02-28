@@ -6,11 +6,11 @@
 #[cfg(not(feature = "error-stack"))]
 use crate::{Error, Result};
 use std::fs;
+use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::Path;
-use std::panic::{catch_unwind, AssertUnwindSafe};
 
-use crate::{DeleteEvent, EventSink, SecureDelete};
 use crate::error::FSProblem;
+use crate::{DeleteEvent, EventSink, SecureDelete};
 #[cfg(feature = "error-stack")]
 use crate::{Error, Result};
 #[cfg(feature = "error-stack")]

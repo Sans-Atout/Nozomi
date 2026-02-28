@@ -1,5 +1,5 @@
-use crate::{DeleteEvent, EventSink, Method};
 use crate::engine::overwrite::common::prepare_overwrite;
+use crate::{DeleteEvent, EventSink, Method};
 use rand::Rng;
 use std::io::{Seek, SeekFrom, Write};
 use std::path::Path;
@@ -13,9 +13,9 @@ use crate::{Error, Result};
 #[cfg(feature = "error-stack")]
 use error_stack::ResultExt;
 
+use crate::engine::utils::emit_safe;
 #[cfg(feature = "log")]
 use log::info;
-use crate::engine::utils::emit_safe;
 
 const FIXED_PATTERNS: &[Option<u8>] = &[
     Some(0x00),
@@ -38,7 +38,7 @@ const FIXED_PATTERNS: &[Option<u8>] = &[
 /// ## Return
 /// * `secure_deletion` (SecureDelete) : An SecureDelete object
 #[cfg(not(feature = "error-stack"))]
-pub(crate) fn overwrite_file<S : EventSink>(path: &Path,sink : &mut S) -> Result<()> {
+pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
 
     for (pass, patterns) in FIXED_PATTERNS.iter().enumerate() {
@@ -73,7 +73,7 @@ pub(crate) fn overwrite_file<S : EventSink>(path: &Path,sink : &mut S) -> Result
                 path: path.to_path_buf(),
                 pass: pass as u32,
                 total_passes: FIXED_PATTERNS.len() as u32,
-            }
+            },
         );
     }
     file.sync_all().map_err(|_| {
@@ -92,7 +92,7 @@ pub(crate) fn overwrite_file<S : EventSink>(path: &Path,sink : &mut S) -> Result
 /// ## Return
 /// * `secure_deletion` (SecureDelete) : An SecureDelete object
 #[cfg(feature = "error-stack")]
-pub(crate) fn overwrite_file<S : EventSink>(path: &Path,sink : &mut S) -> Result<()> {
+pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
 
     for (pass, patterns) in FIXED_PATTERNS.iter().enumerate() {
@@ -127,7 +127,7 @@ pub(crate) fn overwrite_file<S : EventSink>(path: &Path,sink : &mut S) -> Result
                 path: path.to_path_buf(),
                 pass: pass as u32,
                 total_passes: FIXED_PATTERNS.len() as u32,
-            }
+            },
         );
     }
     file.sync_all().change_context(Error::SystemProblem(
@@ -158,10 +158,10 @@ mod test {
 
         #[cfg(not(any(feature = "log", feature = "secure_log")))]
         mod no_log {
+            use super::*;
+            use crate::api::delete::request::NoopSink;
             use pretty_assertions::{assert_eq, assert_ne};
             use std::path::Path;
-            use crate::api::delete::request::NoopSink;
-            use super::*;
 
             /// Test if the overwrite method for this particular erase protocol work well or not.
             ///
@@ -177,7 +177,7 @@ mod test {
                 let path = Path::new(&string_path);
                 assert!(path.exists());
                 let mut sink = NoopSink;
-                overwrite_file(&path.to_path_buf(),&mut sink)?;
+                overwrite_file(&path.to_path_buf(), &mut sink)?;
                 let bytes = get_bytes(&path)?;
                 assert_eq!(bytes.len(), lorem.as_bytes().len());
                 assert_ne!(bytes, lorem.as_bytes());
@@ -326,12 +326,12 @@ mod test {
 
         #[cfg(not(any(feature = "log", feature = "secure_log")))]
         mod no_log {
+            use super::*;
+            use crate::api::delete::request::NoopSink;
+            use crate::engine::overwrite::dod_522022_mece::overwrite_file;
             use error_stack::ResultExt;
             use pretty_assertions::{assert_eq, assert_ne};
             use std::path::Path;
-            use crate::api::delete::request::NoopSink;
-            use crate::engine::overwrite::dod_522022_mece::overwrite_file;
-            use super::*;
 
             /// Test if the overwrite method for this particular erase protocol work well or not.
             ///
@@ -347,7 +347,7 @@ mod test {
                 let path = Path::new(&string_path);
                 assert!(path.exists());
                 let mut sink = NoopSink;
-                overwrite_file(&path.to_path_buf(),&mut sink)?;
+                overwrite_file(&path.to_path_buf(), &mut sink)?;
                 let bytes = get_bytes(&path)?;
                 assert_eq!(bytes.len(), lorem.as_bytes().len());
                 assert_ne!(bytes, lorem.as_bytes());

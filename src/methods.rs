@@ -48,7 +48,7 @@ impl Method {
     pub fn delete(&self, path: &str) -> Result<()> {
         let path_to_delete = Path::new(path);
         let mut sink = NoopSink;
-        run(self, path_to_delete,&mut sink)
+        run(self, path_to_delete, &mut sink)
     }
 }
 

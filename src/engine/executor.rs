@@ -17,7 +17,7 @@ use error_stack::ResultExt;
 use log::info;
 
 #[cfg(not(feature = "error-stack"))]
-pub(crate) fn run<S: EventSink>(method: &Method, path: &Path,sink : &mut S) -> Result<()> {
+pub(crate) fn run<S: EventSink>(method: &Method, path: &Path, sink: &mut S) -> Result<()> {
     emit_safe(
         sink,
         DeleteEvent::DeletionStarted {
@@ -25,31 +25,33 @@ pub(crate) fn run<S: EventSink>(method: &Method, path: &Path,sink : &mut S) -> R
         },
     );
     let result = (|| {
-    let plan = planner::execution_plan(path)?;
+        let plan = planner::execution_plan(path)?;
 
-    for file_path in &plan.files {
-        overwrite::overwrite_file(method, file_path, sink)?;
-    }
+        for file_path in &plan.files {
+            overwrite::overwrite_file(method, file_path, sink)?;
+        }
 
-    for file_path in &plan.files {
-        delete_file(file_path)?;
-        emit_safe(
-            sink,
-            DeleteEvent::EntryDeleted { path: file_path.clone() },
-        );
+        for file_path in &plan.files {
+            delete_file(file_path)?;
+            emit_safe(
+                sink,
+                DeleteEvent::EntryDeleted {
+                    path: file_path.clone(),
+                },
+            );
+        }
 
-    }
+        for dir_path in plan.directories.iter().rev() {
+            delete_dir(dir_path)?;
+            emit_safe(
+                sink,
+                DeleteEvent::EntryDeleted {
+                    path: dir_path.clone(),
+                },
+            );
+        }
 
-    for dir_path in plan.directories.iter().rev() {
-        delete_dir(dir_path)?;
-        emit_safe(
-            sink,
-            DeleteEvent::EntryDeleted { path: dir_path.clone() },
-        );
-
-    }
-
-    Ok(())
+        Ok(())
     })();
 
     emit_safe(
@@ -60,11 +62,10 @@ pub(crate) fn run<S: EventSink>(method: &Method, path: &Path,sink : &mut S) -> R
     );
 
     result
-
 }
 
 #[cfg(feature = "error-stack")]
-pub(crate) fn run<S: EventSink>(method: &Method, path: &Path,sink : &mut S) -> Result<()> {
+pub(crate) fn run<S: EventSink>(method: &Method, path: &Path, sink: &mut S) -> Result<()> {
     emit_safe(
         sink,
         DeleteEvent::DeletionStarted {
@@ -73,28 +74,32 @@ pub(crate) fn run<S: EventSink>(method: &Method, path: &Path,sink : &mut S) -> R
     );
 
     let result = (|| {
-    let plan = planner::execution_plan(path)?;
+        let plan = planner::execution_plan(path)?;
 
-    for file_path in &plan.files {
-        overwrite::overwrite_file(method, file_path, sink)?;
-    }
+        for file_path in &plan.files {
+            overwrite::overwrite_file(method, file_path, sink)?;
+        }
 
-    for file_path in &plan.files {
-        delete_file(file_path)?;
-        emit_safe(
-            sink,
-            DeleteEvent::EntryDeleted { path: file_path.clone() },
-        );
-    }
+        for file_path in &plan.files {
+            delete_file(file_path)?;
+            emit_safe(
+                sink,
+                DeleteEvent::EntryDeleted {
+                    path: file_path.clone(),
+                },
+            );
+        }
 
-    for dir_path in plan.directories.iter().rev() {
-        delete_dir(dir_path)?;
-        emit_safe(
-            sink,
-            DeleteEvent::EntryDeleted { path: dir_path.clone() },
-        );
-    }
-    Ok(())
+        for dir_path in plan.directories.iter().rev() {
+            delete_dir(dir_path)?;
+            emit_safe(
+                sink,
+                DeleteEvent::EntryDeleted {
+                    path: dir_path.clone(),
+                },
+            );
+        }
+        Ok(())
     })();
 
     emit_safe(
