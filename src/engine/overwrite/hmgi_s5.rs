@@ -100,6 +100,8 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
         FSProblem::Write,
         format!("{}", path.to_string_lossy()),
     ))?;
+    #[cfg(feature = "verify")]
+    verify_last_pass(&path.to_path_buf(),LastPassInfo::Zero,sink)?;
     Ok(())
 }
 

@@ -103,10 +103,13 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
 
     let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
 
+    let seed = generate_seed();
+    rng = StdRng::from_seed(seed);
+
     let mut remaining = file_size;
 
     while remaining > 0 {
-        rng.fill(&mut buffer);
+        rng.fill_bytes(&mut buffer);
         let write_size = std::cmp::min(remaining, buffer.len() as u64) as usize;
         file.write_all(&buffer[..write_size])
             .change_context(Error::OverwriteError(Method::PseudoRandom, 1))?;
@@ -128,6 +131,8 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
         format!("{}", path.to_string_lossy()),
     ))?;
 
+    #[cfg(feature = "verify")]
+    verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
     Ok(())
 }
 
@@ -232,7 +237,7 @@ mod test {
             ///
             /// Test success is all conditions are met :
             /// * a specific folder with multiple files in it is created
-            /// * folder is delete thanks to the specific erasing method
+            /// * folder is deleted thanks to the specific erasing method
             #[test]
             fn folder_test() -> Result<()> {
                 let (string_path, _) = create_test_file(&TestType::Folder, &METHOD_NAME)?;

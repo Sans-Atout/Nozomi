@@ -136,9 +136,17 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
 #[cfg(feature = "error-stack")]
 pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
+    #[cfg(feature = "verify")]
+    let mut seed = [0u8; 32];
 
     // Total passes = 35
     for pass in 0..35 {
+        #[cfg(feature = "verify")]
+        if pass == 34 {
+            seed = generate_seed();
+            rng = StdRng::from_seed(seed);
+        }
+
         file.seek(SeekFrom::Start(0))
             .change_context(Error::OverwriteError(Method::Gutmann, pass as u32))?;
         let mut remaining = file_size;
@@ -149,7 +157,7 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
             let write_size = std::cmp::min(remaining, buffer.len() as u64) as usize;
 
             if is_random {
-                rng.fill(&mut buffer[..write_size]);
+                rng.fill_bytes(&mut buffer[..write_size]);
             } else {
                 let pattern = FIXED_PATTERNS[pass - 4];
                 for i in 0..write_size {
@@ -180,6 +188,9 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
         FSProblem::Write,
         format!("{}", path.to_string_lossy()),
     ))?;
+
+    #[cfg(feature = "verify")]
+    verify_last_pass(&path.to_path_buf(), crate::engine::verify::LastPassInfo::Random { seed }, sink)?;
     Ok(())
 }
 

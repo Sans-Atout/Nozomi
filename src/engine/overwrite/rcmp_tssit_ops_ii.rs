@@ -134,6 +134,8 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     file.seek(SeekFrom::Start(0))
         .change_context(Error::OverwriteError(Method::RcmpTssitOpsII, 7))?;
 
+    let seed = generate_seed();
+    rng = StdRng::from_seed(seed);
     while remaining > 0 {
         rng.fill(&mut buffer);
         let write_size = std::cmp::min(remaining, buffer.len() as u64) as usize;
@@ -157,6 +159,8 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
         format!("{}", path.to_string_lossy()),
     ))?;
 
+    #[cfg(feature = "verify")]
+    verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
     Ok(())
 }
 

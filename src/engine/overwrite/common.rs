@@ -54,7 +54,7 @@ pub(crate) fn prepare_overwrite(
 #[cfg(feature = "error-stack")]
 pub(crate) fn prepare_overwrite(
     path: &Path,
-) -> Result<(std::fs::File, u64, ThreadRng, [u8; 8192])> {
+) -> Result<(std::fs::File, u64, StdRng, [u8; 8192])> {
     let mut file = OpenOptions::new()
         .read(true)
         .write(true)
@@ -78,7 +78,8 @@ pub(crate) fn prepare_overwrite(
             format!("{}", path.to_string_lossy()),
         ))?;
 
-    let rng = rand::rng();
+    let seed = generate_seed();
+    let rng = StdRng::from_seed(seed);
     let buffer = [0u8; 8192];
 
     Ok((file, file_size, rng, buffer))

@@ -131,22 +131,6 @@ impl SecureDelete {
         buffer
     }
 
-    #[cfg(feature = "verify")]
-    pub fn verify(&self) -> Result<bool> {
-        let mut sink = NoopSink{};
-        if let Some(byte) = self.byte {
-            let result = verify_last_pass(&PathBuf::from(&self.path), LastPassInfo::Pattern(byte), &mut sink).is_ok();
-            return Ok(result);
-        }
-        if let Some(_bytes_pattern) = self.pattern {
-            todo!()
-        }
-        if let Some(seed) = self.seed {
-            let result = verify_last_pass(&PathBuf::from(&self.path),LastPassInfo::Random {seed},&mut sink).is_ok();
-            return Ok(result);
-        }
-        return Ok(false);
-    }
 }
 
 #[cfg(not(feature = "error-stack"))]
@@ -301,6 +285,23 @@ impl SecureDelete {
             .ok_or(Error::NoFileName(self.clone().to_owned()))?;
         let new_name = (0..name.len()).map(|_| "0").collect::<String>();
         Ok(new_name)
+    }
+
+    #[cfg(feature = "verify")]
+    pub fn verify(&self) -> Result<bool> {
+        let mut sink = NoopSink{};
+        if let Some(byte) = self.byte {
+            let result = verify_last_pass(&PathBuf::from(&self.path), LastPassInfo::Pattern(byte), &mut sink).is_ok();
+            return Ok(result);
+        }
+        if let Some(_bytes_pattern) = self.pattern {
+            todo!()
+        }
+        if let Some(seed) = self.seed {
+            let result = verify_last_pass(&PathBuf::from(&self.path),LastPassInfo::Random {seed},&mut sink).is_ok();
+            return Ok(result);
+        }
+        Ok(false)
     }
 }
 
@@ -524,6 +525,8 @@ impl SecureDelete {
             buffer_size: 4096,
             #[cfg(feature = "secure_log")]
             md5: computed_md5,
+            #[cfg(feature = "verify")]
+            seed : None,
         })
     }
 
@@ -648,6 +651,23 @@ impl SecureDelete {
         let new_name = (0..name.len()).map(|_| "0").collect::<String>();
         Ok(new_name)
     }
+
+    #[cfg(feature = "verify")]
+    pub fn verify(&self) -> Result<bool> {
+        let mut sink = NoopSink{};
+        if let Some(byte) = self.byte {
+            let result = verify_last_pass(&PathBuf::from(&self.path), LastPassInfo::Pattern(byte), &mut sink).is_ok();
+            return Ok(result);
+        }
+        if let Some(_bytes_pattern) = self.pattern {
+            todo!()
+        }
+        if let Some(seed) = self.seed {
+            let result = verify_last_pass(&PathBuf::from(&self.path),LastPassInfo::Random {seed},&mut sink).is_ok();
+            return Ok(result);
+        }
+        Ok(false)
+    }
 }
 
 #[cfg(all(
@@ -681,6 +701,8 @@ mod enhanced_test {
                 byte: None,
                 pattern: None,
                 buffer_size: 4096,
+                #[cfg(feature = "verify")]
+                seed : None,
             }
         );
         basic_creation.pattern(&[0x00_u8, 0x00_u8, 0x00_u8]);
@@ -691,6 +713,8 @@ mod enhanced_test {
                 byte: None,
                 pattern: Some([0x00_u8, 0x00_u8, 0x00_u8]),
                 buffer_size: 4096,
+                #[cfg(feature = "verify")]
+                seed : None,
             }
         );
         basic_creation.byte(&0x00_u8);
@@ -701,6 +725,8 @@ mod enhanced_test {
                 byte: Some(0x00_u8),
                 pattern: None,
                 buffer_size: 4096,
+                #[cfg(feature = "verify")]
+                seed : None,
             }
         );
         Ok(())
@@ -757,6 +783,8 @@ mod enhanced_test {
                 pattern: None,
                 byte: None,
                 buffer_size: 4096,
+                #[cfg(feature = "verify")]
+                seed : None,
             }
         );
         secure_delete.delete()?;
@@ -794,6 +822,8 @@ mod enhanced_test {
                 pattern: None,
                 byte: None,
                 buffer_size: 4096,
+                #[cfg(feature = "verify")]
+                seed : None,
             }
         );
         assert!(!file_to_rename_path.exists());
@@ -815,6 +845,8 @@ mod enhanced_test {
                 byte: None,
                 pattern: None,
                 buffer_size: 4096,
+                #[cfg(feature = "verify")]
+                seed : None,
             }
         );
         basic_creation.buffer(1024);
@@ -825,6 +857,8 @@ mod enhanced_test {
                 byte: None,
                 pattern: None,
                 buffer_size: 1024,
+                #[cfg(feature = "verify")]
+                seed : None,
             }
         );
         Ok(())
