@@ -25,10 +25,22 @@ unsafe_code="forbid"
 [dev-dependencies]
 pretty_assertions = "1.4.1"
 
-[features]
-error-stack = ["dep:error-stack"]
-log = ["dep:log"]
-secure_log = ["log","dep:md5"]
-
 [badges]
 maintenance = { status = "actively-developed" }
+
+[features]
+# No optional capability enabled by default.
+# The default build must remain minimal and predictable.
+default = []
+
+# Functional capabilities
+verify = []
+dry-run = []
+analyze = []
+
+# Error handling
+error-stack = ["dep:error-stack"]
+
+# Logging
+log = ["dep:log"]
+secure_log = ["log", "dep:md5"]

@@ -2,24 +2,48 @@ name: Rust CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    branches:
-      - main 
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    steps:
-      - name: Install Rust
-        uses: actions/checkout@v2
-      - name: Install rust auditing tools
-        run: cargo install cargo-audit
-      - name : Build
-        run: cargo build --verbose
-      - name : Clippy
-        run: cargo clippy --verbose -- -D warnings
-      - name: Audit
-        run: cargo audit
 
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install audit tool
+        run: cargo install cargo-audit
+
+      # --- Build minimal ---
+      - name: Build (no default features)
+        run: cargo build --no-default-features --locked
+
+      # --- Build all features ---
+      - name: Build (all features)
+        run: cargo build --all-features --locked
+
+      # --- Clippy strict ---
+      - name: Clippy (all features, deny warnings)
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      # --- Format check ---
+      - name: Rustfmt check
+        run: cargo fmt --all -- --check
+
+      # --- Security audit ---
+      - name: Cargo audit
+        run: cargo audit --locked

@@ -1,3 +1,6 @@
+use std::path::Path;
+use nozomi::Method::PseudoRandom;
+
 mod events;
 
 #[cfg(test)]
@@ -12,7 +15,15 @@ fn api_export() {
     use nozomi::DeleteRequest;
 
     Method::Dod522022ME;
-    nozomi::Method::Afssi5020;
+    Method::Afssi5020;
 
     //SecureDelete::new("README.md").unwrap().overwrite().unwrap();
+}
+
+#[test]
+fn default_build_has_no_optional_capabilities() {
+    use nozomi::*;
+    let builder = DeleteRequest::builder().path(Path::new("/path/to/nozomi")).method(DeleteMethod::BuiltIn(PseudoRandom));
+    let result = builder.build();
+    assert!(result.is_ok());
 }
