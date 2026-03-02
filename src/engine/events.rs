@@ -4,7 +4,9 @@ use std::path::PathBuf;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DeleteEvent {
     /// Deletion process has started for a given path
-    DeletionStarted { path: PathBuf },
+    DeletionStarted {
+        path: PathBuf,
+    },
     /// A filesystem entry has been successfully overwritten
     EntryOverwritePass {
         path: PathBuf,
@@ -13,10 +15,27 @@ pub enum DeleteEvent {
     },
 
     /// A filesystem entry has been successfully deleted
-    EntryDeleted { path: PathBuf },
+    EntryDeleted {
+        path: PathBuf,
+    },
 
     /// Deletion process has finished
-    DeletionFinished { path: PathBuf },
+    DeletionFinished {
+        path: PathBuf,
+    },
+    #[cfg(feature = "verify")]
+    VerificationStarted {
+        path: PathBuf,
+    },
+    #[cfg(feature = "verify")]
+    VerificationCompleted {
+        path: PathBuf,
+    },
+    #[cfg(feature = "verify")]
+    VerificationFailed {
+        path: PathBuf,
+        offset: u64,
+    },
 }
 
 /// Sink for deletion execution events.

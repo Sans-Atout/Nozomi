@@ -10,4 +10,7 @@ mod executor;
 mod overwrite;
 mod planner;
 mod utils;
+#[cfg(feature = "verify")]
+pub(crate) mod verify;
+
 pub(crate) use executor::run;

@@ -20,6 +20,10 @@ pub enum Error {
     #[cfg(test)]
     FileCreationError,
     MissingParameter(&'static str),
+    #[cfg(feature = "verify")]
+    VerificationFailed {
+        offset: u64,
+    },
 }
 
 /// Implementing display trait for Error enum
