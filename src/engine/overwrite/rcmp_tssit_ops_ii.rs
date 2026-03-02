@@ -1,6 +1,6 @@
 use crate::engine::overwrite::common::prepare_overwrite;
 use crate::{DeleteEvent, EventSink, Method};
-use rand::Rng;
+use rand::{Rng, SeedableRng};
 use std::io::{Seek, SeekFrom, Write};
 use std::path::Path;
 
@@ -13,9 +13,12 @@ use crate::{Error, Result};
 #[cfg(feature = "error-stack")]
 use error_stack::ResultExt;
 
-use crate::engine::utils::emit_safe;
+use crate::engine::utils::{emit_safe, generate_seed};
 #[cfg(feature = "log")]
 use log::info;
+use rand::prelude::StdRng;
+#[cfg(feature = "verify")]
+use crate::engine::verify::{verify_last_pass, LastPassInfo};
 
 const FIXED_PATTERNS: &[u8; 6] = &[0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF];
 
@@ -60,6 +63,9 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     file.seek(SeekFrom::Start(0))
         .map_err(|_| Error::OverwriteError(Method::RcmpTssitOpsII, 7))?;
 
+    let seed = generate_seed();
+    rng = StdRng::from_seed(seed);
+
     while remaining > 0 {
         rng.fill(&mut buffer);
         let write_size = std::cmp::min(remaining, buffer.len() as u64) as usize;
@@ -81,6 +87,8 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     file.sync_all().map_err(|_| {
         Error::SystemProblem(FSProblem::Write, format!("{}", path.to_string_lossy()))
     })?;
+    #[cfg(feature = "verify")]
+    verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
 
     Ok(())
 }

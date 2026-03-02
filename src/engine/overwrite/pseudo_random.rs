@@ -1,6 +1,6 @@
 use crate::engine::overwrite::common::prepare_overwrite;
 use crate::{DeleteEvent, EventSink, Method};
-use rand::Rng;
+use rand::RngCore;
 use std::io::Write;
 use std::path::Path;
 
@@ -16,6 +16,12 @@ use error_stack::ResultExt;
 use crate::engine::utils::emit_safe;
 #[cfg(feature = "log")]
 use log::info;
+
+use rand::{SeedableRng, Rng};
+use crate::engine::utils::generate_seed;
+#[cfg(feature = "verify")]
+use crate::engine::verify::{verify_last_pass,LastPassInfo};
+use rand::rngs::StdRng;
 
 /// Function that implement a basic pseudo random method using basic error handling method.
 /// ! Please note that this method does not delete the given file.
@@ -43,8 +49,11 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
 
     let mut remaining = file_size;
 
+    let seed = generate_seed();
+    rng = StdRng::from_seed(seed);
+
     while remaining > 0 {
-        rng.fill(&mut buffer);
+        rng.fill_bytes(&mut buffer);
         let write_size = std::cmp::min(remaining, buffer.len() as u64) as usize;
         file.write_all(&buffer[..write_size])
             .map_err(|_| Error::OverwriteError(Method::PseudoRandom, 1))?;
@@ -65,6 +74,8 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
         Error::SystemProblem(FSProblem::Write, format!("{}", path.to_string_lossy()))
     })?;
 
+    #[cfg(feature = "verify")]
+    verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
     Ok(())
 }
 

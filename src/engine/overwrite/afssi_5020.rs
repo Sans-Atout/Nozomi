@@ -1,6 +1,6 @@
 use crate::engine::overwrite::common::prepare_overwrite;
 use crate::{DeleteEvent, EventSink, Method};
-use rand::Rng;
+use rand::RngCore;
 use std::io::{Seek, SeekFrom, Write};
 use std::path::Path;
 
@@ -12,6 +12,15 @@ use crate::{Error, Result};
 use crate::{Error, Result};
 #[cfg(feature = "error-stack")]
 use error_stack::ResultExt;
+
+#[cfg(feature = "verify")]
+use rand::{SeedableRng, Rng};
+#[cfg(feature = "verify")]
+use crate::engine::utils::generate_seed;
+#[cfg(feature = "verify")]
+use crate::engine::verify::{verify_last_pass,LastPassInfo};
+#[cfg(feature = "verify")]
+use rand::rngs::StdRng;
 
 use crate::engine::utils::emit_safe;
 #[cfg(feature = "log")]
@@ -32,8 +41,15 @@ const FIXED_PATTERNS: &[Option<u8>] = &[Some(0x00), Some(0xFF), None];
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
+    #[cfg(feature = "verify")]
+    let mut seed = [0u8; 32];
 
     for (pass, patterns) in FIXED_PATTERNS.iter().enumerate() {
+        #[cfg(feature = "verify")]
+        if pass == FIXED_PATTERNS.len()-1{
+            seed = generate_seed();
+            rng = StdRng::from_seed(seed);
+        }
         // rewind start of file
         file.seek(SeekFrom::Start(0))
             .map_err(|_| Error::OverwriteError(Method::Afssi5020, pass as u32))?;
@@ -47,7 +63,7 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
                     buffer[..write_size].fill(*b);
                 }
                 None => {
-                    rng.fill(&mut buffer[..write_size]);
+                    rng.fill_bytes(&mut buffer[..write_size]);
                 }
             }
 
@@ -70,6 +86,9 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     file.sync_all().map_err(|_| {
         Error::SystemProblem(FSProblem::Write, format!("{}", path.to_string_lossy()))
     })?;
+
+    #[cfg(feature = "verify")]
+    verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
 
     Ok(())
 }

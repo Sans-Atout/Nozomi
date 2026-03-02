@@ -5,7 +5,7 @@ use std::{
     os::unix::fs::MetadataExt,
     path::Path,
 };
-
+use std::path::PathBuf;
 #[cfg(not(feature = "error-stack"))]
 use crate::{Error, Result};
 #[cfg(feature = "error-stack")]
@@ -14,6 +14,9 @@ use crate::{Error, Result};
 use error_stack::{Report, ResultExt};
 #[cfg(feature = "log")]
 use log::trace;
+use crate::api::delete::request::NoopSink;
+#[cfg(feature = "verify")]
+use crate::engine::verify::{verify_last_pass,LastPassInfo};
 
 /// Secure Delete object : backbone of
 #[derive(Debug, Clone)]
@@ -27,6 +30,8 @@ pub struct SecureDelete {
     byte: Option<u8>,
     /// Used to redefine the size of the buffer that will be rewritten each time.
     buffer_size: usize,
+    #[cfg(feature = "verify")]
+    seed : Option<[u8; 32]>,
     /// Result of the md5 hash of the path of the file/folder you want to delete (only if feature "secure log" is activated)
     #[cfg(feature = "secure_log")]
     pub md5: md5::Digest,
@@ -125,6 +130,23 @@ impl SecureDelete {
         }
         buffer
     }
+
+    #[cfg(feature = "verify")]
+    pub fn verify(&self) -> Result<bool> {
+        let mut sink = NoopSink{};
+        if let Some(byte) = self.byte {
+            let result = verify_last_pass(&PathBuf::from(&self.path), LastPassInfo::Pattern(byte), &mut sink).is_ok();
+            return Ok(result);
+        }
+        if let Some(_bytes_pattern) = self.pattern {
+            todo!()
+        }
+        if let Some(seed) = self.seed {
+            let result = verify_last_pass(&PathBuf::from(&self.path),LastPassInfo::Random {seed},&mut sink).is_ok();
+            return Ok(result);
+        }
+        return Ok(false);
+    }
 }
 
 #[cfg(not(feature = "error-stack"))]
@@ -150,6 +172,8 @@ impl SecureDelete {
             pattern: None,
             byte: None,
             buffer_size: 4096,
+            #[cfg(feature = "verify")]
+            seed : None,
             #[cfg(feature = "secure_log")]
             md5: computed_md5.clone(),
         })
@@ -307,6 +331,8 @@ mod std_test {
                 byte: None,
                 pattern: None,
                 buffer_size: 4096,
+                #[cfg(feature = "verify")]
+                seed : None,
             }
         );
         basic_creation.pattern(&[0x00_u8, 0x00_u8, 0x00_u8]);
@@ -317,6 +343,8 @@ mod std_test {
                 byte: None,
                 pattern: Some([0x00_u8, 0x00_u8, 0x00_u8]),
                 buffer_size: 4096,
+                #[cfg(feature = "verify")]
+                seed : None,
             }
         );
         basic_creation.byte(&0x00_u8);
@@ -327,6 +355,8 @@ mod std_test {
                 byte: Some(0x00_u8),
                 pattern: None,
                 buffer_size: 4096,
+                #[cfg(feature = "verify")]
+                seed : None,
             }
         );
         Ok(())
@@ -383,6 +413,8 @@ mod std_test {
                 pattern: None,
                 byte: None,
                 buffer_size: 4096,
+                #[cfg(feature = "verify")]
+                seed : None,
             }
         );
         secure_delete.delete()?;
@@ -420,6 +452,8 @@ mod std_test {
                 pattern: None,
                 byte: None,
                 buffer_size: 4096,
+                #[cfg(feature = "verify")]
+                seed : None,
             }
         );
         assert!(!file_to_rename_path.exists());
@@ -441,6 +475,8 @@ mod std_test {
                 byte: None,
                 pattern: None,
                 buffer_size: 4096,
+                #[cfg(feature = "verify")]
+                seed : None,
             }
         );
         basic_creation.buffer(1024);
@@ -451,6 +487,8 @@ mod std_test {
                 byte: None,
                 pattern: None,
                 buffer_size: 1024,
+                #[cfg(feature = "verify")]
+                seed : None,
             }
         );
         Ok(())

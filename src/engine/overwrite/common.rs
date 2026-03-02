@@ -3,7 +3,8 @@ use std::io::{Seek, SeekFrom};
 use std::path::Path;
 
 use crate::error::FSProblem;
-use rand::rngs::ThreadRng;
+use rand::{SeedableRng, RngCore};
+use rand::rngs::StdRng;
 
 #[cfg(not(feature = "error-stack"))]
 use crate::{Error, Result};
@@ -15,11 +16,12 @@ use error_stack::ResultExt;
 
 #[cfg(feature = "log")]
 use log::info;
+use crate::engine::utils::generate_seed;
 
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn prepare_overwrite(
     path: &Path,
-) -> Result<(std::fs::File, u64, ThreadRng, [u8; 8192])> {
+) -> Result<(std::fs::File, u64, StdRng, [u8; 8192])> {
     let mut file = OpenOptions::new()
         .read(true)
         .write(true)
@@ -42,7 +44,8 @@ pub(crate) fn prepare_overwrite(
         Error::SystemProblem(FSProblem::Write, format!("{}", path.to_string_lossy()))
     })?;
 
-    let rng = rand::rng();
+    let seed = generate_seed();
+    let rng = StdRng::from_seed(seed);
     let buffer = [0u8; 8192];
 
     Ok((file, file_size, rng, buffer))

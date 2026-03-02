@@ -17,6 +17,13 @@ use crate::{Error, Result};
 use error_stack::{Context, Report, ResultExt};
 #[cfg(feature = "log")]
 use log::trace;
+use rand::RngCore;
+
+pub(crate) fn generate_seed() -> [u8; 32] {
+    let mut seed = [0u8; 32];
+    rand::rng().fill_bytes(&mut seed);
+    seed
+}
 
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn delete_file(path: &Path) -> Result<()> {
