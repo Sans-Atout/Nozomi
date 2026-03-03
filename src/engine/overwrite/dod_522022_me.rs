@@ -8,16 +8,16 @@ use crate::error::FSProblem;
 #[cfg(not(feature = "error-stack"))]
 use crate::{Error, Result};
 
+#[cfg(feature = "verify")]
+use crate::engine::utils::generate_seed;
+#[cfg(feature = "verify")]
+use crate::engine::verify::{LastPassInfo, verify_last_pass};
 #[cfg(feature = "error-stack")]
 use crate::{Error, Result};
 #[cfg(feature = "error-stack")]
 use error_stack::ResultExt;
 #[cfg(feature = "verify")]
-use rand::{SeedableRng, Rng};
-#[cfg(feature = "verify")]
-use crate::engine::utils::generate_seed;
-#[cfg(feature = "verify")]
-use crate::engine::verify::{verify_last_pass,LastPassInfo};
+use rand::SeedableRng;
 #[cfg(feature = "verify")]
 use rand::rngs::StdRng;
 
@@ -45,7 +45,7 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
 
     for (pass, patterns) in FIXED_PATTERNS.iter().enumerate() {
         #[cfg(feature = "verify")]
-        if pass == FIXED_PATTERNS.len()-1{
+        if pass == FIXED_PATTERNS.len() - 1 {
             seed = generate_seed();
             rng = StdRng::from_seed(seed);
         }
@@ -107,7 +107,7 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
 
     for (pass, patterns) in FIXED_PATTERNS.iter().enumerate() {
         #[cfg(feature = "verify")]
-        if pass == FIXED_PATTERNS.len()-1{
+        if pass == FIXED_PATTERNS.len() - 1 {
             seed = generate_seed();
             rng = StdRng::from_seed(seed);
         }

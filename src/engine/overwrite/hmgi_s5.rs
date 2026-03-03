@@ -13,10 +13,10 @@ use crate::{Error, Result};
 use error_stack::ResultExt;
 
 use crate::engine::utils::emit_safe;
+#[cfg(feature = "verify")]
+use crate::engine::verify::{LastPassInfo, verify_last_pass};
 #[cfg(feature = "log")]
 use log::info;
-#[cfg(feature = "verify")]
-use crate::engine::verify::{verify_last_pass, LastPassInfo};
 
 /// Function that implement [HMGI S5 overwrite method](https://www.bitraser.com/knowledge-series/data-destruction-standards-and-guidelines.php)
 /// ! Please note that this method does not delete the given file.
@@ -57,7 +57,7 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
         Error::SystemProblem(FSProblem::Write, format!("{}", path.to_string_lossy()))
     })?;
     #[cfg(feature = "verify")]
-    verify_last_pass(&path.to_path_buf(),LastPassInfo::Zero,sink)?;
+    verify_last_pass(&path.to_path_buf(), LastPassInfo::Zero, sink)?;
     Ok(())
 }
 
@@ -101,7 +101,7 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
         format!("{}", path.to_string_lossy()),
     ))?;
     #[cfg(feature = "verify")]
-    verify_last_pass(&path.to_path_buf(),LastPassInfo::Zero,sink)?;
+    verify_last_pass(&path.to_path_buf(), LastPassInfo::Zero, sink)?;
     Ok(())
 }
 

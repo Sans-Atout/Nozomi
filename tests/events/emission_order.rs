@@ -31,9 +31,9 @@ fn events_are_emitted_in_deterministic_order() -> Result<()> {
                 total_passes: 1,
             },
             #[cfg(feature = "verify")]
-            DeleteEvent::VerificationStarted {path : path.clone()},
+            DeleteEvent::VerificationStarted { path: path.clone() },
             #[cfg(feature = "verify")]
-            DeleteEvent::VerificationCompleted {path : path.clone()},
+            DeleteEvent::VerificationCompleted { path: path.clone() },
             DeleteEvent::EntryDeleted { path: path.clone() },
             DeleteEvent::DeletionFinished { path },
         ]
@@ -69,9 +69,9 @@ fn events_are_emitted_in_deterministic_order() -> Result<()> {
                 total_passes: 1,
             },
             #[cfg(feature = "verify")]
-            DeleteEvent::VerificationStarted {path : path.clone()},
+            DeleteEvent::VerificationStarted { path: path.clone() },
             #[cfg(feature = "verify")]
-            DeleteEvent::VerificationCompleted {path : path.clone()},
+            DeleteEvent::VerificationCompleted { path: path.clone() },
             DeleteEvent::EntryDeleted { path: path.clone() },
             DeleteEvent::DeletionFinished { path },
         ]

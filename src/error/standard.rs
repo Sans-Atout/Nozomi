@@ -46,8 +46,8 @@ impl core::fmt::Display for Error {
             Error::FileCreationError(e) => write!(fmt, "{e:?}"),
             Error::MissingParameter(param) => {
                 write!(fmt, "RequestDeleter : {param} params missing")
-            },
-            #[cfg(feature="verify")]
+            }
+            #[cfg(feature = "verify")]
             Error::VerificationFailed { offset } => {
                 write!(fmt, "Verification failed - offset : {offset}")
             }

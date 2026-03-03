@@ -1,6 +1,6 @@
 use crate::engine::overwrite::common::prepare_overwrite;
 use crate::{DeleteEvent, EventSink, Method};
-use rand::{Rng, RngCore};
+use rand::RngCore;
 use std::io::{Seek, SeekFrom, Write};
 use std::path::Path;
 
@@ -17,13 +17,12 @@ use crate::engine::utils::emit_safe;
 #[cfg(feature = "log")]
 use log::info;
 
-
-#[cfg(feature = "verify")]
-use rand::{SeedableRng};
 #[cfg(feature = "verify")]
 use crate::engine::utils::generate_seed;
 #[cfg(feature = "verify")]
-use crate::engine::verify::{verify_last_pass,LastPassInfo};
+use crate::engine::verify::{LastPassInfo, verify_last_pass};
+#[cfg(feature = "verify")]
+use rand::SeedableRng;
 #[cfg(feature = "verify")]
 use rand::rngs::StdRng;
 // 3-byte fixed patterns (27 passes)
@@ -73,7 +72,6 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
 
     // Total passes = 35
     for pass in 0..35 {
-
         #[cfg(feature = "verify")]
         if pass == 34 {
             seed = generate_seed();
@@ -121,7 +119,11 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     })?;
 
     #[cfg(feature = "verify")]
-    verify_last_pass(&path.to_path_buf(), crate::engine::verify::LastPassInfo::Random { seed }, sink)?;
+    verify_last_pass(
+        &path.to_path_buf(),
+        crate::engine::verify::LastPassInfo::Random { seed },
+        sink,
+    )?;
     Ok(())
 }
 
@@ -190,7 +192,7 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     ))?;
 
     #[cfg(feature = "verify")]
-    verify_last_pass(&path.to_path_buf(), crate::engine::verify::LastPassInfo::Random { seed }, sink)?;
+    verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
     Ok(())
 }
 

@@ -14,11 +14,11 @@ use crate::{Error, Result};
 use error_stack::ResultExt;
 
 use crate::engine::utils::{emit_safe, generate_seed};
+#[cfg(feature = "verify")]
+use crate::engine::verify::{LastPassInfo, verify_last_pass};
 #[cfg(feature = "log")]
 use log::info;
 use rand::prelude::StdRng;
-#[cfg(feature = "verify")]
-use crate::engine::verify::{verify_last_pass, LastPassInfo};
 
 const FIXED_PATTERNS: &[u8; 6] = &[0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF];
 
@@ -32,7 +32,7 @@ const FIXED_PATTERNS: &[u8; 6] = &[0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF];
 /// * `()
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
-    let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
+    let (mut file, file_size, _, mut buffer) = prepare_overwrite(path)?;
     for pattern in 0..6 {
         // rewind start of file
         file.seek(SeekFrom::Start(0))
@@ -64,7 +64,7 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
         .map_err(|_| Error::OverwriteError(Method::RcmpTssitOpsII, 7))?;
 
     let seed = generate_seed();
-    rng = StdRng::from_seed(seed);
+    let mut rng = StdRng::from_seed(seed);
 
     while remaining > 0 {
         rng.fill(&mut buffer);
@@ -103,7 +103,7 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
 /// * `()
 #[cfg(feature = "error-stack")]
 pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
-    let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
+    let (mut file, file_size, _, mut buffer) = prepare_overwrite(path)?;
     for pattern in 0..6 {
         // rewind start of filels
         file.seek(SeekFrom::Start(0))
@@ -135,7 +135,7 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
         .change_context(Error::OverwriteError(Method::RcmpTssitOpsII, 7))?;
 
     let seed = generate_seed();
-    rng = StdRng::from_seed(seed);
+    let mut rng = StdRng::from_seed(seed);
     while remaining > 0 {
         rng.fill(&mut buffer);
         let write_size = std::cmp::min(remaining, buffer.len() as u64) as usize;

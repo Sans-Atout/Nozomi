@@ -1,6 +1,6 @@
 use crate::engine::overwrite::common::prepare_overwrite;
 use crate::{DeleteEvent, EventSink, Method};
-use rand::{Rng, RngCore};
+use rand::RngCore;
 use std::io::{Seek, SeekFrom, Write};
 use std::path::Path;
 
@@ -18,11 +18,11 @@ use crate::engine::utils::emit_safe;
 use log::info;
 
 #[cfg(feature = "verify")]
-use rand::{SeedableRng};
-#[cfg(feature = "verify")]
 use crate::engine::utils::generate_seed;
 #[cfg(feature = "verify")]
-use crate::engine::verify::{verify_last_pass,LastPassInfo};
+use crate::engine::verify::{LastPassInfo, verify_last_pass};
+#[cfg(feature = "verify")]
+use rand::SeedableRng;
 #[cfg(feature = "verify")]
 use rand::rngs::StdRng;
 
@@ -54,7 +54,7 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
 
     for (pass, patterns) in FIXED_PATTERNS.iter().enumerate() {
         #[cfg(feature = "verify")]
-        if pass == FIXED_PATTERNS.len()-1{
+        if pass == FIXED_PATTERNS.len() - 1 {
             seed = generate_seed();
             rng = StdRng::from_seed(seed);
         }
@@ -118,7 +118,7 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
 
     for (pass, patterns) in FIXED_PATTERNS.iter().enumerate() {
         #[cfg(feature = "verify")]
-        if pass == FIXED_PATTERNS.len()-1{
+        if pass == FIXED_PATTERNS.len() - 1 {
             seed = generate_seed();
             rng = StdRng::from_seed(seed);
         }

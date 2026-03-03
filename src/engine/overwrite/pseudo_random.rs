@@ -17,10 +17,10 @@ use crate::engine::utils::emit_safe;
 #[cfg(feature = "log")]
 use log::info;
 
-use rand::{SeedableRng, Rng};
 use crate::engine::utils::generate_seed;
 #[cfg(feature = "verify")]
-use crate::engine::verify::{verify_last_pass,LastPassInfo};
+use crate::engine::verify::{LastPassInfo, verify_last_pass};
+use rand::SeedableRng;
 use rand::rngs::StdRng;
 
 /// Function that implement a basic pseudo random method using basic error handling method.
@@ -45,12 +45,12 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     #[cfg(all(feature = "log", feature = "secure_log"))]
     info!("[{}][{:x}]\t1/1", Method::PseudoRandom, computed_md5);
 
-    let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
+    let (mut file, file_size, _, mut buffer) = prepare_overwrite(path)?;
 
     let mut remaining = file_size;
 
     let seed = generate_seed();
-    rng = StdRng::from_seed(seed);
+    let mut rng = StdRng::from_seed(seed);
 
     while remaining > 0 {
         rng.fill_bytes(&mut buffer);
@@ -101,10 +101,10 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     #[cfg(all(feature = "log", feature = "secure_log"))]
     info!("[{}][{:x}]\t1/1", Method::PseudoRandom, computed_md5);
 
-    let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
+    let (mut file, file_size, _, mut buffer) = prepare_overwrite(path)?;
 
     let seed = generate_seed();
-    rng = StdRng::from_seed(seed);
+    let mut rng = StdRng::from_seed(seed);
 
     let mut remaining = file_size;
 
