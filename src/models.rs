@@ -299,7 +299,7 @@ impl SecureDelete {
         if let Some(bytes_pattern) = self.pattern {
             let result = verify_last_pass(
                 &PathBuf::from(&self.path),
-                LastPassInfo::LegacyPattern(bytes_pattern),
+                LastPassInfo::ThreeBytesPattern(bytes_pattern),
                 &mut sink,
             )
             .is_ok();
@@ -680,7 +680,7 @@ impl SecureDelete {
         if let Some(bytes_pattern) = self.pattern {
             let result = verify_last_pass(
                 &PathBuf::from(&self.path),
-                LastPassInfo::LegacyPattern(bytes_pattern),
+                LastPassInfo::ThreeBytesPattern(bytes_pattern),
                 &mut sink,
             )
             .is_ok();

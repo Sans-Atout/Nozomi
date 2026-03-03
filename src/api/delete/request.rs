@@ -2,7 +2,8 @@ use crate::api::delete::{DeleteReport, DeleteRequestBuilder};
 use crate::engine;
 use crate::{DeleteEvent, EventSink, Method};
 use std::path::PathBuf;
-
+#[cfg(feature = "dry-run")]
+use crate::engine::emit_safe;
 #[cfg(not(feature = "error-stack"))]
 use crate::Result;
 #[cfg(feature = "error-stack")]
@@ -13,6 +14,8 @@ use crate::Result;
 pub struct DeleteRequest {
     pub(crate) path: PathBuf,
     pub(crate) method: DeleteMethod,
+    #[cfg(feature = "dry-run")]
+    pub(crate) dry_run: bool,
 }
 
 #[derive(Debug)]
@@ -35,6 +38,21 @@ impl DeleteRequest {
     }
 
     pub fn run_with<S: EventSink>(&self, sink: &mut S) -> Result<DeleteReport> {
+        #[cfg(feature = "dry-run")]
+        if self.dry_run{
+            emit_safe(sink,DeleteEvent::DryRunStarted {path : self.path.to_path_buf()});
+            match &self.method {
+                DeleteMethod::BuiltIn(method) => {
+                    engine::dry_run(method, &self.path, sink)?;
+                    emit_safe(sink,DeleteEvent::DryRunCompleted {path : self.path.to_path_buf()});
+                    return Ok(DeleteReport {
+                        path: self.path.clone(),
+                        method: *method,
+                    })
+                }
+            }
+        }
+
         match &self.method {
             DeleteMethod::BuiltIn(method) => {
                 engine::run(method, &self.path, sink)?;
@@ -55,6 +73,21 @@ impl DeleteRequest {
     }
 
     pub fn run_with<S: EventSink>(&self, sink: &mut S) -> Result<DeleteReport> {
+        #[cfg(feature = "dry-run")]
+        if self.dry_run{
+            emit_safe(sink,DeleteEvent::DryRunStarted {path : self.path.to_path_buf()});
+            match &self.method {
+                DeleteMethod::BuiltIn(method) => {
+                    engine::dry_run(method, &self.path, sink)?;
+                    emit_safe(sink,DeleteEvent::DryRunCompleted {path : self.path.to_path_buf()});
+                    return Ok(DeleteReport {
+                        path: self.path.clone(),
+                        method: *method,
+                    })
+                }
+            }
+        }
+
         match &self.method {
             DeleteMethod::BuiltIn(method) => {
                 engine::run(method, &self.path, sink)?;

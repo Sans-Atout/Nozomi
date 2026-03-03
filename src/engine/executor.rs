@@ -64,6 +64,50 @@ pub(crate) fn run<S: EventSink>(method: &Method, path: &Path, sink: &mut S) -> R
     result
 }
 
+#[cfg(all(feature = "dry-run",not(feature = "error-stack")))]
+pub(crate) fn dry_run<S: EventSink>(method: &Method, path: &Path, sink: &mut S) -> Result<()> {
+    emit_safe(
+        sink,
+        DeleteEvent::DeletionStarted {
+            path: path.to_path_buf(),
+        },
+    );
+
+    let result = (|| {
+        let plan = planner::execution_plan(path)?;
+
+        for file_path in &plan.files {
+            overwrite::dry_overwrite_file(method, file_path, sink)?;
+        }
+        for file_path in &plan.files {
+            emit_safe(
+                sink,
+                DeleteEvent::EntryDeleted {
+                    path: file_path.clone(),
+                },
+            );
+        }
+
+        for dir_path in plan.directories.iter().rev() {
+            emit_safe(
+                sink,
+                DeleteEvent::EntryDeleted {
+                    path: dir_path.clone(),
+                },
+            );
+        }
+        Ok(())
+    })();
+
+    emit_safe(
+        sink,
+        DeleteEvent::DeletionFinished {
+            path: path.to_path_buf(),
+        },
+    );
+    result
+}
+
 #[cfg(feature = "error-stack")]
 pub(crate) fn run<S: EventSink>(method: &Method, path: &Path, sink: &mut S) -> Result<()> {
     emit_safe(
@@ -109,5 +153,50 @@ pub(crate) fn run<S: EventSink>(method: &Method, path: &Path, sink: &mut S) -> R
         },
     );
 
+    result
+}
+
+
+#[cfg(all(feature = "dry-run",feature = "error-stack"))]
+pub(crate) fn dry_run<S: EventSink>(method: &Method, path: &Path, sink: &mut S) -> Result<()> {
+    emit_safe(
+        sink,
+        DeleteEvent::DeletionStarted {
+            path: path.to_path_buf(),
+        },
+    );
+
+    let result = (|| {
+        let plan = planner::execution_plan(path)?;
+
+        for file_path in &plan.files {
+            overwrite::dry_overwrite_file(method, file_path, sink)?;
+        }
+        for file_path in &plan.files {
+            emit_safe(
+                sink,
+                DeleteEvent::EntryDeleted {
+                    path: file_path.clone(),
+                },
+            );
+        }
+
+        for dir_path in plan.directories.iter().rev() {
+            emit_safe(
+                sink,
+                DeleteEvent::EntryDeleted {
+                    path: dir_path.clone(),
+                },
+            );
+        }
+        Ok(())
+    })();
+
+    emit_safe(
+        sink,
+        DeleteEvent::DeletionFinished {
+            path: path.to_path_buf(),
+        },
+    );
     result
 }

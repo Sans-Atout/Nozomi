@@ -1,6 +1,6 @@
 use crate::DeleteEvent;
 use crate::engine::events::EventSink;
-use crate::engine::utils::{emit_safe, get_legacy_buffer};
+use crate::engine::utils::{emit_safe, get_three_bytes_pattern_buffer};
 use rand::rngs::StdRng;
 use rand::{RngCore, SeedableRng};
 use std::fs::File;
@@ -18,7 +18,7 @@ use error_stack::{Report, ResultExt};
 #[derive(Debug, Clone)]
 pub(crate) enum LastPassInfo {
     Zero,
-    LegacyPattern([u8; 3]),
+    ThreeBytesPattern([u8; 3]),
     Pattern(u8),
     Random { seed: [u8; 32] },
 }
@@ -61,8 +61,8 @@ pub(crate) fn verify_last_pass<S: EventSink>(
             }
             Err(e) => return Err(e),
         },
-        LastPassInfo::LegacyPattern(pattern) => {
-            match verify_legacy(&mut file, &pattern, &mut buffer, &path) {
+        LastPassInfo::ThreeBytesPattern(pattern) => {
+            match verify_three_bytes_pattern(&mut file, &pattern, &mut buffer, &path) {
                 Ok(_) => {}
                 Err(Error::VerificationFailed { offset }) => {
                     emit_safe(
@@ -112,6 +112,29 @@ pub(crate) fn verify_last_pass<S: EventSink>(
         DeleteEvent::VerificationCompleted { path: path.clone() },
     );
 
+    Ok(())
+}
+
+#[cfg(all(not(feature = "error-stack"),feature = "dry-run"))]
+pub(crate) fn dry_verify_last_pass<S: EventSink>(
+path: &PathBuf,
+info: LastPassInfo,
+sink: &mut S,
+)-> Result<()> {
+    emit_safe(
+        sink,
+        DeleteEvent::VerificationStarted { path: path.clone() },
+    );
+    match info {
+        LastPassInfo::Zero => Ok(()),
+        LastPassInfo::ThreeBytesPattern(pattern) => Ok(()),
+        LastPassInfo::Pattern(p) => Ok(()),
+        LastPassInfo::Random { seed } => Ok(())
+    }
+    emit_safe(
+        sink,
+        DeleteEvent::VerificationCompleted { path: path.clone() },
+    );
     Ok(())
 }
 
@@ -174,7 +197,7 @@ fn verify_random(file: &mut File, seed: [u8; 32], buffer: &mut [u8], path: &Path
 }
 
 #[cfg(not(feature = "error-stack"))]
-fn verify_legacy(
+fn verify_three_bytes_pattern(
     file: &mut File,
     pattern: &[u8; 3],
     buffer: &mut [u8],
@@ -192,7 +215,7 @@ fn verify_legacy(
             break;
         }
 
-        let expected = get_legacy_buffer(&pattern, bytes_read);
+        let expected = get_three_bytes_pattern_buffer(&pattern, bytes_read);
 
         for i in 0..bytes_read {
             if buffer[i] != expected[i] {
@@ -215,6 +238,7 @@ mod tests {
     use std::fs::{File, OpenOptions};
     use std::io::{Seek, SeekFrom, Write};
     use std::path::PathBuf;
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn verify_fixed_ok() {
@@ -348,8 +372,8 @@ pub(crate) fn verify_last_pass<S: EventSink>(
                 return Err(report);
             }
         },
-        LastPassInfo::LegacyPattern(pattern) => {
-            match verify_legacy(&mut file, &pattern, &mut buffer, &path) {
+        LastPassInfo::ThreeBytesPattern(pattern) => {
+            match verify_three_bytes_pattern(&mut file, &pattern, &mut buffer, &path) {
                 Ok(_) => {}
                 Err(report) => {
                     if let Error::VerificationFailed { offset } = report.current_context() {
@@ -405,6 +429,28 @@ pub(crate) fn verify_last_pass<S: EventSink>(
     Ok(())
 }
 
+#[cfg(all(feature = "error-stack",feature = "dry-run"))]
+pub(crate) fn dry_verify_last_pass<S: EventSink>(
+    path: &PathBuf,
+    info: LastPassInfo,
+    sink: &mut S,
+)-> Result<()> {
+    emit_safe(
+        sink,
+        DeleteEvent::VerificationStarted { path: path.clone() },
+    );
+    match info {
+        LastPassInfo::Zero => Ok(()),
+        LastPassInfo::ThreeBytesPattern(pattern) => Ok(()),
+        LastPassInfo::Pattern(p) => Ok(()),
+        LastPassInfo::Random { seed } => Ok(())
+    }
+    emit_safe(
+        sink,
+        DeleteEvent::VerificationCompleted { path: path.clone() },
+    );
+    Ok(())
+}
 #[cfg(feature = "error-stack")]
 fn verify_fixed(
     file: &mut std::fs::File,
@@ -474,7 +520,7 @@ fn verify_random(
 }
 
 #[cfg(feature = "error-stack")]
-fn verify_legacy(
+fn verify_three_bytes_pattern(
     file: &mut File,
     pattern: &[u8; 3],
     buffer: &mut [u8],
@@ -492,7 +538,7 @@ fn verify_legacy(
             break;
         }
 
-        let expected = get_legacy_buffer(&pattern, bytes_read);
+        let expected = get_three_bytes_pattern_buffer(&pattern, bytes_read);
 
         for i in 0..bytes_read {
             if buffer[i] != expected[i] {

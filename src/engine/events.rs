@@ -23,6 +23,10 @@ pub enum DeleteEvent {
     VerificationCompleted { path: PathBuf },
     #[cfg(feature = "verify")]
     VerificationFailed { path: PathBuf, offset: u64 },
+    #[cfg(feature = "dry-run")]
+    DryRunStarted { path: PathBuf },
+    #[cfg(feature = "dry-run")]
+    DryRunCompleted { path: PathBuf },
 }
 
 /// Sink for deletion execution events.

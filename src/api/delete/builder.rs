@@ -14,6 +14,8 @@ use super::request::{DeleteMethod, DeleteRequest};
 pub struct DeleteRequestBuilder {
     path: Option<PathBuf>,
     method: Option<DeleteMethod>,
+    #[cfg(feature = "dry-run")]
+    dry_run: bool,
 }
 
 impl DeleteRequestBuilder {
@@ -30,6 +32,12 @@ impl DeleteRequestBuilder {
         self.method = Some(method);
         self
     }
+
+    #[cfg(feature = "dry-run")]
+    pub fn dry_run(mut self, dry_run: bool) -> Self {
+        self.dry_run = dry_run;
+        self
+    }
 }
 
 #[cfg(not(feature = "error-stack"))]
@@ -39,7 +47,12 @@ impl DeleteRequestBuilder {
 
         let method = self.method.ok_or(Error::MissingParameter("method"))?;
 
-        Ok(DeleteRequest { path, method })
+        Ok(DeleteRequest {
+            path,
+            method,
+            #[cfg(feature = "dry-run")]
+            dry_run : self.dry_run
+        })
     }
 }
 
@@ -88,7 +101,12 @@ impl DeleteRequestBuilder {
     pub fn build(self) -> Result<DeleteRequest> {
         let path = self.path.ok_or(Error::MissingParameter("path"))?;
         let method = self.method.ok_or(Error::MissingParameter("method"))?;
-        Ok(DeleteRequest { path, method })
+        Ok(DeleteRequest {
+            path,
+            method,
+            #[cfg(feature = "dry-run")]
+            dry_run : self.dry_run.clone(),
+        })
     }
 }
 

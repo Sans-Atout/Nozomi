@@ -26,7 +26,7 @@ pub(crate) fn generate_seed() -> [u8; 32] {
 }
 
 #[cfg(feature = "verify")]
-pub(super) fn get_legacy_buffer(pattern: &[u8; 3], size: usize) -> Vec<u8> {
+pub(super) fn get_three_bytes_pattern_buffer(pattern: &[u8; 3], size: usize) -> Vec<u8> {
     let mut buffer = Vec::<u8>::new();
     for i in 0..size {
         let pattern_index = i % 3;
@@ -86,7 +86,7 @@ pub(crate) fn delete_file(path: &Path) -> Result<()> {
     })
 }
 
-pub(super) fn emit_safe<S: EventSink>(sink: &mut S, event: DeleteEvent) {
+pub(crate) fn emit_safe<S: EventSink>(sink: &mut S, event: DeleteEvent) {
     let _ = catch_unwind(AssertUnwindSafe(|| {
         sink.emit(event);
     }));

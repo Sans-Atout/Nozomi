@@ -34,3 +34,9 @@ fn verify_and_error_stack_compile_together() {
 fn secure_log_and_verify_compile_together() {
     assert!(true);
 }
+
+#[cfg(not(feature = "dry-run"))]
+#[test]
+fn dry_run_compile_together() {
+    assert!(true);
+}
