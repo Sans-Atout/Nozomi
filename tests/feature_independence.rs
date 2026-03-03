@@ -40,3 +40,9 @@ fn secure_log_and_verify_compile_together() {
 fn dry_run_compile_together() {
     assert!(true);
 }
+
+#[cfg(not(feature = "analyze"))]
+#[test]
+fn analyze_not_available_without_feature() {
+    assert!(true);
+}
