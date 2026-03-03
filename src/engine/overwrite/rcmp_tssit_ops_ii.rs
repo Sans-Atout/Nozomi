@@ -102,7 +102,7 @@ pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Res
             sink,
             DeleteEvent::EntryOverwritePass {
                 path: path.to_path_buf(),
-                pass: pass+1,
+                pass: pass + 1,
                 total_passes: 7,
             },
         );
@@ -194,7 +194,7 @@ pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Res
             sink,
             DeleteEvent::EntryOverwritePass {
                 path: path.to_path_buf(),
-                pass: pass+1,
+                pass: pass + 1,
                 total_passes: 7,
             },
         );

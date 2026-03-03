@@ -13,8 +13,8 @@ mod utils;
 #[cfg(feature = "verify")]
 pub(crate) mod verify;
 
-pub(crate) use executor::run;
 #[cfg(feature = "dry-run")]
 pub(crate) use executor::dry_run;
+pub(crate) use executor::run;
 #[cfg(feature = "dry-run")]
 pub(crate) use utils::emit_safe;

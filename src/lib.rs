@@ -1,11 +1,11 @@
 // -- Libraries use in this library
+#[cfg(feature = "analyze")]
+mod analyze;
 mod error;
 mod methods;
 mod models;
 #[cfg(test)]
 mod tests;
-#[cfg(feature = "analyze")]
-mod analyze;
 #[cfg(feature = "analyze")]
 pub use analyze::{AnalysisReport, PassInfo, PassKind};
 

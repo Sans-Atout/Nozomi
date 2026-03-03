@@ -1,8 +1,6 @@
 //! These tests ensure that each feature compiles independently.
 //! They do not test behavior yet — only conditional compilation integrity.
 
-use nozomi::*;
-
 /// Always compiled: ensures base crate compiles without features.
 #[test]
 fn base_build_compiles() {
@@ -32,8 +30,6 @@ mod verify_enabled {
 
 #[cfg(feature = "dry-run")]
 mod dry_run_enabled {
-    use super::*;
-
     #[test]
     fn dry_run_feature_compiles() {
         assert!(true);
@@ -46,8 +42,6 @@ mod dry_run_enabled {
 
 #[cfg(feature = "analyze")]
 mod analyze_enabled {
-    use super::*;
-
     #[test]
     fn analyze_feature_compiles() {
         assert!(true);

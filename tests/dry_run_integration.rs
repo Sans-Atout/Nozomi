@@ -4,351 +4,342 @@ use nozomi::{DeleteEvent, EventSink};
 #[cfg(feature = "dry-run")]
 #[derive(Default)]
 struct TestSink {
-	events: Vec<DeleteEvent>,
+    events: Vec<DeleteEvent>,
 }
 
 #[cfg(feature = "dry-run")]
 impl EventSink for TestSink {
-	fn emit(&mut self, event: DeleteEvent) {
-		self.events.push(event);
-	}
+    fn emit(&mut self, event: DeleteEvent) {
+        self.events.push(event);
+    }
 }
 
-#[cfg(all(feature = "dry-run",not(feature = "error-stack")))]
-mod test_dry_run{
-	use pretty_assertions::assert_eq;
-	use nozomi::{DeleteEvent, DeleteMethod, DeleteRequest, Method,Result};
-	use super::TestSink;
-	use std::fs::{File};
-	use std::io::{Write, Read};
+#[cfg(all(feature = "dry-run", not(feature = "error-stack")))]
+mod test_dry_run {
+    use super::TestSink;
+    use nozomi::{DeleteEvent, DeleteMethod, DeleteRequest, Method, Result};
+    use pretty_assertions::assert_eq;
+    use std::fs::File;
+    use std::io::{Read, Write};
 
-	#[test]
-	fn dry_run_does_not_modify_file() -> Result<()> {
+    #[test]
+    fn dry_run_does_not_modify_file() -> Result<()> {
+        let mut path = std::env::temp_dir();
+        path.push("nozomi_test_dry_run_test.tmp".to_string());
 
-		let mut path = std::env::temp_dir();
-		path.push("nozomi_test_dry_run_test.tmp".to_string());
+        let original = b"HELLO_WORLD";
+        {
+            let mut file = File::create(&path).unwrap();
+            file.write_all(original).unwrap();
+            file.sync_all().unwrap();
+        }
 
-		let original = b"HELLO_WORLD";
-		{
-			let mut file = File::create(&path).unwrap();
-			file.write_all(original).unwrap();
-			file.sync_all().unwrap();
-		}
+        let request = DeleteRequest::builder()
+            .method(DeleteMethod::BuiltIn(Method::PseudoRandom))
+            .path(&path)
+            .dry_run(true)
+            .build()?;
 
-		let request = DeleteRequest::builder()
-			.method(DeleteMethod::BuiltIn(Method::PseudoRandom))
-			.path(&path)
-			.dry_run(true)
-			.build()?;
+        request.run()?;
 
-		request.run()?;
+        let mut content = Vec::new();
+        File::open(&path)
+            .unwrap()
+            .read_to_end(&mut content)
+            .unwrap();
+        assert_eq!(content, original);
 
-		let mut content = Vec::new();
-		File::open(&path).unwrap().read_to_end(&mut content).unwrap();
-		assert_eq!(content, original);
+        std::fs::remove_file(path).unwrap();
+        Ok(())
+    }
 
-		std::fs::remove_file(path).unwrap();
-		Ok(())
-	}
+    #[test]
+    fn dry_run_does_not_remove_file() -> Result<()> {
+        let mut path = std::env::temp_dir();
+        path.push("nozomi_test_dry_run_remove.tmp".to_string());
+        File::create(&path).unwrap();
 
-	#[test]
-	fn dry_run_does_not_remove_file() -> Result<()>{
+        let request = DeleteRequest::builder()
+            .method(DeleteMethod::BuiltIn(Method::PseudoRandom))
+            .path(&path)
+            .dry_run(true)
+            .build()?;
 
-		let mut path = std::env::temp_dir();
-		path.push("nozomi_test_dry_run_remove.tmp".to_string());
-		File::create(&path).unwrap();
+        request.run()?;
 
-		let request = DeleteRequest::builder()
-			.method(DeleteMethod::BuiltIn(Method::PseudoRandom))
-			.path(&path)
-			.dry_run(true)
-			.build()?;
+        assert!(path.exists());
 
-		request.run()?;
+        std::fs::remove_file(path).unwrap();
+        Ok(())
+    }
 
-		assert!(path.exists());
+    #[test]
+    #[cfg(feature = "verify")]
+    fn dry_run_skips_verify() -> Result<()> {
+        let mut path = std::env::temp_dir();
+        path.push("nozomi_test_dry_run_verify.tmp".to_string());
+        File::create(&path).unwrap();
 
-		std::fs::remove_file(path).unwrap();
-		Ok(())
-	}
+        let request = DeleteRequest::builder()
+            .method(DeleteMethod::BuiltIn(Method::PseudoRandom))
+            .path(&path)
+            .dry_run(true)
+            .build()?;
 
-	#[test]
-	#[cfg(feature = "verify")]
-	fn dry_run_skips_verify() -> Result<()>{
+        let result = request.run();
 
-		let mut path = std::env::temp_dir();
-		path.push("nozomi_test_dry_run_verify.tmp".to_string());
-		File::create(&path).unwrap();
+        assert!(result.is_ok());
 
-		let request = DeleteRequest::builder()
-			.method(DeleteMethod::BuiltIn(Method::PseudoRandom))
-			.path(&path)
-			.dry_run(true)
-			.build()?;
+        std::fs::remove_file(path).unwrap();
+        Ok(())
+    }
 
-		let result = request.run();
+    #[test]
+    fn dry_run_emits_events() -> Result<()> {
+        let mut path = std::env::temp_dir();
+        path.push("nozomi_test_dry_run_event.tmp".to_string());
+        File::create(&path).unwrap();
 
-		assert!(result.is_ok());
+        let mut sink = TestSink::default();
 
-		std::fs::remove_file(path).unwrap();
-		Ok(())
-	}
+        let request = DeleteRequest::builder()
+            .method(DeleteMethod::BuiltIn(Method::PseudoRandom))
+            .path(&path)
+            .dry_run(true)
+            .build()?;
 
-	#[test]
-	fn dry_run_emits_events() -> Result<()>{
+        request.run_with(&mut sink)?;
 
-		let mut path = std::env::temp_dir();
-		path.push("nozomi_test_dry_run_event.tmp".to_string());
-		File::create(&path).unwrap();
+        assert_eq!(
+            sink.events,
+            vec![
+                #[cfg(feature = "dry-run")]
+                DeleteEvent::DryRunStarted { path: path.clone() },
+                DeleteEvent::DeletionStarted { path: path.clone() },
+                DeleteEvent::EntryOverwritePass {
+                    path: path.clone(),
+                    pass: 1,
+                    total_passes: 1,
+                },
+                #[cfg(feature = "verify")]
+                DeleteEvent::VerificationStarted { path: path.clone() },
+                #[cfg(feature = "verify")]
+                DeleteEvent::VerificationCompleted { path: path.clone() },
+                DeleteEvent::EntryDeleted { path: path.clone() },
+                DeleteEvent::DeletionFinished { path: path.clone() },
+                #[cfg(feature = "dry-run")]
+                DeleteEvent::DryRunCompleted { path: path.clone() },
+            ]
+        );
 
-		let mut sink = TestSink::default();
+        std::fs::remove_file(path).unwrap();
+        Ok(())
+    }
 
-		let request = DeleteRequest::builder()
-			.method(DeleteMethod::BuiltIn(Method::PseudoRandom))
-			.path(&path)
-			.dry_run(true)
-			.build()?;
+    #[test]
+    fn dry_run_empty_file() -> Result<()> {
+        let mut path = std::env::temp_dir();
+        path.push("nozomi_test_dry_run_empty.tmp".to_string());
+        File::create(&path).unwrap();
 
-		request.run_with(&mut sink)?;
+        let request = DeleteRequest::builder()
+            .method(DeleteMethod::BuiltIn(Method::PseudoRandom))
+            .path(&path)
+            .dry_run(true)
+            .build()?;
 
+        let result = request.run();
 
-		assert_eq!(
-			sink.events,
-			vec![
-				#[cfg(feature = "dry-run")]
-				DeleteEvent::DryRunStarted{path: path.clone()},
-				DeleteEvent::DeletionStarted { path: path.clone() },
-				DeleteEvent::EntryOverwritePass {
-					path: path.clone(),
-					pass: 1,
-					total_passes: 1,
-				},
-				#[cfg(feature = "verify")]
-				DeleteEvent::VerificationStarted { path: path.clone() },
-				#[cfg(feature = "verify")]
-				DeleteEvent::VerificationCompleted { path: path.clone() },
-				DeleteEvent::EntryDeleted { path: path.clone() },
-				DeleteEvent::DeletionFinished { path: path.clone()  },
-				#[cfg(feature = "dry-run")]
-				DeleteEvent::DryRunCompleted{path: path.clone()},
-			]
-		);
+        assert!(result.is_ok());
 
-		std::fs::remove_file(path).unwrap();
-		Ok(())
-	}
+        std::fs::remove_file(path).unwrap();
+        Ok(())
+    }
 
-	#[test]
-	fn dry_run_empty_file() -> Result<()>{
+    #[test]
+    fn normal_run_modifies_file() -> Result<()> {
+        let mut path = std::env::temp_dir();
+        path.push("nozomi_test_dry_normal_run.tmp".to_string());
 
-		let mut path = std::env::temp_dir();
-		path.push("nozomi_test_dry_run_empty.tmp".to_string());
-		File::create(&path).unwrap();
+        {
+            let mut file = File::create(&path).unwrap();
+            file.write_all(b"ABC").unwrap();
+            file.sync_all().unwrap();
+        }
 
-		let request = DeleteRequest::builder()
-			.method(DeleteMethod::BuiltIn(Method::PseudoRandom))
-			.path(&path)
-			.dry_run(true)
-			.build()?;
+        let request = DeleteRequest::builder()
+            .method(DeleteMethod::BuiltIn(Method::PseudoRandom))
+            .path(&path)
+            .build()?;
 
-		let result = request.run();
+        request.run()?;
 
-		assert!(result.is_ok());
-
-		std::fs::remove_file(path).unwrap();
-		Ok(())
-	}
-
-	#[test]
-	fn normal_run_modifies_file() -> Result<()> {
-
-		let mut path = std::env::temp_dir();
-		path.push("nozomi_test_dry_normal_run.tmp".to_string());
-
-		{
-			let mut file = File::create(&path).unwrap();
-			file.write_all(b"ABC").unwrap();
-			file.sync_all().unwrap();
-		}
-
-		let request = DeleteRequest::builder()
-			.method(DeleteMethod::BuiltIn(Method::PseudoRandom))
-			.path(&path)
-			.build()?;
-
-		request.run()?;
-
-		assert!(!path.exists());
-		Ok(())
-	}
+        assert!(!path.exists());
+        Ok(())
+    }
 }
 
+#[cfg(all(feature = "dry-run", feature = "error-stack"))]
+mod test_dry_run {
+    use super::TestSink;
+    use nozomi::{DeleteEvent, DeleteMethod, DeleteRequest, Method, Result};
+    use pretty_assertions::assert_eq;
+    use std::fs::File;
+    use std::io::{Read, Write};
 
-#[cfg(all(feature = "dry-run",feature = "error-stack"))]
-mod test_dry_run{
-	use pretty_assertions::assert_eq;
-	use nozomi::{DeleteEvent, DeleteMethod, DeleteRequest, Method,Result};
-	use super::TestSink;
-	use std::fs::{File};
-	use std::io::{Write, Read};
+    #[test]
+    fn dry_run_does_not_modify_file() -> Result<()> {
+        let mut path = std::env::temp_dir();
+        path.push("nozomi_test_dry_run_test.tmp".to_string());
 
-	#[test]
-	fn dry_run_does_not_modify_file() -> Result<()> {
+        let original = b"HELLO_WORLD";
+        {
+            let mut file = File::create(&path).unwrap();
+            file.write_all(original).unwrap();
+            file.sync_all().unwrap();
+        }
 
-		let mut path = std::env::temp_dir();
-		path.push("nozomi_test_dry_run_test.tmp".to_string());
+        let request = DeleteRequest::builder()
+            .method(DeleteMethod::BuiltIn(Method::PseudoRandom))
+            .path(&path)
+            .dry_run(true)
+            .build()?;
 
-		let original = b"HELLO_WORLD";
-		{
-			let mut file = File::create(&path).unwrap();
-			file.write_all(original).unwrap();
-			file.sync_all().unwrap();
-		}
+        request.run()?;
 
-		let request = DeleteRequest::builder()
-			.method(DeleteMethod::BuiltIn(Method::PseudoRandom))
-			.path(&path)
-			.dry_run(true)
-			.build()?;
+        let mut content = Vec::new();
+        File::open(&path)
+            .unwrap()
+            .read_to_end(&mut content)
+            .unwrap();
+        assert_eq!(content, original);
 
-		request.run()?;
+        std::fs::remove_file(path).unwrap();
+        Ok(())
+    }
 
-		let mut content = Vec::new();
-		File::open(&path).unwrap().read_to_end(&mut content).unwrap();
-		assert_eq!(content, original);
+    #[test]
+    fn dry_run_does_not_remove_file() -> Result<()> {
+        let mut path = std::env::temp_dir();
+        path.push("nozomi_test_dry_run_remove.tmp".to_string());
+        File::create(&path).unwrap();
 
-		std::fs::remove_file(path).unwrap();
-		Ok(())
-	}
+        let request = DeleteRequest::builder()
+            .method(DeleteMethod::BuiltIn(Method::PseudoRandom))
+            .path(&path)
+            .dry_run(true)
+            .build()?;
 
-	#[test]
-	fn dry_run_does_not_remove_file() -> Result<()>{
+        request.run()?;
 
-		let mut path = std::env::temp_dir();
-		path.push("nozomi_test_dry_run_remove.tmp".to_string());
-		File::create(&path).unwrap();
+        assert!(path.exists());
 
-		let request = DeleteRequest::builder()
-			.method(DeleteMethod::BuiltIn(Method::PseudoRandom))
-			.path(&path)
-			.dry_run(true)
-			.build()?;
+        std::fs::remove_file(path).unwrap();
+        Ok(())
+    }
 
-		request.run()?;
+    #[test]
+    #[cfg(feature = "verify")]
+    fn dry_run_skips_verify() -> Result<()> {
+        let mut path = std::env::temp_dir();
+        path.push("nozomi_test_dry_run_verify.tmp".to_string());
+        File::create(&path).unwrap();
 
-		assert!(path.exists());
+        let request = DeleteRequest::builder()
+            .method(DeleteMethod::BuiltIn(Method::PseudoRandom))
+            .path(&path)
+            .dry_run(true)
+            .build()?;
 
-		std::fs::remove_file(path).unwrap();
-		Ok(())
-	}
+        let result = request.run();
 
-	#[test]
-	#[cfg(feature = "verify")]
-	fn dry_run_skips_verify() -> Result<()>{
+        assert!(result.is_ok());
 
-		let mut path = std::env::temp_dir();
-		path.push("nozomi_test_dry_run_verify.tmp".to_string());
-		File::create(&path).unwrap();
+        std::fs::remove_file(path).unwrap();
+        Ok(())
+    }
 
-		let request = DeleteRequest::builder()
-			.method(DeleteMethod::BuiltIn(Method::PseudoRandom))
-			.path(&path)
-			.dry_run(true)
-			.build()?;
+    #[test]
+    fn dry_run_emits_events() -> Result<()> {
+        let mut path = std::env::temp_dir();
+        path.push("nozomi_test_dry_run_event.tmp".to_string());
+        File::create(&path).unwrap();
 
-		let result = request.run();
+        let mut sink = TestSink::default();
 
-		assert!(result.is_ok());
+        let request = DeleteRequest::builder()
+            .method(DeleteMethod::BuiltIn(Method::PseudoRandom))
+            .path(&path)
+            .dry_run(true)
+            .build()?;
 
-		std::fs::remove_file(path).unwrap();
-		Ok(())
-	}
+        request.run_with(&mut sink)?;
 
-	#[test]
-	fn dry_run_emits_events() -> Result<()>{
+        assert_eq!(
+            sink.events,
+            vec![
+                #[cfg(feature = "dry-run")]
+                DeleteEvent::DryRunStarted { path: path.clone() },
+                DeleteEvent::DeletionStarted { path: path.clone() },
+                DeleteEvent::EntryOverwritePass {
+                    path: path.clone(),
+                    pass: 1,
+                    total_passes: 1,
+                },
+                #[cfg(feature = "verify")]
+                DeleteEvent::VerificationStarted { path: path.clone() },
+                #[cfg(feature = "verify")]
+                DeleteEvent::VerificationCompleted { path: path.clone() },
+                DeleteEvent::EntryDeleted { path: path.clone() },
+                DeleteEvent::DeletionFinished { path: path.clone() },
+                #[cfg(feature = "dry-run")]
+                DeleteEvent::DryRunCompleted { path: path.clone() },
+            ]
+        );
 
-		let mut path = std::env::temp_dir();
-		path.push("nozomi_test_dry_run_event.tmp".to_string());
-		File::create(&path).unwrap();
+        std::fs::remove_file(path).unwrap();
+        Ok(())
+    }
 
-		let mut sink = TestSink::default();
+    #[test]
+    fn dry_run_empty_file() -> Result<()> {
+        let mut path = std::env::temp_dir();
+        path.push("nozomi_test_dry_run_empty.tmp".to_string());
+        File::create(&path).unwrap();
 
-		let request = DeleteRequest::builder()
-			.method(DeleteMethod::BuiltIn(Method::PseudoRandom))
-			.path(&path)
-			.dry_run(true)
-			.build()?;
+        let request = DeleteRequest::builder()
+            .method(DeleteMethod::BuiltIn(Method::PseudoRandom))
+            .path(&path)
+            .dry_run(true)
+            .build()?;
 
-		request.run_with(&mut sink)?;
+        let result = request.run();
 
+        assert!(result.is_ok());
 
-		assert_eq!(
-			sink.events,
-			vec![
-				#[cfg(feature = "dry-run")]
-				DeleteEvent::DryRunStarted{path: path.clone()},
-				DeleteEvent::DeletionStarted { path: path.clone() },
-				DeleteEvent::EntryOverwritePass {
-					path: path.clone(),
-					pass: 1,
-					total_passes: 1,
-				},
-				#[cfg(feature = "verify")]
-				DeleteEvent::VerificationStarted { path: path.clone() },
-				#[cfg(feature = "verify")]
-				DeleteEvent::VerificationCompleted { path: path.clone() },
-				DeleteEvent::EntryDeleted { path: path.clone() },
-				DeleteEvent::DeletionFinished { path: path.clone()  },
-				#[cfg(feature = "dry-run")]
-				DeleteEvent::DryRunCompleted{path: path.clone()},
-			]
-		);
+        std::fs::remove_file(path).unwrap();
+        Ok(())
+    }
 
-		std::fs::remove_file(path).unwrap();
-		Ok(())
-	}
+    #[test]
+    fn normal_run_modifies_file() -> Result<()> {
+        let mut path = std::env::temp_dir();
+        path.push("nozomi_test_dry_normal_run.tmp".to_string());
 
-	#[test]
-	fn dry_run_empty_file() -> Result<()>{
+        {
+            let mut file = File::create(&path).unwrap();
+            file.write_all(b"ABC").unwrap();
+            file.sync_all().unwrap();
+        }
 
-		let mut path = std::env::temp_dir();
-		path.push("nozomi_test_dry_run_empty.tmp".to_string());
-		File::create(&path).unwrap();
+        let request = DeleteRequest::builder()
+            .method(DeleteMethod::BuiltIn(Method::PseudoRandom))
+            .path(&path)
+            .build()?;
 
-		let request = DeleteRequest::builder()
-			.method(DeleteMethod::BuiltIn(Method::PseudoRandom))
-			.path(&path)
-			.dry_run(true)
-			.build()?;
+        request.run()?;
 
-		let result = request.run();
-
-		assert!(result.is_ok());
-
-		std::fs::remove_file(path).unwrap();
-		Ok(())
-	}
-
-	#[test]
-	fn normal_run_modifies_file() -> Result<()> {
-
-		let mut path = std::env::temp_dir();
-		path.push("nozomi_test_dry_normal_run.tmp".to_string());
-
-		{
-			let mut file = File::create(&path).unwrap();
-			file.write_all(b"ABC").unwrap();
-			file.sync_all().unwrap();
-		}
-
-		let request = DeleteRequest::builder()
-			.method(DeleteMethod::BuiltIn(Method::PseudoRandom))
-			.path(&path)
-			.build()?;
-
-		request.run()?;
-
-		assert!(!path.exists());
-		Ok(())
-	}
+        assert!(!path.exists());
+        Ok(())
+    }
 }

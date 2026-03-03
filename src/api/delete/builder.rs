@@ -51,7 +51,7 @@ impl DeleteRequestBuilder {
             path,
             method,
             #[cfg(feature = "dry-run")]
-            dry_run : self.dry_run
+            dry_run: self.dry_run,
         })
     }
 }
@@ -105,7 +105,7 @@ impl DeleteRequestBuilder {
             path,
             method,
             #[cfg(feature = "dry-run")]
-            dry_run : self.dry_run.clone(),
+            dry_run: self.dry_run.clone(),
         })
     }
 }

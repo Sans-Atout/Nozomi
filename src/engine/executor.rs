@@ -64,7 +64,7 @@ pub(crate) fn run<S: EventSink>(method: &Method, path: &Path, sink: &mut S) -> R
     result
 }
 
-#[cfg(all(feature = "dry-run",not(feature = "error-stack")))]
+#[cfg(all(feature = "dry-run", not(feature = "error-stack")))]
 pub(crate) fn dry_run<S: EventSink>(method: &Method, path: &Path, sink: &mut S) -> Result<()> {
     emit_safe(
         sink,
@@ -156,8 +156,7 @@ pub(crate) fn run<S: EventSink>(method: &Method, path: &Path, sink: &mut S) -> R
     result
 }
 
-
-#[cfg(all(feature = "dry-run",feature = "error-stack"))]
+#[cfg(all(feature = "dry-run", feature = "error-stack"))]
 pub(crate) fn dry_run<S: EventSink>(method: &Method, path: &Path, sink: &mut S) -> Result<()> {
     emit_safe(
         sink,

@@ -1,5 +1,3 @@
-use nozomi::*;
-
 #[test]
 fn base_build_still_minimal() {
     assert!(true);

@@ -1,4 +1,6 @@
 #[cfg(feature = "verify")]
+use crate::api::delete::request::NoopSink;
+#[cfg(feature = "verify")]
 use crate::engine::verify::{LastPassInfo, verify_last_pass};
 use crate::error::FSProblem;
 #[cfg(not(feature = "error-stack"))]
@@ -10,18 +12,16 @@ use error_stack::{Report, ResultExt};
 #[cfg(feature = "log")]
 use log::trace;
 #[cfg(feature = "verify")]
-use crate::api::delete::request::NoopSink;
-#[cfg(feature = "verify")]
 use std::path::PathBuf;
 
+#[cfg(feature = "analyze")]
+use crate::{PassInfo, PassKind};
 use std::{
     fs::{self, OpenOptions},
     io::{BufWriter, Write},
     os::unix::fs::MetadataExt,
     path::Path,
 };
-#[cfg(feature = "analyze")]
-use crate::{PassInfo, PassKind};
 
 /// Secure Delete object : backbone of
 #[derive(Debug, Clone)]
@@ -147,13 +147,18 @@ impl SecureDelete {
     #[cfg(feature = "analyze")]
     pub fn get_pass_info(&self) -> PassInfo {
         if let Some(byte) = &self.byte {
-            return PassInfo { kind: PassKind::Pattern(byte.clone()) }
+            return PassInfo {
+                kind: PassKind::Pattern(byte.clone()),
+            };
         }
         if let Some(bytes_pattern) = self.pattern {
-            return PassInfo { kind: PassKind::ThreeBytePattern(bytes_pattern.clone()) }
-
+            return PassInfo {
+                kind: PassKind::ThreeBytePattern(bytes_pattern.clone()),
+            };
         }
-        PassInfo { kind: PassKind::Random }
+        PassInfo {
+            kind: PassKind::Random,
+        }
     }
 }
 
@@ -185,7 +190,7 @@ impl SecureDelete {
             #[cfg(feature = "secure_log")]
             md5: computed_md5.clone(),
             #[cfg(feature = "dry-run")]
-            dry_run:false,
+            dry_run: false,
         })
     }
 
@@ -195,7 +200,7 @@ impl SecureDelete {
     /// * `&mut self` (SecureDelete) : The object itself that can be modified
     pub fn delete(&mut self) -> Result<()> {
         #[cfg(feature = "dry-run")]
-        if self.dry_run{
+        if self.dry_run {
             return Ok(());
         }
         let zero_name = self.zero_name()?;
@@ -238,7 +243,7 @@ impl SecureDelete {
     /// * `new_name` (&Path) : New file name as Path struct
     pub fn rename(&mut self, new_name: &Path) -> Result<()> {
         #[cfg(feature = "dry-run")]
-        if self.dry_run{
+        if self.dry_run {
             return Ok(());
         }
         fs::rename(&self.path, new_name)
@@ -272,7 +277,7 @@ impl SecureDelete {
         #[cfg(feature = "secure_log")]
         trace!("[{:x}]\tBegging of overwriting phase", &self.md5);
         #[cfg(feature = "dry-run")]
-        if self.dry_run{
+        if self.dry_run {
             return Ok(self);
         }
 
@@ -389,7 +394,7 @@ mod std_test {
                 #[cfg(feature = "verify")]
                 seed: None,
                 #[cfg(feature = "dry-run")]
-                dry_run:false,
+                dry_run: false,
             }
         );
         basic_creation.pattern(&[0x00_u8, 0x00_u8, 0x00_u8]);
@@ -403,7 +408,7 @@ mod std_test {
                 #[cfg(feature = "verify")]
                 seed: None,
                 #[cfg(feature = "dry-run")]
-                dry_run:false,
+                dry_run: false,
             }
         );
         basic_creation.byte(&0x00_u8);
@@ -417,7 +422,7 @@ mod std_test {
                 #[cfg(feature = "verify")]
                 seed: None,
                 #[cfg(feature = "dry-run")]
-                dry_run:false,
+                dry_run: false,
             }
         );
         Ok(())
@@ -477,7 +482,7 @@ mod std_test {
                 #[cfg(feature = "verify")]
                 seed: None,
                 #[cfg(feature = "dry-run")]
-                dry_run:false,
+                dry_run: false,
             }
         );
         secure_delete.delete()?;
@@ -518,7 +523,7 @@ mod std_test {
                 #[cfg(feature = "verify")]
                 seed: None,
                 #[cfg(feature = "dry-run")]
-                dry_run:false,
+                dry_run: false,
             }
         );
         assert!(!file_to_rename_path.exists());
@@ -543,7 +548,7 @@ mod std_test {
                 #[cfg(feature = "verify")]
                 seed: None,
                 #[cfg(feature = "dry-run")]
-                dry_run:false,
+                dry_run: false,
             }
         );
         basic_creation.buffer(1024);
@@ -557,7 +562,7 @@ mod std_test {
                 #[cfg(feature = "verify")]
                 seed: None,
                 #[cfg(feature = "dry-run")]
-                dry_run:false,
+                dry_run: false,
             }
         );
         Ok(())
@@ -596,7 +601,7 @@ impl SecureDelete {
             #[cfg(feature = "verify")]
             seed: None,
             #[cfg(feature = "dry-run")]
-            dry_run:false,
+            dry_run: false,
         })
     }
 
@@ -606,7 +611,7 @@ impl SecureDelete {
     /// * `&mut self` (SecureDelete) : The object itself that can be modified
     pub fn delete(&mut self) -> Result<()> {
         #[cfg(feature = "dry-run")]
-        if self.dry_run{
+        if self.dry_run {
             return Ok(());
         }
         let zero_name = self.zero_name()?;
@@ -649,7 +654,7 @@ impl SecureDelete {
     /// * `new_name` (&Path) : New file name as Path struct
     pub fn rename(&mut self, new_name: &Path) -> Result<()> {
         #[cfg(feature = "dry-run")]
-        if self.dry_run{
+        if self.dry_run {
             return Ok(());
         }
         fs::rename(&self.path, new_name)
@@ -733,7 +738,7 @@ impl SecureDelete {
     #[cfg(feature = "verify")]
     pub fn verify(&self) -> Result<bool> {
         #[cfg(feature = "dry-run")]
-        if self.dry_run{
+        if self.dry_run {
             return Ok(self);
         }
         let mut sink = NoopSink {};
@@ -802,7 +807,7 @@ mod enhanced_test {
                 #[cfg(feature = "verify")]
                 seed: None,
                 #[cfg(feature = "dry-run")]
-                dry_run:false,
+                dry_run: false,
             }
         );
         basic_creation.pattern(&[0x00_u8, 0x00_u8, 0x00_u8]);
@@ -816,7 +821,7 @@ mod enhanced_test {
                 #[cfg(feature = "verify")]
                 seed: None,
                 #[cfg(feature = "dry-run")]
-                dry_run:false,
+                dry_run: false,
             }
         );
         basic_creation.byte(&0x00_u8);
@@ -830,7 +835,7 @@ mod enhanced_test {
                 #[cfg(feature = "verify")]
                 seed: None,
                 #[cfg(feature = "dry-run")]
-                dry_run:false,
+                dry_run: false,
             }
         );
         Ok(())
@@ -890,7 +895,7 @@ mod enhanced_test {
                 #[cfg(feature = "verify")]
                 seed: None,
                 #[cfg(feature = "dry-run")]
-                dry_run:false,
+                dry_run: false,
             }
         );
         secure_delete.delete()?;
@@ -931,7 +936,7 @@ mod enhanced_test {
                 #[cfg(feature = "verify")]
                 seed: None,
                 #[cfg(feature = "dry-run")]
-                dry_run:false,
+                dry_run: false,
             }
         );
         assert!(!file_to_rename_path.exists());
@@ -956,7 +961,7 @@ mod enhanced_test {
                 #[cfg(feature = "verify")]
                 seed: None,
                 #[cfg(feature = "dry-run")]
-                dry_run:false,
+                dry_run: false,
             }
         );
         basic_creation.buffer(1024);
@@ -970,7 +975,7 @@ mod enhanced_test {
                 #[cfg(feature = "verify")]
                 seed: None,
                 #[cfg(feature = "dry-run")]
-                dry_run:false,
+                dry_run: false,
             }
         );
         Ok(())

@@ -8,14 +8,14 @@ use crate::api::delete::request::NoopSink;
 #[cfg(feature = "log")]
 use log::{error, info, warn};
 
-#[cfg(feature = "error-stack")]
-use crate::{Error, Result};
-#[cfg(feature = "error-stack")]
-use error_stack::{Context, Report, ResultExt};
 #[cfg(feature = "analyze")]
 use crate::AnalysisReport;
+#[cfg(feature = "error-stack")]
+use crate::{Error, Result};
 #[cfg(feature = "analyze")]
 use crate::{PassInfo, PassKind};
+#[cfg(feature = "error-stack")]
+use error_stack::{Context, Report, ResultExt};
 
 use crate::engine::run;
 // -- Region : Method logic
@@ -87,103 +87,195 @@ impl core::fmt::Display for Method {
 
 #[cfg(feature = "analyze")]
 impl Method {
-    pub fn analyze(&self) -> AnalysisReport{
+    pub fn analyze(&self) -> AnalysisReport {
         let analysis_report = match &self {
-            Method::Dod522022MECE => {
-                AnalysisReport{
-                    pass_count: 6,
-                    passes: vec![
-                        PassInfo{kind: PassKind::Zero},
-                        PassInfo{kind: PassKind::One},
-                        PassInfo{kind: PassKind::Random},
-                        PassInfo{kind: PassKind::Zero},
-                        PassInfo{kind: PassKind::One},
-                        PassInfo{kind: PassKind::Random},
-                    ],
-                }
+            Method::Dod522022MECE => AnalysisReport {
+                pass_count: 6,
+                passes: vec![
+                    PassInfo {
+                        kind: PassKind::Zero,
+                    },
+                    PassInfo {
+                        kind: PassKind::One,
+                    },
+                    PassInfo {
+                        kind: PassKind::Random,
+                    },
+                    PassInfo {
+                        kind: PassKind::Zero,
+                    },
+                    PassInfo {
+                        kind: PassKind::One,
+                    },
+                    PassInfo {
+                        kind: PassKind::Random,
+                    },
+                ],
             },
-            Method::Dod522022ME | Method::Afssi5020 => {
-                AnalysisReport{
-                    pass_count: 3,
-                    passes: vec![
-                        PassInfo{kind: PassKind::Zero},
-                        PassInfo{kind: PassKind::One},
-                        PassInfo{kind: PassKind::Random},
-                    ],
-                }
+            Method::Dod522022ME | Method::Afssi5020 => AnalysisReport {
+                pass_count: 3,
+                passes: vec![
+                    PassInfo {
+                        kind: PassKind::Zero,
+                    },
+                    PassInfo {
+                        kind: PassKind::One,
+                    },
+                    PassInfo {
+                        kind: PassKind::Random,
+                    },
+                ],
             },
-            Method::RcmpTssitOpsII => {
-                AnalysisReport{
-                    pass_count: 6,
-                    passes: vec![
-                        PassInfo{kind: PassKind::Zero},
-                        PassInfo{kind: PassKind::One},
-                        PassInfo{kind: PassKind::Zero},
-                        PassInfo{kind: PassKind::One},
-                        PassInfo{kind: PassKind::Zero},
-                        PassInfo{kind: PassKind::One},
-                    ],
-                }
+            Method::RcmpTssitOpsII => AnalysisReport {
+                pass_count: 6,
+                passes: vec![
+                    PassInfo {
+                        kind: PassKind::Zero,
+                    },
+                    PassInfo {
+                        kind: PassKind::One,
+                    },
+                    PassInfo {
+                        kind: PassKind::Zero,
+                    },
+                    PassInfo {
+                        kind: PassKind::One,
+                    },
+                    PassInfo {
+                        kind: PassKind::Zero,
+                    },
+                    PassInfo {
+                        kind: PassKind::One,
+                    },
+                ],
             },
-            Method::HmgiS5 => {
-                AnalysisReport{
-                    pass_count: 2,
-                    passes: vec![
-                        PassInfo{kind: PassKind::Zero},
-                        PassInfo{kind: PassKind::Zero},
-                    ],
-                }
+            Method::HmgiS5 => AnalysisReport {
+                pass_count: 2,
+                passes: vec![
+                    PassInfo {
+                        kind: PassKind::Zero,
+                    },
+                    PassInfo {
+                        kind: PassKind::Zero,
+                    },
+                ],
             },
-            Method::Gutmann => {
-                AnalysisReport{
-                    pass_count: 35,
-                    passes: vec![
-                        PassInfo{kind: PassKind::Random},
-                        PassInfo{kind: PassKind::Random},
-                        PassInfo{kind: PassKind::Random},
-                        PassInfo{kind: PassKind::Random},
-                        PassInfo{kind: PassKind::ThreeBytePattern([0x55, 0x55, 0x55])},
-                        PassInfo{kind: PassKind::ThreeBytePattern([0xAA, 0xAA, 0xAA])},
-                        PassInfo{kind: PassKind::ThreeBytePattern([0x92, 0x49, 0x24])},
-                        PassInfo{kind: PassKind::ThreeBytePattern([0x49, 0x24, 0x92])},
-                        PassInfo{kind: PassKind::ThreeBytePattern([0x24, 0x92, 0x49])},
-                        PassInfo{kind: PassKind::ThreeBytePattern([0x00, 0x00, 0x00])},
-                        PassInfo{kind: PassKind::ThreeBytePattern([0x11, 0x11, 0x11])},
-                        PassInfo{kind: PassKind::ThreeBytePattern([0x22, 0x22, 0x22])},
-                        PassInfo{kind: PassKind::ThreeBytePattern([0x33, 0x33, 0x33])},
-                        PassInfo{kind: PassKind::ThreeBytePattern([0x44, 0x44, 0x44])},
-                        PassInfo{kind: PassKind::ThreeBytePattern([0x55, 0x55, 0x55])},
-                        PassInfo{kind: PassKind::ThreeBytePattern([0x66, 0x66, 0x66])},
-                        PassInfo{kind: PassKind::ThreeBytePattern([0x77, 0x77, 0x77])},
-                        PassInfo{kind: PassKind::ThreeBytePattern([0x88, 0x88, 0x88])},
-                        PassInfo{kind: PassKind::ThreeBytePattern([0x99, 0x99, 0x99])},
-                        PassInfo{kind: PassKind::ThreeBytePattern([0xAA, 0xAA, 0xAA])},
-                        PassInfo{kind: PassKind::ThreeBytePattern([0xBB, 0xBB, 0xBB])},
-                        PassInfo{kind: PassKind::ThreeBytePattern([0xCC, 0xCC, 0xCC])},
-                        PassInfo{kind: PassKind::ThreeBytePattern([0xDD, 0xDD, 0xDD])},
-                        PassInfo{kind: PassKind::ThreeBytePattern([0xEE, 0xEE, 0xEE])},
-                        PassInfo{kind: PassKind::ThreeBytePattern([0xFF, 0xFF, 0xFF])},
-                        PassInfo{kind: PassKind::ThreeBytePattern([0x92, 0x49, 0x24])},
-                        PassInfo{kind: PassKind::ThreeBytePattern([0x49, 0x24, 0x92])},
-                        PassInfo{kind: PassKind::ThreeBytePattern([0x24, 0x92, 0x49])},
-                        PassInfo{kind: PassKind::ThreeBytePattern([0x6D, 0xB6, 0xDB])},
-                        PassInfo{kind: PassKind::ThreeBytePattern([0xB6, 0xDB, 0x6D])},
-                        PassInfo{kind: PassKind::ThreeBytePattern([0xDB, 0x6D, 0xB6])},
-                        PassInfo{kind: PassKind::Random},
-                        PassInfo{kind: PassKind::Random},
-                        PassInfo{kind: PassKind::Random},
-                        PassInfo{kind: PassKind::Random},
-                    ],
-                }
+            Method::Gutmann => AnalysisReport {
+                pass_count: 35,
+                passes: vec![
+                    PassInfo {
+                        kind: PassKind::Random,
+                    },
+                    PassInfo {
+                        kind: PassKind::Random,
+                    },
+                    PassInfo {
+                        kind: PassKind::Random,
+                    },
+                    PassInfo {
+                        kind: PassKind::Random,
+                    },
+                    PassInfo {
+                        kind: PassKind::ThreeBytePattern([0x55, 0x55, 0x55]),
+                    },
+                    PassInfo {
+                        kind: PassKind::ThreeBytePattern([0xAA, 0xAA, 0xAA]),
+                    },
+                    PassInfo {
+                        kind: PassKind::ThreeBytePattern([0x92, 0x49, 0x24]),
+                    },
+                    PassInfo {
+                        kind: PassKind::ThreeBytePattern([0x49, 0x24, 0x92]),
+                    },
+                    PassInfo {
+                        kind: PassKind::ThreeBytePattern([0x24, 0x92, 0x49]),
+                    },
+                    PassInfo {
+                        kind: PassKind::ThreeBytePattern([0x00, 0x00, 0x00]),
+                    },
+                    PassInfo {
+                        kind: PassKind::ThreeBytePattern([0x11, 0x11, 0x11]),
+                    },
+                    PassInfo {
+                        kind: PassKind::ThreeBytePattern([0x22, 0x22, 0x22]),
+                    },
+                    PassInfo {
+                        kind: PassKind::ThreeBytePattern([0x33, 0x33, 0x33]),
+                    },
+                    PassInfo {
+                        kind: PassKind::ThreeBytePattern([0x44, 0x44, 0x44]),
+                    },
+                    PassInfo {
+                        kind: PassKind::ThreeBytePattern([0x55, 0x55, 0x55]),
+                    },
+                    PassInfo {
+                        kind: PassKind::ThreeBytePattern([0x66, 0x66, 0x66]),
+                    },
+                    PassInfo {
+                        kind: PassKind::ThreeBytePattern([0x77, 0x77, 0x77]),
+                    },
+                    PassInfo {
+                        kind: PassKind::ThreeBytePattern([0x88, 0x88, 0x88]),
+                    },
+                    PassInfo {
+                        kind: PassKind::ThreeBytePattern([0x99, 0x99, 0x99]),
+                    },
+                    PassInfo {
+                        kind: PassKind::ThreeBytePattern([0xAA, 0xAA, 0xAA]),
+                    },
+                    PassInfo {
+                        kind: PassKind::ThreeBytePattern([0xBB, 0xBB, 0xBB]),
+                    },
+                    PassInfo {
+                        kind: PassKind::ThreeBytePattern([0xCC, 0xCC, 0xCC]),
+                    },
+                    PassInfo {
+                        kind: PassKind::ThreeBytePattern([0xDD, 0xDD, 0xDD]),
+                    },
+                    PassInfo {
+                        kind: PassKind::ThreeBytePattern([0xEE, 0xEE, 0xEE]),
+                    },
+                    PassInfo {
+                        kind: PassKind::ThreeBytePattern([0xFF, 0xFF, 0xFF]),
+                    },
+                    PassInfo {
+                        kind: PassKind::ThreeBytePattern([0x92, 0x49, 0x24]),
+                    },
+                    PassInfo {
+                        kind: PassKind::ThreeBytePattern([0x49, 0x24, 0x92]),
+                    },
+                    PassInfo {
+                        kind: PassKind::ThreeBytePattern([0x24, 0x92, 0x49]),
+                    },
+                    PassInfo {
+                        kind: PassKind::ThreeBytePattern([0x6D, 0xB6, 0xDB]),
+                    },
+                    PassInfo {
+                        kind: PassKind::ThreeBytePattern([0xB6, 0xDB, 0x6D]),
+                    },
+                    PassInfo {
+                        kind: PassKind::ThreeBytePattern([0xDB, 0x6D, 0xB6]),
+                    },
+                    PassInfo {
+                        kind: PassKind::Random,
+                    },
+                    PassInfo {
+                        kind: PassKind::Random,
+                    },
+                    PassInfo {
+                        kind: PassKind::Random,
+                    },
+                    PassInfo {
+                        kind: PassKind::Random,
+                    },
+                ],
             },
-            Method::PseudoRandom => {
-                AnalysisReport{
-                    pass_count: 1,
-                    passes: vec![
-                        PassInfo{kind: PassKind::Random},
-                    ],
-                }
-            }
+            Method::PseudoRandom => AnalysisReport {
+                pass_count: 1,
+                passes: vec![PassInfo {
+                    kind: PassKind::Random,
+                }],
+            },
         };
         analysis_report
     }
@@ -193,119 +285,223 @@ impl Method {
 #[cfg(test)]
 mod analyse_tests {
     use super::Method;
+    use crate::analyze::{AnalysisReport, PassInfo, PassKind};
     use pretty_assertions::assert_eq;
-    use crate::analyze::{AnalysisReport, PassKind,PassInfo};
 
     #[test]
-    fn gutmann(){
+    fn gutmann() {
         let expected = AnalysisReport {
             pass_count: 35,
             passes: vec![
-                PassInfo{kind: PassKind::Random},
-                PassInfo{kind: PassKind::Random},
-                PassInfo{kind: PassKind::Random},
-                PassInfo{kind: PassKind::Random},
-                PassInfo{kind: PassKind::ThreeBytePattern([0x55, 0x55, 0x55])},
-                PassInfo{kind: PassKind::ThreeBytePattern([0xAA, 0xAA, 0xAA])},
-                PassInfo{kind: PassKind::ThreeBytePattern([0x92, 0x49, 0x24])},
-                PassInfo{kind: PassKind::ThreeBytePattern([0x49, 0x24, 0x92])},
-                PassInfo{kind: PassKind::ThreeBytePattern([0x24, 0x92, 0x49])},
-                PassInfo{kind: PassKind::ThreeBytePattern([0x00, 0x00, 0x00])},
-                PassInfo{kind: PassKind::ThreeBytePattern([0x11, 0x11, 0x11])},
-                PassInfo{kind: PassKind::ThreeBytePattern([0x22, 0x22, 0x22])},
-                PassInfo{kind: PassKind::ThreeBytePattern([0x33, 0x33, 0x33])},
-                PassInfo{kind: PassKind::ThreeBytePattern([0x44, 0x44, 0x44])},
-                PassInfo{kind: PassKind::ThreeBytePattern([0x55, 0x55, 0x55])},
-                PassInfo{kind: PassKind::ThreeBytePattern([0x66, 0x66, 0x66])},
-                PassInfo{kind: PassKind::ThreeBytePattern([0x77, 0x77, 0x77])},
-                PassInfo{kind: PassKind::ThreeBytePattern([0x88, 0x88, 0x88])},
-                PassInfo{kind: PassKind::ThreeBytePattern([0x99, 0x99, 0x99])},
-                PassInfo{kind: PassKind::ThreeBytePattern([0xAA, 0xAA, 0xAA])},
-                PassInfo{kind: PassKind::ThreeBytePattern([0xBB, 0xBB, 0xBB])},
-                PassInfo{kind: PassKind::ThreeBytePattern([0xCC, 0xCC, 0xCC])},
-                PassInfo{kind: PassKind::ThreeBytePattern([0xDD, 0xDD, 0xDD])},
-                PassInfo{kind: PassKind::ThreeBytePattern([0xEE, 0xEE, 0xEE])},
-                PassInfo{kind: PassKind::ThreeBytePattern([0xFF, 0xFF, 0xFF])},
-                PassInfo{kind: PassKind::ThreeBytePattern([0x92, 0x49, 0x24])},
-                PassInfo{kind: PassKind::ThreeBytePattern([0x49, 0x24, 0x92])},
-                PassInfo{kind: PassKind::ThreeBytePattern([0x24, 0x92, 0x49])},
-                PassInfo{kind: PassKind::ThreeBytePattern([0x6D, 0xB6, 0xDB])},
-                PassInfo{kind: PassKind::ThreeBytePattern([0xB6, 0xDB, 0x6D])},
-                PassInfo{kind: PassKind::ThreeBytePattern([0xDB, 0x6D, 0xB6])},
-                PassInfo{kind: PassKind::Random},
-                PassInfo{kind: PassKind::Random},
-                PassInfo{kind: PassKind::Random},
-                PassInfo{kind: PassKind::Random},
+                PassInfo {
+                    kind: PassKind::Random,
+                },
+                PassInfo {
+                    kind: PassKind::Random,
+                },
+                PassInfo {
+                    kind: PassKind::Random,
+                },
+                PassInfo {
+                    kind: PassKind::Random,
+                },
+                PassInfo {
+                    kind: PassKind::ThreeBytePattern([0x55, 0x55, 0x55]),
+                },
+                PassInfo {
+                    kind: PassKind::ThreeBytePattern([0xAA, 0xAA, 0xAA]),
+                },
+                PassInfo {
+                    kind: PassKind::ThreeBytePattern([0x92, 0x49, 0x24]),
+                },
+                PassInfo {
+                    kind: PassKind::ThreeBytePattern([0x49, 0x24, 0x92]),
+                },
+                PassInfo {
+                    kind: PassKind::ThreeBytePattern([0x24, 0x92, 0x49]),
+                },
+                PassInfo {
+                    kind: PassKind::ThreeBytePattern([0x00, 0x00, 0x00]),
+                },
+                PassInfo {
+                    kind: PassKind::ThreeBytePattern([0x11, 0x11, 0x11]),
+                },
+                PassInfo {
+                    kind: PassKind::ThreeBytePattern([0x22, 0x22, 0x22]),
+                },
+                PassInfo {
+                    kind: PassKind::ThreeBytePattern([0x33, 0x33, 0x33]),
+                },
+                PassInfo {
+                    kind: PassKind::ThreeBytePattern([0x44, 0x44, 0x44]),
+                },
+                PassInfo {
+                    kind: PassKind::ThreeBytePattern([0x55, 0x55, 0x55]),
+                },
+                PassInfo {
+                    kind: PassKind::ThreeBytePattern([0x66, 0x66, 0x66]),
+                },
+                PassInfo {
+                    kind: PassKind::ThreeBytePattern([0x77, 0x77, 0x77]),
+                },
+                PassInfo {
+                    kind: PassKind::ThreeBytePattern([0x88, 0x88, 0x88]),
+                },
+                PassInfo {
+                    kind: PassKind::ThreeBytePattern([0x99, 0x99, 0x99]),
+                },
+                PassInfo {
+                    kind: PassKind::ThreeBytePattern([0xAA, 0xAA, 0xAA]),
+                },
+                PassInfo {
+                    kind: PassKind::ThreeBytePattern([0xBB, 0xBB, 0xBB]),
+                },
+                PassInfo {
+                    kind: PassKind::ThreeBytePattern([0xCC, 0xCC, 0xCC]),
+                },
+                PassInfo {
+                    kind: PassKind::ThreeBytePattern([0xDD, 0xDD, 0xDD]),
+                },
+                PassInfo {
+                    kind: PassKind::ThreeBytePattern([0xEE, 0xEE, 0xEE]),
+                },
+                PassInfo {
+                    kind: PassKind::ThreeBytePattern([0xFF, 0xFF, 0xFF]),
+                },
+                PassInfo {
+                    kind: PassKind::ThreeBytePattern([0x92, 0x49, 0x24]),
+                },
+                PassInfo {
+                    kind: PassKind::ThreeBytePattern([0x49, 0x24, 0x92]),
+                },
+                PassInfo {
+                    kind: PassKind::ThreeBytePattern([0x24, 0x92, 0x49]),
+                },
+                PassInfo {
+                    kind: PassKind::ThreeBytePattern([0x6D, 0xB6, 0xDB]),
+                },
+                PassInfo {
+                    kind: PassKind::ThreeBytePattern([0xB6, 0xDB, 0x6D]),
+                },
+                PassInfo {
+                    kind: PassKind::ThreeBytePattern([0xDB, 0x6D, 0xB6]),
+                },
+                PassInfo {
+                    kind: PassKind::Random,
+                },
+                PassInfo {
+                    kind: PassKind::Random,
+                },
+                PassInfo {
+                    kind: PassKind::Random,
+                },
+                PassInfo {
+                    kind: PassKind::Random,
+                },
             ],
         };
-        assert_eq!(expected,Method::Gutmann.analyze());
+        assert_eq!(expected, Method::Gutmann.analyze());
     }
 
     #[test]
-    fn pseudo_random(){
-        let expected = AnalysisReport{
+    fn pseudo_random() {
+        let expected = AnalysisReport {
             pass_count: 1,
-            passes: vec![
-                PassInfo{kind: PassKind::Random},
-            ],
+            passes: vec![PassInfo {
+                kind: PassKind::Random,
+            }],
         };
-        assert_eq!(expected,Method::PseudoRandom.analyze());
+        assert_eq!(expected, Method::PseudoRandom.analyze());
     }
 
     #[test]
-    fn hmgi_s5(){
-        let expected = AnalysisReport{
+    fn hmgi_s5() {
+        let expected = AnalysisReport {
             pass_count: 2,
             passes: vec![
-                PassInfo{kind: PassKind::Zero},
-                PassInfo{kind: PassKind::Zero},
+                PassInfo {
+                    kind: PassKind::Zero,
+                },
+                PassInfo {
+                    kind: PassKind::Zero,
+                },
             ],
         };
-        assert_eq!(expected,Method::HmgiS5.analyze());
+        assert_eq!(expected, Method::HmgiS5.analyze());
     }
 
     #[test]
-    fn rcmp_tssit_ops_ii(){
-        let expected = AnalysisReport{
+    fn rcmp_tssit_ops_ii() {
+        let expected = AnalysisReport {
             pass_count: 6,
             passes: vec![
-                PassInfo{kind: PassKind::Zero},
-                PassInfo{kind: PassKind::One},
-                PassInfo{kind: PassKind::Zero},
-                PassInfo{kind: PassKind::One},
-                PassInfo{kind: PassKind::Zero},
-                PassInfo{kind: PassKind::One},
+                PassInfo {
+                    kind: PassKind::Zero,
+                },
+                PassInfo {
+                    kind: PassKind::One,
+                },
+                PassInfo {
+                    kind: PassKind::Zero,
+                },
+                PassInfo {
+                    kind: PassKind::One,
+                },
+                PassInfo {
+                    kind: PassKind::Zero,
+                },
+                PassInfo {
+                    kind: PassKind::One,
+                },
             ],
         };
-        assert_eq!(expected,Method::RcmpTssitOpsII.analyze())
+        assert_eq!(expected, Method::RcmpTssitOpsII.analyze())
     }
 
     #[test]
-    fn dod_522022_me(){
-        let expected = AnalysisReport{
+    fn dod_522022_me() {
+        let expected = AnalysisReport {
             pass_count: 3,
             passes: vec![
-                PassInfo{kind: PassKind::Zero},
-                PassInfo{kind: PassKind::One},
-                PassInfo{kind: PassKind::Random},
+                PassInfo {
+                    kind: PassKind::Zero,
+                },
+                PassInfo {
+                    kind: PassKind::One,
+                },
+                PassInfo {
+                    kind: PassKind::Random,
+                },
             ],
         };
-        assert_eq!(expected,Method::Dod522022ME.analyze());
+        assert_eq!(expected, Method::Dod522022ME.analyze());
     }
 
     #[test]
-    fn dod_522022_mece(){
-        let expected = AnalysisReport{
-                pass_count: 6,
-                passes: vec![
-                    PassInfo{kind: PassKind::Zero},
-                    PassInfo{kind: PassKind::One},
-                    PassInfo{kind: PassKind::Random},
-                    PassInfo{kind: PassKind::Zero},
-                    PassInfo{kind: PassKind::One},
-                    PassInfo{kind: PassKind::Random},
-                ],
-            };
-        assert_eq!(expected,Method::Dod522022MECE.analyze());
+    fn dod_522022_mece() {
+        let expected = AnalysisReport {
+            pass_count: 6,
+            passes: vec![
+                PassInfo {
+                    kind: PassKind::Zero,
+                },
+                PassInfo {
+                    kind: PassKind::One,
+                },
+                PassInfo {
+                    kind: PassKind::Random,
+                },
+                PassInfo {
+                    kind: PassKind::Zero,
+                },
+                PassInfo {
+                    kind: PassKind::One,
+                },
+                PassInfo {
+                    kind: PassKind::Random,
+                },
+            ],
+        };
+        assert_eq!(expected, Method::Dod522022MECE.analyze());
     }
 }

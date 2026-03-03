@@ -115,12 +115,12 @@ pub(crate) fn verify_last_pass<S: EventSink>(
     Ok(())
 }
 
-#[cfg(all(not(feature = "error-stack"),feature = "dry-run"))]
+#[cfg(all(not(feature = "error-stack"), feature = "dry-run"))]
 pub(crate) fn dry_verify_last_pass<S: EventSink>(
-path: &PathBuf,
-info: LastPassInfo,
-sink: &mut S,
-)-> Result<()> {
+    path: &PathBuf,
+    info: LastPassInfo,
+    sink: &mut S,
+) -> Result<()> {
     emit_safe(
         sink,
         DeleteEvent::VerificationStarted { path: path.clone() },
@@ -129,7 +129,7 @@ sink: &mut S,
         LastPassInfo::Zero => Ok(()),
         LastPassInfo::ThreeBytesPattern(pattern) => Ok(()),
         LastPassInfo::Pattern(p) => Ok(()),
-        LastPassInfo::Random { seed } => Ok(())
+        LastPassInfo::Random { seed } => Ok(()),
     }
     emit_safe(
         sink,
@@ -235,10 +235,10 @@ fn verify_three_bytes_pattern(
 mod tests {
     use super::*;
     use crate::Error;
+    use pretty_assertions::assert_eq;
     use std::fs::{File, OpenOptions};
     use std::io::{Seek, SeekFrom, Write};
     use std::path::PathBuf;
-    use pretty_assertions::assert_eq;
 
     #[test]
     fn verify_fixed_ok() {
@@ -429,12 +429,12 @@ pub(crate) fn verify_last_pass<S: EventSink>(
     Ok(())
 }
 
-#[cfg(all(feature = "error-stack",feature = "dry-run"))]
+#[cfg(all(feature = "error-stack", feature = "dry-run"))]
 pub(crate) fn dry_verify_last_pass<S: EventSink>(
     path: &PathBuf,
     info: LastPassInfo,
     sink: &mut S,
-)-> Result<()> {
+) -> Result<()> {
     emit_safe(
         sink,
         DeleteEvent::VerificationStarted { path: path.clone() },
@@ -443,7 +443,7 @@ pub(crate) fn dry_verify_last_pass<S: EventSink>(
         LastPassInfo::Zero => Ok(()),
         LastPassInfo::ThreeBytesPattern(pattern) => Ok(()),
         LastPassInfo::Pattern(p) => Ok(()),
-        LastPassInfo::Random { seed } => Ok(())
+        LastPassInfo::Random { seed } => Ok(()),
     }
     emit_safe(
         sink,
