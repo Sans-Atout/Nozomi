@@ -5,7 +5,6 @@ use std::{
     os::unix::fs::MetadataExt,
     path::Path,
 };
-use std::path::PathBuf;
 #[cfg(not(feature = "error-stack"))]
 use crate::{Error, Result};
 #[cfg(feature = "error-stack")]
@@ -14,7 +13,6 @@ use crate::{Error, Result};
 use error_stack::{Report, ResultExt};
 #[cfg(feature = "log")]
 use log::trace;
-use crate::api::delete::request::NoopSink;
 #[cfg(feature = "verify")]
 use crate::engine::verify::{verify_last_pass,LastPassInfo};
 
@@ -294,8 +292,9 @@ impl SecureDelete {
             let result = verify_last_pass(&PathBuf::from(&self.path), LastPassInfo::Pattern(byte), &mut sink).is_ok();
             return Ok(result);
         }
-        if let Some(_bytes_pattern) = self.pattern {
-            todo!()
+        if let Some(bytes_pattern) = self.pattern {
+            let result = verify_last_pass(&PathBuf::from(&self.path), LastPassInfo::LegacyPattern (bytes_pattern), &mut sink).is_ok();
+            return Ok(result);
         }
         if let Some(seed) = self.seed {
             let result = verify_last_pass(&PathBuf::from(&self.path),LastPassInfo::Random {seed},&mut sink).is_ok();
@@ -659,8 +658,9 @@ impl SecureDelete {
             let result = verify_last_pass(&PathBuf::from(&self.path), LastPassInfo::Pattern(byte), &mut sink).is_ok();
             return Ok(result);
         }
-        if let Some(_bytes_pattern) = self.pattern {
-            todo!()
+        if let Some(bytes_pattern) = self.pattern {
+            let result = verify_last_pass(&PathBuf::from(&self.path), LastPassInfo::LegacyPattern (bytes_pattern), &mut sink).is_ok();
+            return Ok(result);
         }
         if let Some(seed) = self.seed {
             let result = verify_last_pass(&PathBuf::from(&self.path),LastPassInfo::Random {seed},&mut sink).is_ok();

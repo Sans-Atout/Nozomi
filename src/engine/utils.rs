@@ -25,6 +25,16 @@ pub(crate) fn generate_seed() -> [u8; 32] {
     seed
 }
 
+#[cfg(feature = "verify")]
+pub(super) fn get_legacy_buffer(pattern : &[u8; 3],size :usize) -> Vec<u8> {
+    let mut buffer = Vec::<u8>::new();
+    for i in 0..size {
+        let pattern_index = i % 3;
+        buffer.push(pattern[pattern_index]);
+    }
+    buffer
+}
+
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn delete_file(path: &Path) -> Result<()> {
     #[cfg(feature = "secure_log")]

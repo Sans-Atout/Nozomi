@@ -1,9 +1,8 @@
 use crate::DeleteEvent;
-use crate::engine::utils::emit_safe;
+use crate::engine::utils::{emit_safe, get_legacy_buffer};
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
 use std::path::PathBuf;
-use error_stack::{Report, ResultExt};
 use rand::{SeedableRng, RngCore};
 use rand::rngs::StdRng;
 use crate::engine::events::EventSink;
@@ -13,11 +12,13 @@ use crate::error::FSProblem;
 use crate::{Error, Result};
 #[cfg(feature = "error-stack")]
 use crate::{Error, Result};
+#[cfg(feature = "error-stack")]
+use error_stack::{Report, ResultExt};
 
 #[derive(Debug, Clone)]
 pub(crate) enum LastPassInfo {
     Zero,
-    One,
+    LegacyPattern([u8;3]),
     Pattern(u8),
     Random { seed: [u8; 32] },
 }
@@ -55,8 +56,8 @@ pub(crate) fn verify_last_pass<S: EventSink>(
 	            Err(e) => return Err(e),
             }
         }
-        LastPassInfo::One => {
-            match verify_fixed(&mut file, 0xFF, &mut buffer, &path){
+        LastPassInfo::LegacyPattern(pattern) => {
+            match verify_legacy(&mut file, &pattern, &mut buffer, &path){
 		        Ok(_) => {},
 		        Err(Error::VerificationFailed {offset}) => {
 			        emit_safe(sink, DeleteEvent::VerificationFailed {
@@ -169,6 +170,39 @@ fn verify_random(
 	}
 
 	Ok(())
+}
+
+#[cfg(not(feature = "error-stack"))]
+fn verify_legacy(
+	file: &mut File,
+	pattern: &[u8; 3],
+	buffer: &mut [u8],
+	path: &PathBuf
+) -> Result<()> {
+
+		use std::io::Read;
+
+		let mut offset: u64 = 0;
+
+		loop {
+			let bytes_read = file.read(buffer).map_err(|_| Error::SystemProblem(FSProblem::Read, format!("{}",path.to_string_lossy())))?;
+			if bytes_read == 0 {
+				break;
+			}
+
+			let expected = get_legacy_buffer(&pattern, bytes_read);
+
+			for i in 0..bytes_read {
+				if buffer[i] != expected[i] {
+					return Err(Error::VerificationFailed {
+						offset: offset + i as u64,
+					});
+				}
+			}
+			offset += bytes_read as u64;
+		}
+
+		Ok(())
 }
 
 #[cfg(test)]
@@ -311,8 +345,8 @@ pub(crate) fn verify_last_pass<S: EventSink>(
 				}
 			}
 		}
-		LastPassInfo::One => {
-			match verify_fixed(&mut file, 0xFF, &mut buffer, &path){
+		LastPassInfo::LegacyPattern(pattern) => {
+			match verify_legacy(&mut file, &pattern, &mut buffer, &path){
 				Ok(_) => {},
 				Err(report) => {
 					if let Error::VerificationFailed { offset } = report.current_context() {
@@ -433,6 +467,39 @@ fn verify_random(
 			}
 		}
 
+		offset += bytes_read as u64;
+	}
+
+	Ok(())
+}
+
+#[cfg(feature = "error-stack")]
+fn verify_legacy(
+	file: &mut File,
+	pattern: &[u8; 3],
+	buffer: &mut [u8],
+	path: &PathBuf
+) -> Result<()> {
+
+	use std::io::Read;
+
+	let mut offset: u64 = 0;
+
+	loop {
+		let bytes_read = file.read(buffer).map_err(|_| Error::SystemProblem(FSProblem::Read, format!("{}",path.to_string_lossy())))?;
+		if bytes_read == 0 {
+			break;
+		}
+
+		let expected = get_legacy_buffer(&pattern, bytes_read);
+
+		for i in 0..bytes_read {
+			if buffer[i] != expected[i] {
+				return Err(Report::new(Error::VerificationFailed {
+					offset: offset + i as u64,
+				}));
+			}
+		}
 		offset += bytes_read as u64;
 	}
 
