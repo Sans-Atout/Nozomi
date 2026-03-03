@@ -20,6 +20,8 @@ use std::{
     os::unix::fs::MetadataExt,
     path::Path,
 };
+#[cfg(feature = "analyze")]
+use crate::{PassInfo, PassKind};
 
 /// Secure Delete object : backbone of
 #[derive(Debug, Clone)]
@@ -142,6 +144,17 @@ impl SecureDelete {
         self
     }
 
+    #[cfg(feature = "analyze")]
+    pub fn get_pass_info(&self) -> PassInfo {
+        if let Some(byte) = &self.byte {
+            return PassInfo { kind: PassKind::Pattern(byte.clone()) }
+        }
+        if let Some(bytes_pattern) = self.pattern {
+            return PassInfo { kind: PassKind::ThreeBytePattern(bytes_pattern.clone()) }
+
+        }
+        PassInfo { kind: PassKind::Random }
+    }
 }
 
 #[cfg(not(feature = "error-stack"))]
