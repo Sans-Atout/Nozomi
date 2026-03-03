@@ -1,6 +1,6 @@
 use crate::engine::overwrite::common::prepare_overwrite;
 use crate::{DeleteEvent, EventSink, Method};
-use rand::Rng;
+use rand::{Rng, SeedableRng};
 use std::io::{Seek, SeekFrom, Write};
 use std::path::Path;
 
@@ -13,9 +13,12 @@ use crate::{Error, Result};
 #[cfg(feature = "error-stack")]
 use error_stack::ResultExt;
 
-use crate::engine::utils::emit_safe;
+use crate::engine::utils::{emit_safe, generate_seed};
+#[cfg(feature = "verify")]
+use crate::engine::verify::{LastPassInfo, verify_last_pass};
 #[cfg(feature = "log")]
 use log::info;
+use rand::prelude::StdRng;
 
 const FIXED_PATTERNS: &[u8; 6] = &[0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF];
 
@@ -29,7 +32,7 @@ const FIXED_PATTERNS: &[u8; 6] = &[0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF];
 /// * `()
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
-    let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
+    let (mut file, file_size, _, mut buffer) = prepare_overwrite(path)?;
     for pattern in 0..6 {
         // rewind start of file
         file.seek(SeekFrom::Start(0))
@@ -60,6 +63,9 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     file.seek(SeekFrom::Start(0))
         .map_err(|_| Error::OverwriteError(Method::RcmpTssitOpsII, 7))?;
 
+    let seed = generate_seed();
+    let mut rng = StdRng::from_seed(seed);
+
     while remaining > 0 {
         rng.fill(&mut buffer);
         let write_size = std::cmp::min(remaining, buffer.len() as u64) as usize;
@@ -81,6 +87,29 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     file.sync_all().map_err(|_| {
         Error::SystemProblem(FSProblem::Write, format!("{}", path.to_string_lossy()))
     })?;
+    #[cfg(feature = "verify")]
+    verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
+
+    Ok(())
+}
+
+#[cfg(all(not(feature = "error-stack"), feature = "dry-run"))]
+pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
+    #[cfg(feature = "verify")]
+    let mut seed = [0u8; 32];
+    for pass in 0..7 {
+        emit_safe(
+            sink,
+            DeleteEvent::EntryOverwritePass {
+                path: path.to_path_buf(),
+                pass: pass + 1,
+                total_passes: 7,
+            },
+        );
+    }
+
+    #[cfg(feature = "verify")]
+    dry_verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
 
     Ok(())
 }
@@ -95,7 +124,7 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
 /// * `()
 #[cfg(feature = "error-stack")]
 pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
-    let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
+    let (mut file, file_size, _, mut buffer) = prepare_overwrite(path)?;
     for pattern in 0..6 {
         // rewind start of filels
         file.seek(SeekFrom::Start(0))
@@ -126,6 +155,8 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     file.seek(SeekFrom::Start(0))
         .change_context(Error::OverwriteError(Method::RcmpTssitOpsII, 7))?;
 
+    let seed = generate_seed();
+    let mut rng = StdRng::from_seed(seed);
     while remaining > 0 {
         rng.fill(&mut buffer);
         let write_size = std::cmp::min(remaining, buffer.len() as u64) as usize;
@@ -148,6 +179,29 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
         FSProblem::Write,
         format!("{}", path.to_string_lossy()),
     ))?;
+
+    #[cfg(feature = "verify")]
+    verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
+    Ok(())
+}
+
+#[cfg(all(feature = "error-stack", feature = "dry-run"))]
+pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
+    #[cfg(feature = "verify")]
+    let mut seed = [0u8; 32];
+    for pass in 0..7 {
+        emit_safe(
+            sink,
+            DeleteEvent::EntryOverwritePass {
+                path: path.to_path_buf(),
+                pass: pass + 1,
+                total_passes: 7,
+            },
+        );
+    }
+
+    #[cfg(feature = "verify")]
+    dry_verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
 
     Ok(())
 }

@@ -1,6 +1,6 @@
 use crate::engine::overwrite::common::prepare_overwrite;
 use crate::{DeleteEvent, EventSink, Method};
-use rand::Rng;
+use rand::RngCore;
 use std::io::{Seek, SeekFrom, Write};
 use std::path::Path;
 
@@ -16,6 +16,15 @@ use error_stack::ResultExt;
 use crate::engine::utils::emit_safe;
 #[cfg(feature = "log")]
 use log::info;
+
+#[cfg(feature = "verify")]
+use crate::engine::utils::generate_seed;
+#[cfg(feature = "verify")]
+use crate::engine::verify::{LastPassInfo, verify_last_pass};
+#[cfg(feature = "verify")]
+use rand::SeedableRng;
+#[cfg(feature = "verify")]
+use rand::rngs::StdRng;
 
 const FIXED_PATTERNS: &[Option<u8>] = &[
     Some(0x00),
@@ -40,8 +49,16 @@ const FIXED_PATTERNS: &[Option<u8>] = &[
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
+    #[cfg(feature = "verify")]
+    let mut seed = [0u8; 32];
 
     for (pass, patterns) in FIXED_PATTERNS.iter().enumerate() {
+        #[cfg(feature = "verify")]
+        if pass == FIXED_PATTERNS.len() - 1 {
+            seed = generate_seed();
+            rng = StdRng::from_seed(seed);
+        }
+
         // rewind start of file
         file.seek(SeekFrom::Start(0))
             .map_err(|_| Error::OverwriteError(Method::Dod522022MECE, pass as u32))?;
@@ -55,7 +72,7 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
                     buffer[..write_size].fill(*b);
                 }
                 None => {
-                    rng.fill(&mut buffer[..write_size]);
+                    rng.fill_bytes(&mut buffer[..write_size]);
                 }
             }
 
@@ -80,6 +97,28 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
         Error::SystemProblem(FSProblem::Write, format!("{}", path.to_string_lossy()))
     })?;
 
+    #[cfg(feature = "verify")]
+    verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
+    Ok(())
+}
+
+#[cfg(all(not(feature = "error-stack"), feature = "dry-run"))]
+pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
+    #[cfg(feature = "verify")]
+    let mut seed = [0u8; 32];
+    for (pass, _) in FIXED_PATTERNS.iter().enumerate() {
+        emit_safe(
+            sink,
+            DeleteEvent::EntryOverwritePass {
+                path: path.to_path_buf(),
+                pass: pass as u32 + 1,
+                total_passes: FIXED_PATTERNS.len() as u32,
+            },
+        );
+    }
+    #[cfg(feature = "verify")]
+    dry_verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
+
     Ok(())
 }
 
@@ -94,8 +133,15 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
 #[cfg(feature = "error-stack")]
 pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
+    #[cfg(feature = "verify")]
+    let mut seed = [0u8; 32];
 
     for (pass, patterns) in FIXED_PATTERNS.iter().enumerate() {
+        #[cfg(feature = "verify")]
+        if pass == FIXED_PATTERNS.len() - 1 {
+            seed = generate_seed();
+            rng = StdRng::from_seed(seed);
+        }
         // rewind start of file
         file.seek(SeekFrom::Start(0))
             .change_context(Error::OverwriteError(Method::Dod522022MECE, pass as u32))?;
@@ -109,7 +155,7 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
                     buffer[..write_size].fill(*b);
                 }
                 None => {
-                    rng.fill(&mut buffer[..write_size]);
+                    rng.fill_bytes(&mut buffer[..write_size]);
                 }
             }
 
@@ -135,9 +181,30 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
         format!("{}", path.to_string_lossy()),
     ))?;
 
+    #[cfg(feature = "verify")]
+    verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
     Ok(())
 }
 
+#[cfg(all(feature = "error-stack", feature = "dry-run"))]
+pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
+    #[cfg(feature = "verify")]
+    let mut seed = [0u8; 32];
+    for (pass, _) in FIXED_PATTERNS.iter().enumerate() {
+        emit_safe(
+            sink,
+            DeleteEvent::EntryOverwritePass {
+                path: path.to_path_buf(),
+                pass: pass as u32 + 1,
+                total_passes: FIXED_PATTERNS.len() as u32,
+            },
+        );
+    }
+    #[cfg(feature = "verify")]
+    dry_verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
+
+    Ok(())
+}
 // -- Region : Tests
 #[cfg(test)]
 mod test {

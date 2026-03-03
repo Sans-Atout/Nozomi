@@ -1,6 +1,6 @@
 use crate::engine::overwrite::common::prepare_overwrite;
 use crate::{DeleteEvent, EventSink, Method};
-use rand::Rng;
+use rand::RngCore;
 use std::io::Write;
 use std::path::Path;
 
@@ -16,6 +16,12 @@ use error_stack::ResultExt;
 use crate::engine::utils::emit_safe;
 #[cfg(feature = "log")]
 use log::info;
+
+use crate::engine::utils::generate_seed;
+#[cfg(feature = "verify")]
+use crate::engine::verify::{LastPassInfo, verify_last_pass};
+use rand::SeedableRng;
+use rand::rngs::StdRng;
 
 /// Function that implement a basic pseudo random method using basic error handling method.
 /// ! Please note that this method does not delete the given file.
@@ -39,12 +45,15 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     #[cfg(all(feature = "log", feature = "secure_log"))]
     info!("[{}][{:x}]\t1/1", Method::PseudoRandom, computed_md5);
 
-    let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
+    let (mut file, file_size, _, mut buffer) = prepare_overwrite(path)?;
 
     let mut remaining = file_size;
 
+    let seed = generate_seed();
+    let mut rng = StdRng::from_seed(seed);
+
     while remaining > 0 {
-        rng.fill(&mut buffer);
+        rng.fill_bytes(&mut buffer);
         let write_size = std::cmp::min(remaining, buffer.len() as u64) as usize;
         file.write_all(&buffer[..write_size])
             .map_err(|_| Error::OverwriteError(Method::PseudoRandom, 1))?;
@@ -64,6 +73,26 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     file.sync_all().map_err(|_| {
         Error::SystemProblem(FSProblem::Write, format!("{}", path.to_string_lossy()))
     })?;
+
+    #[cfg(feature = "verify")]
+    verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
+    Ok(())
+}
+
+#[cfg(all(not(feature = "error-stack"), feature = "dry-run"))]
+pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
+    #[cfg(feature = "verify")]
+    let mut seed = [0u8; 32];
+    emit_safe(
+        sink,
+        DeleteEvent::EntryOverwritePass {
+            path: path.to_path_buf(),
+            pass: 1,
+            total_passes: 1,
+        },
+    );
+    #[cfg(feature = "verify")]
+    dry_verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
 
     Ok(())
 }
@@ -90,12 +119,15 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     #[cfg(all(feature = "log", feature = "secure_log"))]
     info!("[{}][{:x}]\t1/1", Method::PseudoRandom, computed_md5);
 
-    let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
+    let (mut file, file_size, _, mut buffer) = prepare_overwrite(path)?;
+
+    let seed = generate_seed();
+    let mut rng = StdRng::from_seed(seed);
 
     let mut remaining = file_size;
 
     while remaining > 0 {
-        rng.fill(&mut buffer);
+        rng.fill_bytes(&mut buffer);
         let write_size = std::cmp::min(remaining, buffer.len() as u64) as usize;
         file.write_all(&buffer[..write_size])
             .change_context(Error::OverwriteError(Method::PseudoRandom, 1))?;
@@ -116,6 +148,26 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
         FSProblem::Write,
         format!("{}", path.to_string_lossy()),
     ))?;
+
+    #[cfg(feature = "verify")]
+    verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
+    Ok(())
+}
+
+#[cfg(all(feature = "error-stack", feature = "dry-run"))]
+pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
+    #[cfg(feature = "verify")]
+    let mut seed = [0u8; 32];
+    emit_safe(
+        sink,
+        DeleteEvent::EntryOverwritePass {
+            path: path.to_path_buf(),
+            pass: 1,
+            total_passes: 1,
+        },
+    );
+    #[cfg(feature = "verify")]
+    dry_verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
 
     Ok(())
 }
@@ -221,7 +273,7 @@ mod test {
             ///
             /// Test success is all conditions are met :
             /// * a specific folder with multiple files in it is created
-            /// * folder is delete thanks to the specific erasing method
+            /// * folder is deleted thanks to the specific erasing method
             #[test]
             fn folder_test() -> Result<()> {
                 let (string_path, _) = create_test_file(&TestType::Folder, &METHOD_NAME)?;

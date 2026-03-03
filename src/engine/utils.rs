@@ -17,6 +17,23 @@ use crate::{Error, Result};
 use error_stack::{Context, Report, ResultExt};
 #[cfg(feature = "log")]
 use log::trace;
+use rand::RngCore;
+
+pub(crate) fn generate_seed() -> [u8; 32] {
+    let mut seed = [0u8; 32];
+    rand::rng().fill_bytes(&mut seed);
+    seed
+}
+
+#[cfg(feature = "verify")]
+pub(super) fn get_three_bytes_pattern_buffer(pattern: &[u8; 3], size: usize) -> Vec<u8> {
+    let mut buffer = Vec::<u8>::new();
+    for i in 0..size {
+        let pattern_index = i % 3;
+        buffer.push(pattern[pattern_index]);
+    }
+    buffer
+}
 
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn delete_file(path: &Path) -> Result<()> {
@@ -69,7 +86,7 @@ pub(crate) fn delete_file(path: &Path) -> Result<()> {
     })
 }
 
-pub(super) fn emit_safe<S: EventSink>(sink: &mut S, event: DeleteEvent) {
+pub(crate) fn emit_safe<S: EventSink>(sink: &mut S, event: DeleteEvent) {
     let _ = catch_unwind(AssertUnwindSafe(|| {
         sink.emit(event);
     }));

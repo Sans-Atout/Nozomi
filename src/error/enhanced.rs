@@ -20,6 +20,10 @@ pub enum Error {
     #[cfg(test)]
     FileCreationError,
     MissingParameter(&'static str),
+    #[cfg(feature = "verify")]
+    VerificationFailed {
+        offset: u64,
+    },
 }
 
 /// Implementing display trait for Error enum
@@ -45,6 +49,10 @@ impl core::fmt::Display for Error {
             ),
             Error::MissingParameter(param) => {
                 write!(fmt, "RequestDeleter : {param} params missing")
+            }
+            #[cfg(feature = "verify")]
+            Error::VerificationFailed { offset } => {
+                write!(fmt, "Verification failed - offset : {offset}")
             }
         }
     }

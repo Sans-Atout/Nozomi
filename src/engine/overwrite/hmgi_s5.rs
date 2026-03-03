@@ -13,6 +13,8 @@ use crate::{Error, Result};
 use error_stack::ResultExt;
 
 use crate::engine::utils::emit_safe;
+#[cfg(feature = "verify")]
+use crate::engine::verify::{LastPassInfo, verify_last_pass};
 #[cfg(feature = "log")]
 use log::info;
 
@@ -54,6 +56,26 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     file.sync_all().map_err(|_| {
         Error::SystemProblem(FSProblem::Write, format!("{}", path.to_string_lossy()))
     })?;
+    #[cfg(feature = "verify")]
+    verify_last_pass(&path.to_path_buf(), LastPassInfo::Zero, sink)?;
+    Ok(())
+}
+
+#[cfg(all(not(feature = "error-stack"), feature = "dry-run"))]
+pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
+    for pattern in 0..2 {
+        emit_safe(
+            sink,
+            DeleteEvent::EntryOverwritePass {
+                path: path.to_path_buf(),
+                pass: &pattern + 1,
+                total_passes: 2,
+            },
+        );
+    }
+    #[cfg(feature = "verify")]
+    dry_verify_last_pass(&path.to_path_buf(), LastPassInfo::Zero, sink)?;
+
     Ok(())
 }
 
@@ -96,6 +118,26 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
         FSProblem::Write,
         format!("{}", path.to_string_lossy()),
     ))?;
+    #[cfg(feature = "verify")]
+    verify_last_pass(&path.to_path_buf(), LastPassInfo::Zero, sink)?;
+    Ok(())
+}
+
+#[cfg(all(feature = "error-stack", feature = "dry-run"))]
+pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
+    for pattern in 0..2 {
+        emit_safe(
+            sink,
+            DeleteEvent::EntryOverwritePass {
+                path: path.to_path_buf(),
+                pass: &pattern + 1,
+                total_passes: 2,
+            },
+        );
+    }
+    #[cfg(feature = "verify")]
+    dry_verify_last_pass(&path.to_path_buf(), LastPassInfo::Zero, sink)?;
+
     Ok(())
 }
 

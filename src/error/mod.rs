@@ -14,6 +14,8 @@ pub enum FSProblem {
     Opening,
     /// Problem during writing process
     Write,
+    #[cfg(feature = "verify")]
+    Read,
     /// Problem during deletion process
     Delete,
     /// Problem during file enumeration process
@@ -35,6 +37,8 @@ impl core::fmt::Display for FSProblem {
             FSProblem::ReadFolder => write!(fmt, "Read Folder"),
             FSProblem::NotFound => write!(fmt, "File/Folder not found"),
             FSProblem::Permissions => write!(fmt, "Change permission error"),
+            #[cfg(feature = "verify")]
+            FSProblem::Read => write!(fmt, "Cannot read buffer in file during verify stage"),
         }
     }
 }

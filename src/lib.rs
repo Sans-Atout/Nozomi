@@ -1,12 +1,17 @@
 // -- Libraries use in this library
+#[cfg(feature = "analyze")]
+mod analyze;
 mod error;
 mod methods;
 mod models;
 #[cfg(test)]
 mod tests;
+#[cfg(feature = "analyze")]
+pub use analyze::{AnalysisReport, PassInfo, PassKind};
 
 pub mod api;
 mod engine;
+
 pub use api::delete::DeleteMethod;
 pub use api::delete::DeleteReport;
 pub use api::delete::DeleteRequest;
