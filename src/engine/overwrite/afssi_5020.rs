@@ -93,6 +93,26 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     Ok(())
 }
 
+#[cfg(all(not(feature = "error-stack"), feature = "dry-run"))]
+pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
+    #[cfg(feature = "verify")]
+    let mut seed = [0u8; 32];
+    for (pass, _) in FIXED_PATTERNS.iter().enumerate() {
+        emit_safe(
+            sink,
+            DeleteEvent::EntryOverwritePass {
+                path: path.to_path_buf(),
+                pass: pass as u32 + 1,
+                total_passes: FIXED_PATTERNS.len() as u32,
+            },
+        );
+    }
+    #[cfg(feature = "verify")]
+    dry_verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
+
+    Ok(())
+}
+
 /// Function that implement [AFSSI 5020 overwrite method](https://www.lifewire.com/data-sanitization-methods-2626133#toc-afssi-5020)
 /// ! Please note that this method does not delete the given file.
 ///
@@ -152,6 +172,26 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     ))?;
     #[cfg(feature = "verify")]
     verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
+    Ok(())
+}
+
+
+#[cfg(all(feature = "error-stack", feature = "dry-run"))]
+pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
+    #[cfg(feature = "verify")]
+    let mut seed = [0u8; 32];
+    for (pass, patterns) in FIXED_PATTERNS.iter().enumerate() {
+        emit_safe(
+            sink,
+            DeleteEvent::EntryOverwritePass {
+                path: path.to_path_buf(),
+                pass: pass as u32 + 1,
+                total_passes: FIXED_PATTERNS.len() as u32,
+            },
+        );
+    }
+    #[cfg(feature = "verify")]
+    dry_verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
     Ok(())
 }
 

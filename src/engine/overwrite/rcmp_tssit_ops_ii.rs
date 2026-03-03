@@ -93,6 +93,27 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     Ok(())
 }
 
+#[cfg(all(not(feature = "error-stack"), feature = "dry-run"))]
+pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
+    #[cfg(feature = "verify")]
+    let mut seed = [0u8; 32];
+    for pass in 0..7 {
+        emit_safe(
+            sink,
+            DeleteEvent::EntryOverwritePass {
+                path: path.to_path_buf(),
+                pass: pass+1,
+                total_passes: 7,
+            },
+        );
+    }
+
+    #[cfg(feature = "verify")]
+    dry_verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
+
+    Ok(())
+}
+
 /// Function that implement [RCMP TSSIT OPS II overwrite method](https://www.datadestroyers.eu/technology/rcmp_tssit_ops-2.html) using basic error handling method.
 /// ! Please note that this method does not delete the given file.
 ///
@@ -161,6 +182,27 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
 
     #[cfg(feature = "verify")]
     verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
+    Ok(())
+}
+
+#[cfg(all(feature = "error-stack", feature = "dry-run"))]
+pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
+    #[cfg(feature = "verify")]
+    let mut seed = [0u8; 32];
+    for pass in 0..7 {
+        emit_safe(
+            sink,
+            DeleteEvent::EntryOverwritePass {
+                path: path.to_path_buf(),
+                pass: pass+1,
+                total_passes: 7,
+            },
+        );
+    }
+
+    #[cfg(feature = "verify")]
+    dry_verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
+
     Ok(())
 }
 

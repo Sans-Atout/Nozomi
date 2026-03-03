@@ -61,6 +61,24 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     Ok(())
 }
 
+#[cfg(all(not(feature = "error-stack"), feature = "dry-run"))]
+pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
+    for pattern in 0..2 {
+        emit_safe(
+            sink,
+            DeleteEvent::EntryOverwritePass {
+                path: path.to_path_buf(),
+                pass: &pattern + 1,
+                total_passes: 2,
+            },
+        );
+    }
+    #[cfg(feature = "verify")]
+    dry_verify_last_pass(&path.to_path_buf(), LastPassInfo::Zero, sink)?;
+
+    Ok(())
+}
+
 /// Function that implement [HMGI S5 overwrite method](https://www.bitraser.com/knowledge-series/data-destruction-standards-and-guidelines.php)
 /// ! Please note that this method does not delete the given file.
 ///
@@ -102,6 +120,24 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     ))?;
     #[cfg(feature = "verify")]
     verify_last_pass(&path.to_path_buf(), LastPassInfo::Zero, sink)?;
+    Ok(())
+}
+
+#[cfg(all(feature = "error-stack", feature = "dry-run"))]
+pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
+    for pattern in 0..2 {
+        emit_safe(
+            sink,
+            DeleteEvent::EntryOverwritePass {
+                path: path.to_path_buf(),
+                pass: &pattern + 1,
+                total_passes: 2,
+            },
+        );
+    }
+    #[cfg(feature = "verify")]
+    dry_verify_last_pass(&path.to_path_buf(), LastPassInfo::Zero, sink)?;
+
     Ok(())
 }
 
