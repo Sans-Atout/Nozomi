@@ -9,7 +9,7 @@ use crate::api::delete::request::NoopSink;
 #[cfg(feature = "analyze")]
 use crate::AnalysisReport;
 #[cfg(feature = "error-stack")]
-use crate::{Error, Result};
+#[allow(deprecated)]
 use crate::Result;
 #[cfg(feature = "analyze")]
 use crate::{PassInfo, PassKind};
@@ -54,6 +54,7 @@ impl Method {
 
 // -- Region : Implement logic for error-stack's error handling.
 #[cfg(feature = "error-stack")]
+#[allow(deprecated)]
 impl Method {
     /// This function is used to delete a file or folder using a predefined method using error-stack's error handling method.
     ///

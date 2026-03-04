@@ -2,6 +2,7 @@
 pub mod standard;
 
 #[cfg(feature = "error-stack")]
+#[allow(deprecated)]
 pub mod enhanced;
 
 /// Enum that represent different kind of file system problem that Nozomi lib can encounter

@@ -180,6 +180,7 @@ mod test_dry_run {
 }
 
 #[cfg(all(feature = "dry-run", feature = "error-stack"))]
+#[allow(deprecated)]
 mod test_dry_run {
     use super::TestSink;
     use nozomi::{DeleteEvent, DeleteMethod, DeleteRequest, Method, Result};

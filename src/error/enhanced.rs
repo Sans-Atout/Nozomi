@@ -3,10 +3,18 @@ use crate::{Method, models::SecureDelete};
 use error_stack::Context;
 
 /// Reexporting Result type
+#[deprecated(
+    since = "3.1.0",
+    note = "This legacy error system will be removed in `4.0.0`. Please use the default Error system instead."
+)]
 pub type Result<T> = error_stack::Result<T, Error>;
 
 /// Enum used to represent errors in the library
 #[derive(Debug, Clone)]
+#[deprecated(
+    since = "3.1.0",
+    note = "This legacy error system will be removed in `4.0.0`. Please use the default Error system instead."
+)]
 pub enum Error {
     /// Represent file problems with FSProblem and String
     SystemProblem(FSProblem, String),
