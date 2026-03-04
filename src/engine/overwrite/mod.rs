@@ -15,9 +15,7 @@ use std::path::Path;
 use crate::Result;
 
 #[cfg(feature = "error-stack")]
-use crate::{Error, Result};
-#[cfg(feature = "error-stack")]
-use error_stack::ResultExt;
+use crate::Result;
 
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn overwrite_file<S: EventSink>(

@@ -1,6 +1,6 @@
 use crate::engine::overwrite::common::prepare_overwrite;
 use crate::{DeleteEvent, EventSink, Method};
-use rand::RngCore;
+use rand::Rng;
 use std::io::{Seek, SeekFrom, Write};
 use std::path::Path;
 
@@ -14,11 +14,11 @@ use crate::{Error, Result};
 use error_stack::ResultExt;
 
 use crate::engine::utils::emit_safe;
-#[cfg(feature = "log")]
-use log::info;
 
 #[cfg(feature = "verify")]
 use crate::engine::utils::generate_seed;
+#[cfg(all(feature = "verify", feature = "dry-run"))]
+use crate::engine::verify::dry_verify_last_pass;
 #[cfg(feature = "verify")]
 use crate::engine::verify::{LastPassInfo, verify_last_pass};
 #[cfg(feature = "verify")]
@@ -105,7 +105,7 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
 #[cfg(all(not(feature = "error-stack"), feature = "dry-run"))]
 pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     #[cfg(feature = "verify")]
-    let mut seed = [0u8; 32];
+    let seed = [0u8; 32];
     for (pass, _) in FIXED_PATTERNS.iter().enumerate() {
         emit_safe(
             sink,
@@ -189,7 +189,7 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
 #[cfg(all(feature = "error-stack", feature = "dry-run"))]
 pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     #[cfg(feature = "verify")]
-    let mut seed = [0u8; 32];
+    let seed = [0u8; 32];
     for (pass, _) in FIXED_PATTERNS.iter().enumerate() {
         emit_safe(
             sink,
@@ -201,7 +201,7 @@ pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Res
         );
     }
     #[cfg(feature = "verify")]
-    dry_verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
+    dry_verify_last_pass(path, LastPassInfo::Random { seed }, sink)?;
 
     Ok(())
 }
@@ -211,8 +211,6 @@ mod test {
     const METHOD_NAME: &str = "dod_522022_mece";
     use crate::Method::Dod522022MECE as EraseMethod;
 
-    use super::overwrite_file;
-    use crate::error::FSProblem;
     use crate::tests::TestType;
 
     /// Module containing all the tests for the standard error handling method
@@ -220,8 +218,8 @@ mod test {
     mod standard {
         use super::*;
 
-        use crate::tests::standard::{create_test_file, get_bytes};
-        use crate::{Error, Result};
+        use crate::tests::standard::{create_test_file};
+        use crate::Result;
 
         #[cfg(not(any(feature = "log", feature = "secure_log")))]
         mod no_log {
@@ -229,6 +227,10 @@ mod test {
             use crate::api::delete::request::NoopSink;
             use pretty_assertions::{assert_eq, assert_ne};
             use std::path::Path;
+            use crate::engine::overwrite::dod_522022_mece::overwrite_file;
+            use crate::Error;
+            use crate::tests::standard::get_bytes;
+            use crate::error::FSProblem;
 
             /// Test if the overwrite method for this particular erase protocol work well or not.
             ///
@@ -388,8 +390,8 @@ mod test {
     mod enhanced {
         use super::*;
 
-        use crate::tests::enhanced::{create_test_file, get_bytes};
-        use crate::{Error, Result};
+        use crate::tests::enhanced::{create_test_file};
+        use crate::Result;
 
         #[cfg(not(any(feature = "log", feature = "secure_log")))]
         mod no_log {
@@ -399,6 +401,9 @@ mod test {
             use error_stack::ResultExt;
             use pretty_assertions::{assert_eq, assert_ne};
             use std::path::Path;
+            use crate::Error;
+            use crate::tests::enhanced::get_bytes;
+            use crate::error::FSProblem;
 
             /// Test if the overwrite method for this particular erase protocol work well or not.
             ///

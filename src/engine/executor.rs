@@ -9,12 +9,7 @@ use crate::engine::utils::{delete_dir, delete_file, emit_safe};
 use crate::Result;
 
 #[cfg(feature = "error-stack")]
-use crate::{Error, Result};
-#[cfg(feature = "error-stack")]
-use error_stack::ResultExt;
-
-#[cfg(feature = "log")]
-use log::info;
+use crate::Result;
 
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn run<S: EventSink>(method: &Method, path: &Path, sink: &mut S) -> Result<()> {

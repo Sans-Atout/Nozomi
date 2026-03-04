@@ -8,10 +8,10 @@ use crate::{Error, Result};
 #[cfg(feature = "error-stack")]
 use crate::{Error, Result};
 #[cfg(feature = "error-stack")]
-use error_stack::{Context, Report, ResultExt};
+use error_stack::{Report, ResultExt};
 
 #[cfg(feature = "log")]
-use log::{error, info, warn};
+use log::error;
 
 #[derive(Debug)]
 pub(crate) struct ExecutionPlan {
@@ -95,7 +95,7 @@ pub(crate) fn execution_plan(root_path: &Path) -> Result<ExecutionPlan> {
 #[cfg(feature = "error-stack")]
 fn visit(path: &Path, files: &mut Vec<PathBuf>, directories: &mut Vec<PathBuf>) -> Result<()> {
     #[cfg(feature = "secure_log")]
-    let md5_value = md5::compute(&path.to_string_lossy().to_string());
+    let md5_value = md5::compute(path.to_string_lossy().to_string());
 
     if !path.exists() {
         #[cfg(all(feature = "log", not(feature = "secure_log")))]
@@ -103,7 +103,7 @@ fn visit(path: &Path, files: &mut Vec<PathBuf>, directories: &mut Vec<PathBuf>) 
         #[cfg(all(feature = "log", feature = "secure_log"))]
         error!(
             "[{:x}]\tdid not exist",
-            md5::compute(&path.to_string_lossy().to_string())
+            md5::compute(path.to_string_lossy().to_string())
         );
         return Err(Report::new(Error::SystemProblem(
             FSProblem::NotFound,

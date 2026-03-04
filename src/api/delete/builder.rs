@@ -4,8 +4,6 @@ use std::path::{Path, PathBuf};
 use crate::{Error, Result};
 #[cfg(feature = "error-stack")]
 use crate::{Error, Result};
-#[cfg(feature = "error-stack")]
-use error_stack::ResultExt;
 
 use super::request::{DeleteMethod, DeleteRequest};
 
@@ -105,7 +103,7 @@ impl DeleteRequestBuilder {
             path,
             method,
             #[cfg(feature = "dry-run")]
-            dry_run: self.dry_run.clone(),
+            dry_run: self.dry_run,
         })
     }
 }
@@ -115,7 +113,6 @@ mod tests {
     use super::*;
     use crate::Method;
     use crate::api::delete::request::DeleteMethod;
-    use error_stack::Frame;
     use std::path::PathBuf;
 
     #[test]
@@ -137,8 +134,6 @@ mod tests {
 
     #[test]
     fn build_fails_when_method_is_missing() {
-        use std::path::PathBuf;
-
         let result = DeleteRequestBuilder::new()
             .path(PathBuf::from("/tmp/file.txt"))
             .build();
@@ -156,8 +151,6 @@ mod tests {
 
     #[test]
     fn build_succeeds_when_all_parameters_are_present() {
-        use std::path::PathBuf;
-
         let result = DeleteRequestBuilder::new()
             .path(PathBuf::from("/tmp/file.txt"))
             .method(DeleteMethod::BuiltIn(Method::default()))

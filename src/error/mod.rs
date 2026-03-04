@@ -44,4 +44,5 @@ impl core::fmt::Display for FSProblem {
 }
 
 #[cfg(test)]
+#[cfg(not(feature = "error-stack"))]
 pub(crate) fn rfc1236<T: core::error::Error + Send + Sync + 'static>() {}

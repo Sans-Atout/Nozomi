@@ -4,7 +4,6 @@
 /// Always compiled: ensures base crate compiles without features.
 #[test]
 fn base_build_compiles() {
-    // If this test runs, the default feature set compiled successfully.
     assert!(true);
 }
 
@@ -14,12 +13,9 @@ fn base_build_compiles() {
 
 #[cfg(feature = "verify")]
 mod verify_enabled {
-    use super::*;
 
     #[test]
     fn verify_feature_compiles() {
-        // Placeholder until builder method is implemented.
-        // Ensures the crate compiles with `--features verify`.
         assert!(true);
     }
 }
@@ -54,7 +50,6 @@ mod analyze_enabled {
 
 #[cfg(feature = "error-stack")]
 mod error_stack_enabled {
-    use super::*;
 
     #[test]
     fn error_stack_feature_compiles() {
@@ -68,7 +63,6 @@ mod error_stack_enabled {
 
 #[cfg(feature = "log")]
 mod log_enabled {
-    use super::*;
 
     #[test]
     fn log_feature_compiles() {
@@ -82,7 +76,6 @@ mod log_enabled {
 
 #[cfg(feature = "secure_log")]
 mod secure_log_enabled {
-    use super::*;
 
     #[test]
     fn secure_log_feature_compiles() {

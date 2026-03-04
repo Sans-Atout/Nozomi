@@ -21,7 +21,7 @@ mod tests {
     #[cfg(feature = "error-stack")]
     use crate::Result;
     #[cfg(feature = "error-stack")]
-    use error_stack::{Report, ResultExt};
+    use error_stack::ResultExt;
 
     #[test]
     #[cfg(not(feature = "error-stack"))]

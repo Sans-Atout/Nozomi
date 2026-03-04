@@ -332,6 +332,10 @@ impl SecureDelete {
 
     #[cfg(feature = "verify")]
     pub fn verify(&self) -> Result<bool> {
+        #[cfg(feature = "dry-run")]
+        if self.dry_run {
+            return Ok(true);
+        }
         let mut sink = NoopSink {};
         if let Some(byte) = self.byte {
             let result = verify_last_pass(
@@ -587,7 +591,7 @@ impl SecureDelete {
         #[cfg(feature = "log")]
         trace!("[{}]\tSecure deletion object creation", &path);
         #[cfg(feature = "secure_log")]
-        let computed_md5 = md5::compute(&path);
+        let computed_md5 = md5::compute(path);
         #[cfg(feature = "secure_log")]
         trace!("[{:x}]\tSecure deletion object creation", &computed_md5);
 
@@ -739,7 +743,7 @@ impl SecureDelete {
     pub fn verify(&self) -> Result<bool> {
         #[cfg(feature = "dry-run")]
         if self.dry_run {
-            return Ok(self);
+            return Ok(true);
         }
         let mut sink = NoopSink {};
         if let Some(byte) = self.byte {

@@ -14,10 +14,10 @@ use crate::{DeleteEvent, EventSink, SecureDelete};
 #[cfg(feature = "error-stack")]
 use crate::{Error, Result};
 #[cfg(feature = "error-stack")]
-use error_stack::{Context, Report, ResultExt};
+use error_stack::ResultExt;
 #[cfg(feature = "log")]
 use log::trace;
-use rand::RngCore;
+use rand::Rng;
 
 pub(crate) fn generate_seed() -> [u8; 32] {
     let mut seed = [0u8; 32];
@@ -155,7 +155,7 @@ fn zero_name(path: &Path) -> Result<String> {
 #[cfg(feature = "error-stack")]
 pub(crate) fn delete_file(path: &Path) -> Result<()> {
     #[cfg(feature = "secure_log")]
-    let md5_value = md5::compute(&path.to_string_lossy().to_string());
+    let md5_value = md5::compute(path.to_string_lossy().to_string());
     #[cfg(feature = "log")]
     trace!("[{}]\tBeginning of deletion", &path.to_string_lossy());
     #[cfg(feature = "secure_log")]
@@ -175,7 +175,7 @@ pub(crate) fn delete_file(path: &Path) -> Result<()> {
     trace!(
         "[{:x}]\tRenaming to {:x}",
         &md5_value,
-        md5::compute(&new_path.to_string_lossy().to_string())
+        md5::compute(new_path.to_string_lossy().to_string())
     );
 
     let mut anon_file_size = zero_name.len();
@@ -194,7 +194,7 @@ pub(crate) fn delete_file(path: &Path) -> Result<()> {
         trace!(
             "[{:x}]\tRenaming to {:x}",
             &md5_value,
-            md5::compute(&new_path.to_string_lossy().to_string())
+            md5::compute(new_path.to_string_lossy().to_string())
         );
     }
     fs::remove_file(&new_path).change_context(Error::SystemProblem(
@@ -206,7 +206,7 @@ pub(crate) fn delete_file(path: &Path) -> Result<()> {
 #[cfg(feature = "error-stack")]
 pub(crate) fn delete_dir(path: &Path) -> Result<()> {
     #[cfg(feature = "secure_log")]
-    let md5_value = md5::compute(&path.to_string_lossy().to_string());
+    let md5_value = md5::compute(path.to_string_lossy().to_string());
     #[cfg(feature = "log")]
     trace!("[{}]\tBeginning of deletion", &path.to_string_lossy());
     #[cfg(feature = "secure_log")]
@@ -226,7 +226,7 @@ pub(crate) fn delete_dir(path: &Path) -> Result<()> {
     trace!(
         "[{:x}]\tRenaming to {:x}",
         &md5_value,
-        md5::compute(&new_path.to_string_lossy().to_string())
+        md5::compute(new_path.to_string_lossy().to_string())
     );
 
     let mut anon_file_size = zero_name.len();
@@ -245,7 +245,7 @@ pub(crate) fn delete_dir(path: &Path) -> Result<()> {
         trace!(
             "[{:x}]\tRenaming to {:x}",
             &md5_value,
-            md5::compute(&new_path.to_string_lossy().to_string())
+            md5::compute(new_path.to_string_lossy().to_string())
         );
     }
     fs::remove_dir(&new_path).change_context(Error::SystemProblem(

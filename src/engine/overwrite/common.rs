@@ -15,8 +15,6 @@ use crate::{Error, Result};
 use error_stack::ResultExt;
 
 use crate::engine::utils::generate_seed;
-#[cfg(feature = "log")]
-use log::info;
 
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn prepare_overwrite(path: &Path) -> Result<(std::fs::File, u64, StdRng, [u8; 8192])> {

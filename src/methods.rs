@@ -5,17 +5,14 @@ use std::path::Path;
 #[cfg(not(feature = "error-stack"))]
 use crate::Result;
 use crate::api::delete::request::NoopSink;
-#[cfg(feature = "log")]
-use log::{error, info, warn};
 
 #[cfg(feature = "analyze")]
 use crate::AnalysisReport;
 #[cfg(feature = "error-stack")]
 use crate::{Error, Result};
+use crate::Result;
 #[cfg(feature = "analyze")]
 use crate::{PassInfo, PassKind};
-#[cfg(feature = "error-stack")]
-use error_stack::{Context, Report, ResultExt};
 
 use crate::engine::run;
 // -- Region : Method logic
@@ -88,7 +85,7 @@ impl core::fmt::Display for Method {
 #[cfg(feature = "analyze")]
 impl Method {
     pub fn analyze(&self) -> AnalysisReport {
-        let analysis_report = match &self {
+        match &self {
             Method::Dod522022MECE => AnalysisReport {
                 pass_count: 6,
                 passes: vec![
@@ -276,8 +273,7 @@ impl Method {
                     kind: PassKind::Random,
                 }],
             },
-        };
-        analysis_report
+        }
     }
 }
 
