@@ -64,7 +64,7 @@ pub enum TestType {
     /// Test the overwriting function
     #[cfg(not(feature = "log"))]
     OverwriteOnly,
-    #[cfg(all(feature = "log",not(feature = "secure_log")))]
+    #[cfg(all(feature = "log", not(feature = "secure_log")))]
     /// Test deleting a 1KB file with log feature activated
     LogMini,
     #[cfg(feature = "secure_log")]

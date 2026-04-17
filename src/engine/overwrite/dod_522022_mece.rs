@@ -230,19 +230,19 @@ mod test {
     mod standard {
         use super::*;
 
-        use crate::tests::standard::{create_test_file};
         use crate::Result;
+        use crate::tests::standard::create_test_file;
 
         #[cfg(not(any(feature = "log", feature = "secure_log")))]
         mod no_log {
             use super::*;
+            use crate::Error;
             use crate::api::delete::request::NoopSink;
+            use crate::engine::overwrite::dod_522022_mece::overwrite_file;
+            use crate::error::FSProblem;
+            use crate::tests::standard::get_bytes;
             use pretty_assertions::{assert_eq, assert_ne};
             use std::path::Path;
-            use crate::engine::overwrite::dod_522022_mece::overwrite_file;
-            use crate::Error;
-            use crate::tests::standard::get_bytes;
-            use crate::error::FSProblem;
 
             /// Test if the overwrite method for this particular erase protocol work well or not.
             ///
@@ -387,7 +387,7 @@ mod test {
             /// * The file is deleted without any error
             #[test]
             fn test() -> Result<()> {
-                let (string_path, _) = create_test_file(&TestType::SecureLog, &METHOD_NAME)?;
+                let (string_path, _) = create_test_file(&TestType::SecureLog, METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
                 EraseMethod.delete(&string_path)?;
@@ -402,20 +402,20 @@ mod test {
     mod enhanced {
         use super::*;
 
-        use crate::tests::enhanced::{create_test_file};
         use crate::Result;
+        use crate::tests::enhanced::create_test_file;
 
         #[cfg(not(any(feature = "log", feature = "secure_log")))]
         mod no_log {
             use super::*;
+            use crate::Error;
             use crate::api::delete::request::NoopSink;
             use crate::engine::overwrite::dod_522022_mece::overwrite_file;
+            use crate::error::FSProblem;
+            use crate::tests::enhanced::get_bytes;
             use error_stack::ResultExt;
             use pretty_assertions::{assert_eq, assert_ne};
             use std::path::Path;
-            use crate::Error;
-            use crate::tests::enhanced::get_bytes;
-            use crate::error::FSProblem;
 
             /// Test if the overwrite method for this particular erase protocol work well or not.
             ///
@@ -561,7 +561,7 @@ mod test {
             /// * The file is deleted without any error
             #[test]
             fn test() -> Result<()> {
-                let (string_path, _) = create_test_file(&TestType::SecureLog, &METHOD_NAME)?;
+                let (string_path, _) = create_test_file(&TestType::SecureLog, METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
                 EraseMethod.delete(&string_path)?;

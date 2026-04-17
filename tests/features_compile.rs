@@ -3,9 +3,7 @@
 
 /// Always compiled: ensures base crate compiles without features.
 #[test]
-fn base_build_compiles() {
-    assert!(true);
-}
+fn base_build_compiles() {}
 
 //
 // VERIFY FEATURE
@@ -15,9 +13,7 @@ fn base_build_compiles() {
 mod verify_enabled {
 
     #[test]
-    fn verify_feature_compiles() {
-        assert!(true);
-    }
+    fn verify_feature_compiles() {}
 }
 
 //
@@ -27,9 +23,7 @@ mod verify_enabled {
 #[cfg(feature = "dry-run")]
 mod dry_run_enabled {
     #[test]
-    fn dry_run_feature_compiles() {
-        assert!(true);
-    }
+    fn dry_run_feature_compiles() {}
 }
 
 //
@@ -39,9 +33,7 @@ mod dry_run_enabled {
 #[cfg(feature = "analyze")]
 mod analyze_enabled {
     #[test]
-    fn analyze_feature_compiles() {
-        assert!(true);
-    }
+    fn analyze_feature_compiles() {}
 }
 
 //
@@ -52,9 +44,7 @@ mod analyze_enabled {
 mod error_stack_enabled {
 
     #[test]
-    fn error_stack_feature_compiles() {
-        assert!(true);
-    }
+    fn error_stack_feature_compiles() {}
 }
 
 //
@@ -65,9 +55,7 @@ mod error_stack_enabled {
 mod log_enabled {
 
     #[test]
-    fn log_feature_compiles() {
-        assert!(true);
-    }
+    fn log_feature_compiles() {}
 }
 
 //
@@ -78,7 +66,5 @@ mod log_enabled {
 mod secure_log_enabled {
 
     #[test]
-    fn secure_log_feature_compiles() {
-        assert!(true);
-    }
+    fn secure_log_feature_compiles() {}
 }

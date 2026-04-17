@@ -64,7 +64,7 @@ pub fn create_test_file(test_type: &TestType, method_name: &str) -> Result<(Stri
             let mut file = File::create(&file_name).change_context(Error::FileCreationError)?;
             file.write_all(lorem.as_bytes())
                 .change_context(Error::FileCreationError)?;
-            return Ok((file_name, lorem));
+            Ok((file_name, lorem))
         }
         #[cfg(not(feature = "log"))]
         TestType::MediumFile => {
@@ -112,7 +112,7 @@ pub fn create_test_file(test_type: &TestType, method_name: &str) -> Result<(Stri
             let mut file = File::create(&file_name).change_context(Error::FileCreationError)?;
             file.write_all(lorem.as_bytes())
                 .change_context(Error::FileCreationError)?;
-            return Ok((file_name, lorem));
+            Ok((file_name, lorem))
         }
         #[cfg(not(feature = "log"))]
         TestType::LargeFile => {
@@ -124,14 +124,14 @@ pub fn create_test_file(test_type: &TestType, method_name: &str) -> Result<(Stri
             }
             return Ok((file_name, LOREM_IPSUM.to_string()));
         }
-        #[cfg(all(feature = "log",not(feature = "secure_log")))]
+        #[cfg(all(feature = "log", not(feature = "secure_log")))]
         TestType::LogMini => {
             let file_name = format!("{test_folder}/{method_name}_log_mini.txt");
             let lorem = "Hello, world!".to_string();
             let mut file = File::create(&file_name).change_context(Error::FileCreationError)?;
             file.write_all(lorem.as_bytes())
                 .change_context(Error::FileCreationError)?;
-            return Ok((file_name, lorem));
+            Ok((file_name, lorem))
         }
         #[cfg(feature = "secure_log")]
         TestType::SecureLog => {
@@ -140,7 +140,7 @@ pub fn create_test_file(test_type: &TestType, method_name: &str) -> Result<(Stri
             let mut file = File::create(&file_name).change_context(Error::FileCreationError)?;
             file.write_all(lorem.as_bytes())
                 .change_context(Error::FileCreationError)?;
-            return Ok((file_name, lorem));
+            Ok((file_name, lorem))
         }
     }
 }
@@ -172,9 +172,9 @@ mod test {
         let mut tmp_file = std::env::temp_dir();
         tmp_file.push("nozomi_tmp_file_byte_assertion");
         let path = tmp_file.as_path();
-        file(&path, "Hello, world!")?;
+        file(path, "Hello, world!")?;
         assert!(path.exists());
-        assert_eq!(get_bytes(&path)?, b"Hello, world!");
+        assert_eq!(get_bytes(path)?, b"Hello, world!");
         Ok(())
     }
 }

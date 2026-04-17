@@ -25,7 +25,7 @@ mod test_dry_run {
     #[test]
     fn dry_run_does_not_modify_file() -> Result<()> {
         let mut path = std::env::temp_dir();
-        path.push("nozomi_test_dry_run_test.tmp".to_string());
+        path.push("nozomi_test_dry_run_test.tmp");
 
         let original = b"HELLO_WORLD";
         {
@@ -56,7 +56,7 @@ mod test_dry_run {
     #[test]
     fn dry_run_does_not_remove_file() -> Result<()> {
         let mut path = std::env::temp_dir();
-        path.push("nozomi_test_dry_run_remove.tmp".to_string());
+        path.push("nozomi_test_dry_run_remove.tmp");
         File::create(&path).unwrap();
 
         let request = DeleteRequest::builder()
@@ -77,7 +77,7 @@ mod test_dry_run {
     #[cfg(feature = "verify")]
     fn dry_run_skips_verify() -> Result<()> {
         let mut path = std::env::temp_dir();
-        path.push("nozomi_test_dry_run_verify.tmp".to_string());
+        path.push("nozomi_test_dry_run_verify.tmp");
         File::create(&path).unwrap();
 
         let request = DeleteRequest::builder()
@@ -97,7 +97,7 @@ mod test_dry_run {
     #[test]
     fn dry_run_emits_events() -> Result<()> {
         let mut path = std::env::temp_dir();
-        path.push("nozomi_test_dry_run_event.tmp".to_string());
+        path.push("nozomi_test_dry_run_event.tmp");
         File::create(&path).unwrap();
 
         let mut sink = TestSink::default();
@@ -139,7 +139,7 @@ mod test_dry_run {
     #[test]
     fn dry_run_empty_file() -> Result<()> {
         let mut path = std::env::temp_dir();
-        path.push("nozomi_test_dry_run_empty.tmp".to_string());
+        path.push("nozomi_test_dry_run_empty.tmp");
         File::create(&path).unwrap();
 
         let request = DeleteRequest::builder()
@@ -159,7 +159,7 @@ mod test_dry_run {
     #[test]
     fn normal_run_modifies_file() -> Result<()> {
         let mut path = std::env::temp_dir();
-        path.push("nozomi_test_dry_normal_run.tmp".to_string());
+        path.push("nozomi_test_dry_normal_run.tmp");
 
         {
             let mut file = File::create(&path).unwrap();
@@ -191,7 +191,7 @@ mod test_dry_run {
     #[test]
     fn dry_run_does_not_modify_file() -> Result<()> {
         let mut path = std::env::temp_dir();
-        path.push("nozomi_test_dry_run_test.tmp".to_string());
+        path.push("nozomi_test_dry_run_test.tmp");
 
         let original = b"HELLO_WORLD";
         {
@@ -222,7 +222,7 @@ mod test_dry_run {
     #[test]
     fn dry_run_does_not_remove_file() -> Result<()> {
         let mut path = std::env::temp_dir();
-        path.push("nozomi_test_dry_run_remove.tmp".to_string());
+        path.push("nozomi_test_dry_run_remove.tmp");
         File::create(&path).unwrap();
 
         let request = DeleteRequest::builder()
@@ -243,7 +243,7 @@ mod test_dry_run {
     #[cfg(feature = "verify")]
     fn dry_run_skips_verify() -> Result<()> {
         let mut path = std::env::temp_dir();
-        path.push("nozomi_test_dry_run_verify.tmp".to_string());
+        path.push("nozomi_test_dry_run_verify.tmp");
         File::create(&path).unwrap();
 
         let request = DeleteRequest::builder()
@@ -263,7 +263,7 @@ mod test_dry_run {
     #[test]
     fn dry_run_emits_events() -> Result<()> {
         let mut path = std::env::temp_dir();
-        path.push("nozomi_test_dry_run_event.tmp".to_string());
+        path.push("nozomi_test_dry_run_event.tmp");
         File::create(&path).unwrap();
 
         let mut sink = TestSink::default();
@@ -305,7 +305,7 @@ mod test_dry_run {
     #[test]
     fn dry_run_empty_file() -> Result<()> {
         let mut path = std::env::temp_dir();
-        path.push("nozomi_test_dry_run_empty.tmp".to_string());
+        path.push("nozomi_test_dry_run_empty.tmp");
         File::create(&path).unwrap();
 
         let request = DeleteRequest::builder()
@@ -325,7 +325,7 @@ mod test_dry_run {
     #[test]
     fn normal_run_modifies_file() -> Result<()> {
         let mut path = std::env::temp_dir();
-        path.push("nozomi_test_dry_normal_run.tmp".to_string());
+        path.push("nozomi_test_dry_normal_run.tmp");
 
         {
             let mut file = File::create(&path).unwrap();

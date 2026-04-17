@@ -6,9 +6,9 @@ use rand::SeedableRng;
 use rand::rngs::StdRng;
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
-use std::path::PathBuf;
 #[cfg(feature = "error-stack")]
 use std::path::Path;
+use std::path::PathBuf;
 
 use crate::error::FSProblem;
 #[cfg(not(feature = "error-stack"))]
@@ -471,11 +471,15 @@ pub(crate) fn dry_verify_last_pass<S: EventSink>(
 ) -> Result<()> {
     emit_safe(
         sink,
-        DeleteEvent::VerificationStarted { path: path.to_path_buf() },
+        DeleteEvent::VerificationStarted {
+            path: path.to_path_buf(),
+        },
     );
     emit_safe(
         sink,
-        DeleteEvent::VerificationCompleted { path: path.to_path_buf() },
+        DeleteEvent::VerificationCompleted {
+            path: path.to_path_buf(),
+        },
     );
     Ok(())
 }

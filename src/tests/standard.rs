@@ -1,4 +1,3 @@
-
 #[cfg(not(feature = "log"))]
 use super::LOREM_IPSUM;
 use super::TestType;
@@ -117,7 +116,7 @@ pub fn create_test_file(test_type: &TestType, method_name: &str) -> Result<(Stri
             }
             return Ok((file_name, LOREM_IPSUM.to_string()));
         }
-        #[cfg(all(feature = "log",not(feature = "secure_log")))]
+        #[cfg(all(feature = "log", not(feature = "secure_log")))]
         TestType::LogMini => {
             let file_name = format!("{test_folder}/{method_name}_log_mini.txt");
             let lorem = "Hello, world!".to_string();
