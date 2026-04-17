@@ -46,6 +46,9 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
 
         file.flush()
             .map_err(|_| Error::OverwriteError(Method::HmgiS5, &pattern + 1))?;
+        file.sync_all().map_err(|_| {
+            Error::SystemProblem(FSProblem::Write, format!("{}", path.to_string_lossy()))
+        })?;
         emit_safe(
             sink,
             DeleteEvent::EntryOverwritePass {
@@ -113,6 +116,10 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
 
         file.flush()
             .change_context(Error::OverwriteError(Method::HmgiS5, &pattern + 1))?;
+        file.sync_all().change_context(Error::SystemProblem(
+            FSProblem::Write,
+            format!("{}", path.to_string_lossy()),
+        ))?;
         emit_safe(
             sink,
             DeleteEvent::EntryOverwritePass {
