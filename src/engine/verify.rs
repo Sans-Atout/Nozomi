@@ -1,11 +1,14 @@
 use crate::DeleteEvent;
 use crate::engine::events::EventSink;
 use crate::engine::utils::{emit_safe, get_three_bytes_pattern_buffer};
+use rand::Rng;
+use rand::SeedableRng;
 use rand::rngs::StdRng;
-use rand::{RngCore, SeedableRng};
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
 use std::path::PathBuf;
+#[cfg(feature = "error-stack")]
+use std::path::Path;
 
 use crate::error::FSProblem;
 #[cfg(not(feature = "error-stack"))]
@@ -15,14 +18,34 @@ use crate::{Error, Result};
 #[cfg(feature = "error-stack")]
 use error_stack::{Report, ResultExt};
 
+/// Describes the expected byte content of the last overwrite pass so that
+/// [`verify_last_pass`] can reconstruct and compare the expected data.
 #[derive(Debug, Clone)]
 pub(crate) enum LastPassInfo {
+    /// The last pass filled the file with `0x00` bytes.
     Zero,
+    /// The last pass repeated the given 3-byte pattern cyclically.
     ThreeBytesPattern([u8; 3]),
+    /// The last pass filled the file with a single repeated byte value.
     Pattern(u8),
-    Random { seed: [u8; 32] },
+    /// The last pass filled the file with pseudo-random data seeded by `seed`.
+    Random {
+        /// The seed used to initialise the PRNG for this pass.
+        seed: [u8; 32],
+    },
 }
 
+/// Reads back the file at `path` and verifies that every byte matches the
+/// pattern described by `info`.
+///
+/// Emits [`DeleteEvent::VerificationStarted`] before reading and either
+/// [`DeleteEvent::VerificationCompleted`] on success or
+/// [`DeleteEvent::VerificationFailed`] on mismatch.
+///
+/// # Errors
+///
+/// Returns [`Error::VerificationFailed`] if a byte mismatch is detected, or an
+/// I/O error if the file cannot be opened or read.
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn verify_last_pass<S: EventSink>(
     path: &PathBuf,
@@ -115,22 +138,21 @@ pub(crate) fn verify_last_pass<S: EventSink>(
     Ok(())
 }
 
+/// Simulates a last-pass verification by emitting the expected events without
+/// reading the file.
+///
+/// Used during dry-run executions to preserve the event sequence seen by
+/// [`EventSink`] implementations without performing actual I/O.
 #[cfg(all(not(feature = "error-stack"), feature = "dry-run"))]
 pub(crate) fn dry_verify_last_pass<S: EventSink>(
     path: &PathBuf,
-    info: LastPassInfo,
+    _info: LastPassInfo,
     sink: &mut S,
 ) -> Result<()> {
     emit_safe(
         sink,
         DeleteEvent::VerificationStarted { path: path.clone() },
     );
-    match info {
-        LastPassInfo::Zero => Ok(()),
-        LastPassInfo::ThreeBytesPattern(pattern) => Ok(()),
-        LastPassInfo::Pattern(p) => Ok(()),
-        LastPassInfo::Random { seed } => Ok(()),
-    }
     emit_safe(
         sink,
         DeleteEvent::VerificationCompleted { path: path.clone() },
@@ -236,6 +258,8 @@ mod tests {
     use super::*;
     use crate::Error;
     use pretty_assertions::assert_eq;
+    use rand::SeedableRng;
+    use rand::rngs::StdRng;
     use std::fs::{File, OpenOptions};
     use std::io::{Seek, SeekFrom, Write};
     use std::path::PathBuf;
@@ -260,9 +284,6 @@ mod tests {
 
     #[test]
     fn verify_random_detects_corruption() {
-        use rand::rngs::StdRng;
-        use rand::{RngCore, SeedableRng};
-
         let path = PathBuf::from("test_random_fail.tmp");
 
         let seed = [42u8; 32];
@@ -303,9 +324,6 @@ mod tests {
 
     #[test]
     fn verify_random_ok() {
-        use rand::rngs::StdRng;
-        use rand::{RngCore, SeedableRng};
-
         let path = PathBuf::from("test_random_ok.tmp");
         let seed = [7u8; 32];
 
@@ -329,6 +347,17 @@ mod tests {
     }
 }
 
+/// Reads back the file at `path` and verifies that every byte matches the
+/// pattern described by `info`.
+///
+/// Emits [`DeleteEvent::VerificationStarted`] before reading and either
+/// [`DeleteEvent::VerificationCompleted`] on success or
+/// [`DeleteEvent::VerificationFailed`] on mismatch.
+///
+/// # Errors
+///
+/// Returns an [`error_stack::Report`] wrapping [`Error::VerificationFailed`] if
+/// a byte mismatch is detected, or an I/O error if the file cannot be read.
 #[cfg(feature = "error-stack")]
 pub(crate) fn verify_last_pass<S: EventSink>(
     path: &PathBuf,
@@ -357,7 +386,7 @@ pub(crate) fn verify_last_pass<S: EventSink>(
     let mut buffer = vec![0u8; 8192];
 
     match info {
-        LastPassInfo::Zero => match verify_fixed(&mut file, 0x00, &mut buffer, &path) {
+        LastPassInfo::Zero => match verify_fixed(&mut file, 0x00, &mut buffer, path) {
             Ok(_) => {}
             Err(report) => {
                 if let Error::VerificationFailed { offset } = report.current_context() {
@@ -373,7 +402,7 @@ pub(crate) fn verify_last_pass<S: EventSink>(
             }
         },
         LastPassInfo::ThreeBytesPattern(pattern) => {
-            match verify_three_bytes_pattern(&mut file, &pattern, &mut buffer, &path) {
+            match verify_three_bytes_pattern(&mut file, &pattern, &mut buffer, path) {
                 Ok(_) => {}
                 Err(report) => {
                     if let Error::VerificationFailed { offset } = report.current_context() {
@@ -389,7 +418,7 @@ pub(crate) fn verify_last_pass<S: EventSink>(
                 }
             }
         }
-        LastPassInfo::Pattern(p) => match verify_fixed(&mut file, p, &mut buffer, &path) {
+        LastPassInfo::Pattern(p) => match verify_fixed(&mut file, p, &mut buffer, path) {
             Ok(_) => {}
             Err(report) => {
                 if let Error::VerificationFailed { offset } = report.current_context() {
@@ -404,7 +433,7 @@ pub(crate) fn verify_last_pass<S: EventSink>(
                 return Err(report);
             }
         },
-        LastPassInfo::Random { seed } => match verify_random(&mut file, seed, &mut buffer, &path) {
+        LastPassInfo::Random { seed } => match verify_random(&mut file, seed, &mut buffer, path) {
             Ok(_) => {}
             Err(report) => {
                 if let Error::VerificationFailed { offset } = report.current_context() {
@@ -429,25 +458,24 @@ pub(crate) fn verify_last_pass<S: EventSink>(
     Ok(())
 }
 
+/// Simulates a last-pass verification by emitting the expected events without
+/// reading the file.
+///
+/// Used during dry-run executions to preserve the event sequence seen by
+/// [`EventSink`] implementations without performing actual I/O.
 #[cfg(all(feature = "error-stack", feature = "dry-run"))]
 pub(crate) fn dry_verify_last_pass<S: EventSink>(
-    path: &PathBuf,
-    info: LastPassInfo,
+    path: &Path,
+    _info: LastPassInfo,
     sink: &mut S,
 ) -> Result<()> {
     emit_safe(
         sink,
-        DeleteEvent::VerificationStarted { path: path.clone() },
+        DeleteEvent::VerificationStarted { path: path.to_path_buf() },
     );
-    match info {
-        LastPassInfo::Zero => Ok(()),
-        LastPassInfo::ThreeBytesPattern(pattern) => Ok(()),
-        LastPassInfo::Pattern(p) => Ok(()),
-        LastPassInfo::Random { seed } => Ok(()),
-    }
     emit_safe(
         sink,
-        DeleteEvent::VerificationCompleted { path: path.clone() },
+        DeleteEvent::VerificationCompleted { path: path.to_path_buf() },
     );
     Ok(())
 }
@@ -456,7 +484,7 @@ fn verify_fixed(
     file: &mut std::fs::File,
     expected: u8,
     buffer: &mut [u8],
-    path: &PathBuf,
+    path: &Path,
 ) -> Result<()> {
     let mut offset: u64 = 0;
 
@@ -488,7 +516,7 @@ fn verify_random(
     file: &mut std::fs::File,
     seed: [u8; 32],
     buffer: &mut [u8],
-    path: &PathBuf,
+    path: &Path,
 ) -> Result<()> {
     let mut rng = StdRng::from_seed(seed);
     let mut offset: u64 = 0;
@@ -524,7 +552,7 @@ fn verify_three_bytes_pattern(
     file: &mut File,
     pattern: &[u8; 3],
     buffer: &mut [u8],
-    path: &PathBuf,
+    path: &Path,
 ) -> Result<()> {
     use std::io::Read;
 
@@ -538,7 +566,7 @@ fn verify_three_bytes_pattern(
             break;
         }
 
-        let expected = get_three_bytes_pattern_buffer(&pattern, bytes_read);
+        let expected = get_three_bytes_pattern_buffer(pattern, bytes_read);
 
         for i in 0..bytes_read {
             if buffer[i] != expected[i] {
@@ -558,6 +586,8 @@ fn verify_three_bytes_pattern(
 mod tests {
     use super::*;
     use crate::Error;
+    use rand::SeedableRng;
+    use rand::rngs::StdRng;
     use std::fs::{File, OpenOptions};
     use std::io::{Seek, SeekFrom, Write};
     use std::path::PathBuf;
@@ -582,9 +612,6 @@ mod tests {
 
     #[test]
     fn verify_random_detects_corruption() {
-        use rand::rngs::StdRng;
-        use rand::{RngCore, SeedableRng};
-
         let path = PathBuf::from("test_random_fail.tmp");
 
         let seed = [42u8; 32];
@@ -628,9 +655,6 @@ mod tests {
 
     #[test]
     fn verify_random_ok() {
-        use rand::rngs::StdRng;
-        use rand::{RngCore, SeedableRng};
-
         let path = PathBuf::from("test_random_ok.tmp");
         let seed = [7u8; 32];
 

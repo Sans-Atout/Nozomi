@@ -5,37 +5,42 @@ use std::path::Path;
 #[cfg(not(feature = "error-stack"))]
 use crate::Result;
 use crate::api::delete::request::NoopSink;
-#[cfg(feature = "log")]
-use log::{error, info, warn};
 
 #[cfg(feature = "analyze")]
 use crate::AnalysisReport;
 #[cfg(feature = "error-stack")]
-use crate::{Error, Result};
+#[allow(deprecated)]
+use crate::Result;
 #[cfg(feature = "analyze")]
 use crate::{PassInfo, PassKind};
-#[cfg(feature = "error-stack")]
-use error_stack::{Context, Report, ResultExt};
 
 use crate::engine::run;
 // -- Region : Method logic
 
-/// Nozomi Eraser method enumeration based on Eraser for Windows main method
+/// Identifies the overwrite algorithm to use when securely deleting a file.
+///
+/// Each variant maps to an industry-standard data sanitisation method. The
+/// variants are ordered roughly by the number of overwrite passes they perform,
+/// from fastest to most thorough.
+///
+/// `PseudoRandom` is the default and is suitable for most use cases. Use
+/// `Gutmann` only when you require the maximum theoretical guarantee for
+/// magnetic media.
 #[derive(Debug, Clone, Copy, Default, PartialEq)]
 pub enum Method {
-    /// DOD 522022 MECE erasing method <https://www.bitraser.com/article/DoD-5220-22-m-standard-for-drive-erasure.php>
+    /// [DoD 5220.22-M (ECE)](https://www.bitraser.com/article/DoD-5220-22-m-standard-for-drive-erasure.php) — 7 passes.
     Dod522022MECE,
-    /// DOD 522022 ME erasing method <https://www.bitraser.com/article/DoD-5220-22-m-standard-for-drive-erasure.php>
+    /// [DoD 5220.22-M (ME)](https://www.bitraser.com/article/DoD-5220-22-m-standard-for-drive-erasure.php) — 3 passes.
     Dod522022ME,
-    /// AFSSI 5020 erasing method <https://www.lifewire.com/data-sanitization-methods-2626133#toc-afssi-5020>
+    /// [AFSSI 5020](https://www.lifewire.com/data-sanitization-methods-2626133#toc-afssi-5020) — 3 passes.
     Afssi5020,
-    /// RCMP TSSIT OPS II erasing method <https://www.datadestroyers.eu/technology/rcmp_tssit_ops-2.html>
+    /// [RCMP TSSIT OPS-II](https://www.datadestroyers.eu/technology/rcmp_tssit_ops-2.html) — 7 passes.
     RcmpTssitOpsII,
-    /// HMGI S5 erasing method <https://www.bitraser.com/knowledge-series/data-destruction-standards-and-guidelines.php>
+    /// [HMGI S5](https://www.bitraser.com/knowledge-series/data-destruction-standards-and-guidelines.php) — 2 passes.
     HmgiS5,
-    /// Gutmann erasing method <https://en.wikipedia.org/wiki/Gutmann_method>
+    /// [Gutmann](https://en.wikipedia.org/wiki/Gutmann_method) — 35 passes.
     Gutmann,
-    /// Pseudo Random erasing method <https://www.lifewire.com/data-sanitization-methods-2626133#toc-random-data>
+    /// Single-pass pseudo-random overwrite. Fast and suitable for modern storage. Default method.
     #[default]
     PseudoRandom,
 }
@@ -43,11 +48,17 @@ pub enum Method {
 // -- Region : Implement logic for basic error handling.
 #[cfg(not(feature = "error-stack"))]
 impl Method {
-    /// This function is used to delete a file or folder using a predefined method using basic error handling method.
+    /// Securely overwrites and deletes the file or directory at `path` using
+    /// this method's algorithm.
     ///
-    /// ## Argument :
-    /// * `self` (&Method) : Nozomi Eraser method enumeration based on Eraser for Windows main method
-    /// * `path` (&str) : path that you want to erase using the given overwrite method
+    /// This is the high-level convenience entry point for the deprecated
+    /// single-argument API. Prefer [`DeleteRequest::builder`](crate::DeleteRequest::builder)
+    /// for new code as it provides event observation and dry-run support.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`Error`](crate::Error) if the path does not exist, cannot be
+    /// overwritten, or cannot be removed.
     pub fn delete(&self, path: &str) -> Result<()> {
         let path_to_delete = Path::new(path);
         let mut sink = NoopSink;
@@ -57,12 +68,19 @@ impl Method {
 
 // -- Region : Implement logic for error-stack's error handling.
 #[cfg(feature = "error-stack")]
+#[allow(deprecated)]
 impl Method {
-    /// This function is used to delete a file or folder using a predefined method using error-stack's error handling method.
+    /// Securely overwrites and deletes the file or directory at `path` using
+    /// this method's algorithm.
     ///
-    /// ## Argument :
-    /// * `self` (&Method) : Nozomi Eraser method enumeration based on Eraser for Windows main method
-    /// * `path` (&str) : path that you want to erase using the given overwrite method
+    /// This is the high-level convenience entry point for the deprecated
+    /// single-argument API. Prefer [`DeleteRequest::builder`](crate::DeleteRequest::builder)
+    /// for new code as it provides event observation and dry-run support.
+    ///
+    /// # Errors
+    ///
+    /// Returns an [`error_stack::Report`] wrapping [`Error`](crate::Error) if
+    /// the path does not exist, cannot be overwritten, or cannot be removed.
     pub fn delete(&self, path: &str) -> Result<()> {
         let path_to_delete = Path::new(path);
         let mut sink = NoopSink;
@@ -87,8 +105,16 @@ impl core::fmt::Display for Method {
 
 #[cfg(feature = "analyze")]
 impl Method {
+    /// Returns a static description of the overwrite schedule applied by this
+    /// method, without executing any I/O.
+    ///
+    /// The resulting [`AnalysisReport`] lists every pass in order with its
+    /// [`PassKind`](crate::PassKind), and can be used to display or audit the
+    /// plan before running a deletion.
+    ///
+    /// Only available when the `analyze` feature is enabled.
     pub fn analyze(&self) -> AnalysisReport {
-        let analysis_report = match &self {
+        match &self {
             Method::Dod522022MECE => AnalysisReport {
                 pass_count: 6,
                 passes: vec![
@@ -276,8 +302,7 @@ impl Method {
                     kind: PassKind::Random,
                 }],
             },
-        };
-        analysis_report
+        }
     }
 }
 

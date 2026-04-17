@@ -4,7 +4,7 @@ use std::path::Path;
 mod events;
 
 #[cfg(test)]
-#[cfg_attr(test, allow(unused_imports, path_statements))]
+#[cfg_attr(test, allow(unused_imports, deprecated, path_statements))]
 #[test]
 fn api_export() {
     use nozomi::Error;

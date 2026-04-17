@@ -14,17 +14,23 @@ use crate::{DeleteEvent, EventSink, SecureDelete};
 #[cfg(feature = "error-stack")]
 use crate::{Error, Result};
 #[cfg(feature = "error-stack")]
-use error_stack::{Context, Report, ResultExt};
+use error_stack::ResultExt;
 #[cfg(feature = "log")]
 use log::trace;
-use rand::RngCore;
+use rand::Rng;
 
+/// Generates a cryptographically random 32-byte seed suitable for seeding a
+/// deterministic PRNG (e.g. [`rand::rngs::StdRng`]).
 pub(crate) fn generate_seed() -> [u8; 32] {
     let mut seed = [0u8; 32];
     rand::rng().fill_bytes(&mut seed);
     seed
 }
 
+/// Generates a buffer of `size` bytes filled by repeating `pattern` cyclically.
+///
+/// Used during post-overwrite verification to reconstruct the expected byte
+/// sequence for a 3-byte pattern pass. Only available with the `verify` feature.
 #[cfg(feature = "verify")]
 pub(super) fn get_three_bytes_pattern_buffer(pattern: &[u8; 3], size: usize) -> Vec<u8> {
     let mut buffer = Vec::<u8>::new();
@@ -35,6 +41,15 @@ pub(super) fn get_three_bytes_pattern_buffer(pattern: &[u8; 3], size: usize) -> 
     buffer
 }
 
+/// Securely removes a regular file by progressively renaming it to a sequence
+/// of zero-character names before calling [`std::fs::remove_file`].
+///
+/// The renaming strategy obscures the original filename in the directory entry
+/// before the file is unlinked, reducing metadata leakage.
+///
+/// # Errors
+///
+/// Returns an error if any rename or the final removal fails.
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn delete_file(path: &Path) -> Result<()> {
     #[cfg(feature = "secure_log")]
@@ -86,12 +101,25 @@ pub(crate) fn delete_file(path: &Path) -> Result<()> {
     })
 }
 
+/// Forwards `event` to `sink`, catching any panic that might occur inside the
+/// sink implementation so that a misbehaving observer can never abort the
+/// deletion pipeline.
 pub(crate) fn emit_safe<S: EventSink>(sink: &mut S, event: DeleteEvent) {
     let _ = catch_unwind(AssertUnwindSafe(|| {
         sink.emit(event);
     }));
 }
 
+/// Removes an empty directory by progressively renaming it to zero-character
+/// names before calling [`std::fs::remove_dir`].
+///
+/// Mirrors [`delete_file`] but operates on directories. The caller is
+/// responsible for ensuring that the directory is empty before calling this
+/// function.
+///
+/// # Errors
+///
+/// Returns an error if any rename or the final removal fails.
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn delete_dir(path: &Path) -> Result<()> {
     #[cfg(feature = "secure_log")]
@@ -152,10 +180,20 @@ fn zero_name(path: &Path) -> Result<String> {
     Ok(new_name)
 }
 
+/// Securely removes a regular file by progressively renaming it to a sequence
+/// of zero-character names before calling [`std::fs::remove_file`].
+///
+/// The renaming strategy obscures the original filename in the directory entry
+/// before the file is unlinked, reducing metadata leakage.
+///
+/// # Errors
+///
+/// Returns an [`error_stack::Report`] wrapping [`Error`](crate::Error) if any
+/// rename or the final removal fails.
 #[cfg(feature = "error-stack")]
 pub(crate) fn delete_file(path: &Path) -> Result<()> {
     #[cfg(feature = "secure_log")]
-    let md5_value = md5::compute(&path.to_string_lossy().to_string());
+    let md5_value = md5::compute(path.to_string_lossy().to_string());
     #[cfg(feature = "log")]
     trace!("[{}]\tBeginning of deletion", &path.to_string_lossy());
     #[cfg(feature = "secure_log")]
@@ -175,7 +213,7 @@ pub(crate) fn delete_file(path: &Path) -> Result<()> {
     trace!(
         "[{:x}]\tRenaming to {:x}",
         &md5_value,
-        md5::compute(&new_path.to_string_lossy().to_string())
+        md5::compute(new_path.to_string_lossy().to_string())
     );
 
     let mut anon_file_size = zero_name.len();
@@ -194,7 +232,7 @@ pub(crate) fn delete_file(path: &Path) -> Result<()> {
         trace!(
             "[{:x}]\tRenaming to {:x}",
             &md5_value,
-            md5::compute(&new_path.to_string_lossy().to_string())
+            md5::compute(new_path.to_string_lossy().to_string())
         );
     }
     fs::remove_file(&new_path).change_context(Error::SystemProblem(
@@ -203,10 +241,21 @@ pub(crate) fn delete_file(path: &Path) -> Result<()> {
     ))
 }
 
+/// Removes an empty directory by progressively renaming it to zero-character
+/// names before calling [`std::fs::remove_dir`].
+///
+/// Mirrors [`delete_file`] but operates on directories. The caller is
+/// responsible for ensuring that the directory is empty before calling this
+/// function.
+///
+/// # Errors
+///
+/// Returns an [`error_stack::Report`] wrapping [`Error`](crate::Error) if any
+/// rename or the final removal fails.
 #[cfg(feature = "error-stack")]
 pub(crate) fn delete_dir(path: &Path) -> Result<()> {
     #[cfg(feature = "secure_log")]
-    let md5_value = md5::compute(&path.to_string_lossy().to_string());
+    let md5_value = md5::compute(path.to_string_lossy().to_string());
     #[cfg(feature = "log")]
     trace!("[{}]\tBeginning of deletion", &path.to_string_lossy());
     #[cfg(feature = "secure_log")]
@@ -226,7 +275,7 @@ pub(crate) fn delete_dir(path: &Path) -> Result<()> {
     trace!(
         "[{:x}]\tRenaming to {:x}",
         &md5_value,
-        md5::compute(&new_path.to_string_lossy().to_string())
+        md5::compute(new_path.to_string_lossy().to_string())
     );
 
     let mut anon_file_size = zero_name.len();
@@ -245,7 +294,7 @@ pub(crate) fn delete_dir(path: &Path) -> Result<()> {
         trace!(
             "[{:x}]\tRenaming to {:x}",
             &md5_value,
-            md5::compute(&new_path.to_string_lossy().to_string())
+            md5::compute(new_path.to_string_lossy().to_string())
         );
     }
     fs::remove_dir(&new_path).change_context(Error::SystemProblem(

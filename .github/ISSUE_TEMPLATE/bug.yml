@@ -1,84 +1,155 @@
 name: Bug report
-description: Declare a bug inside the library
-title: '[BUG]: '
+description: Report unexpected behavior in the library
+title: "[BUG]: "
 labels:
-  - Bug
+  - bug
 body:
   - type: checkboxes
-    id: version_selector
+    id: preflight
     attributes:
-      label: For which version of the library would you like to report a bug?
-      description: To date, only versions 2.x and 3.x are officially supported.
+      label: Pre-flight checklist
       options:
-        - label: 3.0.0
-          required: false
-        - label: 2.0.1
-          required: false
-        - label: 2.0.0
-          required: false
-        - label: 1.0.2
-          required: false
-        - label: 1.0.1
-          required: false
-        - label: 1.0.0
-          required: false
-  - type: checkboxes
-    id: activated_feature
-    attributes:
-      label: Which features did you use?
-      options:
-        - label: unknown
-          required: false
-        - label: error_stack
-          required: false
-        - label: log
-          required: false
-        - label: secure_log
-          required: false
+        - label: I searched existing issues and this is not a duplicate
+          required: true
+        - label: I am using a supported version (2.x or 3.x)
+          required: true
+
   - type: dropdown
-    id: erasing_method
+    id: version
     attributes:
-      label: Did you erase a folder or a file ?
+      label: Library version
+      description: Which version of Nozomi are you using?
       options:
-        - Files
-        - Folder
+        - "3.x (current stable)"
+        - "2.x (LTS)"
+        - "1.x (unsupported — best effort)"
+        - "Other / pre-release"
     validations:
       required: true
+
+  - type: checkboxes
+    id: features
+    attributes:
+      label: Cargo features enabled
+      description: Which features did you enable in `Cargo.toml`?
+      options:
+        - label: "`dry-run`"
+        - label: "`verify`"
+        - label: "`analyze`"
+        - label: "`log`"
+        - label: "`secure_log`"
+        - label: "`error-stack`"
+        - label: None (default build)
+
+  - type: dropdown
+    id: method
+    attributes:
+      label: Overwrite method used
+      options:
+        - PseudoRandom (default)
+        - Gutmann (35 passes)
+        - DoD 5220.22-M ECE (7 passes)
+        - DoD 5220.22-M ME (3 passes)
+        - AFSSI 5020 (3 passes)
+        - RCMP TSSIT OPS-II (7 passes)
+        - HMGI S5 (2 passes)
+        - Unknown
+    validations:
+      required: true
+
+  - type: dropdown
+    id: target_type
+    attributes:
+      label: Deletion target
+      options:
+        - File
+        - Directory
+        - Both
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "e.g. Arch Linux 6.12, Ubuntu 24.04, macOS 14.5, Windows 11"
+    validations:
+      required: true
+
   - type: input
     id: drive_type
     attributes:
-      label: Hard disk type
-      placeholder: SSD \ HDD
+      label: Storage type
+      placeholder: "SSD / HDD / NVMe / RAM disk / network share"
     validations:
       required: true
-  - type: input
-    id: os_version_type
-    attributes:
-      label: On which systems did you encounter the bug?
-      placeholder: Arch Linux 6.x
-    validations:
-      required: true
+
   - type: input
     id: file_type
     attributes:
-      label: Type of file you tried to delete
-      placeholder: mp4
+      label: File type
+      placeholder: "e.g. mp4, sqlite, txt"
     validations:
       required: true
+
   - type: input
     id: file_size
     attributes:
-      label: Size of file you tried to delete
-      placeholder: 32Go
+      label: File size
+      placeholder: "e.g. 4 KB, 2 GB"
     validations:
       required: true
+
   - type: textarea
-    id: other_file_metadata
+    id: expected
     attributes:
-      label: Write here all the metadata that might be relevant to your case
-  - type: textarea
-    id: bug_step
-    attributes:
-      label: Explain the different steps that could help us reproduce the bug
+      label: Expected behavior
+      description: What did you expect to happen?
     validations:
       required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: error
+    attributes:
+      label: Error message / stack trace
+      description: Paste the full error output if any.
+      render: text
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Minimal, numbered steps to trigger the bug.
+      placeholder: |
+        1. Create a file with ...
+        2. Call `Method::Gutmann.delete(...)` with ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: snippet
+    attributes:
+      label: Minimal reproducible example
+      description: A short Rust snippet that demonstrates the issue.
+      render: rust
+      placeholder: |
+        use nozomi::{Method, DeleteRequest};
+
+        fn main() {
+            // ...
+        }
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Filesystem permissions, unusual mount options, concurrent access, etc.

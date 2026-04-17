@@ -2,6 +2,21 @@ use crate::SecureDelete;
 
 use super::builder::DeleteRequestBuilder;
 
+/// Converts a [`SecureDelete`] into a [`DeleteRequestBuilder`], preserving the
+/// file path.
+///
+/// This implementation provides a migration path from the deprecated
+/// [`SecureDelete`] API to the current builder-based API. The resulting builder
+/// still requires a [`method`](DeleteRequestBuilder::method) to be set before
+/// [`build`](DeleteRequestBuilder::build) can succeed.
+///
+/// # Example
+///
+/// ```rust,ignore
+/// // SecureDelete is deprecated — use DeleteRequestBuilder directly for new code.
+/// let builder = DeleteRequestBuilder::from(legacy_secure_delete);
+/// let request = builder.method(DeleteMethod::BuiltIn(Method::PseudoRandom)).build()?;
+/// ```
 impl From<SecureDelete> for DeleteRequestBuilder {
     fn from(sd: SecureDelete) -> Self {
         DeleteRequestBuilder::new().path(sd.path)
@@ -21,7 +36,7 @@ mod tests {
     #[cfg(feature = "error-stack")]
     use crate::Result;
     #[cfg(feature = "error-stack")]
-    use error_stack::{Report, ResultExt};
+    use error_stack::ResultExt;
 
     #[test]
     #[cfg(not(feature = "error-stack"))]

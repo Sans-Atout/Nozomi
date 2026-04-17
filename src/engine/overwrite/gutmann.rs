@@ -1,6 +1,6 @@
 use crate::engine::overwrite::common::prepare_overwrite;
 use crate::{DeleteEvent, EventSink, Method};
-use rand::RngCore;
+use rand::Rng;
 use std::io::{Seek, SeekFrom, Write};
 use std::path::Path;
 
@@ -14,11 +14,11 @@ use crate::{Error, Result};
 use error_stack::ResultExt;
 
 use crate::engine::utils::emit_safe;
-#[cfg(feature = "log")]
-use log::info;
 
 #[cfg(feature = "verify")]
 use crate::engine::utils::generate_seed;
+#[cfg(all(feature = "verify", feature = "dry-run"))]
+use crate::engine::verify::dry_verify_last_pass;
 #[cfg(feature = "verify")]
 use crate::engine::verify::{LastPassInfo, verify_last_pass};
 #[cfg(feature = "verify")]
@@ -56,14 +56,16 @@ const FIXED_PATTERNS: &[[u8; 3]] = &[
     [0xDB, 0x6D, 0xB6],
 ];
 
-/// Function that implement [Gutmann overwrite method](https://en.wikipedia.org/wiki/Gutmann_method)
-/// ! Please note that this method does not delete the given file.
+/// Overwrites the file at `path` using the
+/// [Gutmann](https://en.wikipedia.org/wiki/Gutmann_method) sanitisation
+/// standard (35 passes: 4 random, 27 fixed 3-byte patterns, 4 random).
 ///
-/// ## Argument :
-/// * `path` (&Path) : path that you want to erase using basic pseudo random method overwrite method
+/// This function overwrites the file contents only; it does **not** delete
+/// the file. Deletion is handled by the executor after all passes complete.
 ///
-/// ## Return
-/// * `()`
+/// # Errors
+///
+/// Returns an error if any write pass fails or the file cannot be synced.
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
@@ -121,16 +123,20 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     #[cfg(feature = "verify")]
     verify_last_pass(
         &path.to_path_buf(),
-        crate::engine::verify::LastPassInfo::Random { seed },
+        LastPassInfo::Random { seed },
         sink,
     )?;
     Ok(())
 }
 
+/// Simulates the Gutmann overwrite of `path` without writing any data.
+///
+/// Emits the same [`DeleteEvent::EntryOverwritePass`] events as [`overwrite_file`].
+/// Only available when the `dry-run` feature is enabled.
 #[cfg(all(not(feature = "error-stack"), feature = "dry-run"))]
 pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     #[cfg(feature = "verify")]
-    let mut seed = [0u8; 32];
+    let seed = [0u8; 32];
     for pass in 0..35 {
         emit_safe(
             sink,
@@ -147,14 +153,16 @@ pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Res
     Ok(())
 }
 
-/// Function that implement [Gutmann overwrite method](https://en.wikipedia.org/wiki/Gutmann_method)
-/// ! Please note that this method does not delete the given file.
+/// Overwrites the file at `path` using the
+/// [Gutmann](https://en.wikipedia.org/wiki/Gutmann_method) sanitisation
+/// standard (35 passes: 4 random, 27 fixed 3-byte patterns, 4 random).
 ///
-/// ## Argument :
-/// * `path` (&Path) : path that you want to erase using basic pseudo random method overwrite method
+/// This function overwrites the file contents only; it does **not** delete
+/// the file. Deletion is handled by the executor after all passes complete.
 ///
-/// ## Return
-/// * `()`
+/// # Errors
+///
+/// Returns an error if any write pass fails or the file cannot be synced.
 #[cfg(feature = "error-stack")]
 pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
@@ -216,10 +224,14 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     Ok(())
 }
 
+/// Simulates the Gutmann overwrite of `path` without writing any data.
+///
+/// Emits the same [`DeleteEvent::EntryOverwritePass`] events as [`overwrite_file`].
+/// Only available when the `dry-run` feature is enabled.
 #[cfg(all(feature = "error-stack", feature = "dry-run"))]
 pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     #[cfg(feature = "verify")]
-    let mut seed = [0u8; 32];
+    let seed = [0u8; 32];
     for pass in 0..35 {
         emit_safe(
             sink,
@@ -231,7 +243,7 @@ pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Res
         );
     }
     #[cfg(feature = "verify")]
-    dry_verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
+    dry_verify_last_pass(path, LastPassInfo::Random { seed }, sink)?;
 
     Ok(())
 }
@@ -241,7 +253,6 @@ mod test {
     const METHOD_NAME: &str = "gutmann";
     use crate::Method::Gutmann as EraseMethod;
 
-    use crate::error::FSProblem;
     use crate::tests::TestType;
 
     /// Module containing all the tests for the standard error handling method
@@ -249,8 +260,8 @@ mod test {
     mod standard {
         use super::*;
 
-        use crate::tests::standard::{create_test_file, get_bytes};
-        use crate::{Error, Result};
+        use crate::tests::standard::{create_test_file};
+        use crate::Result;
 
         #[cfg(not(any(feature = "log", feature = "secure_log")))]
         mod no_log {
@@ -258,6 +269,9 @@ mod test {
             use crate::api::delete::request::NoopSink;
             use pretty_assertions::{assert_eq, assert_ne};
             use std::path::Path;
+            use crate::Error;
+            use crate::tests::standard::get_bytes;
+            use crate::error::FSProblem;
 
             /// Test if the overwrite method for this particular erase protocol work well or not.
             ///
@@ -420,8 +434,8 @@ mod test {
     mod enhanced {
         use super::*;
 
-        use crate::tests::enhanced::{create_test_file, get_bytes};
-        use crate::{Error, Result};
+        use crate::tests::enhanced::{create_test_file};
+        use crate::Result;
 
         #[cfg(not(any(feature = "log", feature = "secure_log")))]
         mod no_log {
@@ -431,6 +445,9 @@ mod test {
             use error_stack::ResultExt;
             use pretty_assertions::{assert_eq, assert_ne};
             use std::path::Path;
+            use crate::Error;
+            use crate::tests::enhanced::get_bytes;
+            use crate::error::FSProblem;
 
             /// Test if the overwrite method for this particular erase protocol work well or not.
             ///

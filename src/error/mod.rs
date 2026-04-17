@@ -1,28 +1,45 @@
+//! Error types used throughout the library.
+//!
+//! Two implementations are provided depending on the active feature flag:
+//!
+//! - **default** (`standard`) — uses the standard [`core::error::Error`] trait.
+//! - **`error-stack`** (`enhanced`) — wraps errors in an [`error_stack::Report`]
+//!   for richer context. This variant is deprecated and will be removed in `4.0.0`.
+//!
+//! [`FSProblem`] is shared between both variants and describes the category of
+//! filesystem operation that failed.
+
 #[cfg(not(feature = "error-stack"))]
 pub mod standard;
 
 #[cfg(feature = "error-stack")]
+#[allow(deprecated)]
 pub mod enhanced;
 
-/// Enum that represent different kind of file system problem that Nozomi lib can encounter
+/// Identifies the category of filesystem operation that produced an error.
+///
+/// Carried inside [`Error::SystemProblem`](crate::Error::SystemProblem) to give
+/// callers and logging tooling precise context about what the engine was
+/// attempting when the failure occurred.
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(test, derive(PartialEq))]
 pub enum FSProblem {
-    /// Problem during rename process
+    /// Failure while renaming a file or directory.
     Rename,
-    /// Problem during file opening operation
+    /// Failure while opening a file for reading or writing.
     Opening,
-    /// Problem during writing process
+    /// Failure while writing data to a file.
     Write,
+    /// Failure while reading data from a file (requires the `verify` feature).
     #[cfg(feature = "verify")]
     Read,
-    /// Problem during deletion process
+    /// Failure while removing a file or directory from the filesystem.
     Delete,
-    /// Problem during file enumeration process
+    /// Failure while enumerating the entries of a directory.
     ReadFolder,
-    /// Can not found a file or a folder
+    /// The requested file or directory does not exist.
     NotFound,
-    /// Problem with file/folder process
+    /// Failure while querying or modifying filesystem permissions.
     Permissions,
 }
 
@@ -44,4 +61,5 @@ impl core::fmt::Display for FSProblem {
 }
 
 #[cfg(test)]
+#[cfg(not(feature = "error-stack"))]
 pub(crate) fn rfc1236<T: core::error::Error + Send + Sync + 'static>() {}

@@ -1,6 +1,9 @@
 use std::path::PathBuf;
+#[allow(deprecated)]
 mod emission_order;
+#[allow(deprecated)]
 mod error_behavior;
+#[allow(deprecated)]
 mod sink_isolation;
 
 use nozomi::{DeleteEvent, EventSink};

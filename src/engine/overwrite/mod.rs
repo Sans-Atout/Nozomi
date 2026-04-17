@@ -1,3 +1,9 @@
+//! Method dispatcher for the overwrite engine.
+//!
+//! Each submodule implements a specific sanitisation standard. This module
+//! provides a single [`overwrite_file`] entry point that routes to the correct
+//! implementation based on the chosen [`Method`].
+
 // -- Region : Module export
 mod afssi_5020;
 mod common;
@@ -15,10 +21,18 @@ use std::path::Path;
 use crate::Result;
 
 #[cfg(feature = "error-stack")]
-use crate::{Error, Result};
-#[cfg(feature = "error-stack")]
-use error_stack::ResultExt;
+use crate::Result;
 
+/// Overwrites the file at `path` using the algorithm specified by `method`,
+/// forwarding progress events to `sink`.
+///
+/// This is the single dispatch point used by the executor. Each method
+/// submodule owns the concrete pass implementation.
+///
+/// # Errors
+///
+/// Returns an error if any overwrite pass fails (I/O error or permission
+/// denied).
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn overwrite_file<S: EventSink>(
     method: &Method,
@@ -37,6 +51,15 @@ pub(crate) fn overwrite_file<S: EventSink>(
     Ok(())
 }
 
+/// Simulates the overwrite of the file at `path` without writing any data,
+/// forwarding the same events as [`overwrite_file`] to `sink`.
+///
+/// Only available when the `dry-run` feature is enabled.
+///
+/// # Errors
+///
+/// Returns an error if the execution context cannot be prepared (e.g. the file
+/// is inaccessible).
 #[cfg(all(not(feature = "error-stack"), feature = "dry-run"))]
 pub(crate) fn dry_overwrite_file<S: EventSink>(
     method: &Method,
@@ -55,6 +78,16 @@ pub(crate) fn dry_overwrite_file<S: EventSink>(
     Ok(())
 }
 
+/// Overwrites the file at `path` using the algorithm specified by `method`,
+/// forwarding progress events to `sink`.
+///
+/// This is the single dispatch point used by the executor. Each method
+/// submodule owns the concrete pass implementation.
+///
+/// # Errors
+///
+/// Returns an [`error_stack::Report`] wrapping [`Error`](crate::Error) if any
+/// overwrite pass fails (I/O error or permission denied).
 #[cfg(feature = "error-stack")]
 pub(crate) fn overwrite_file<S: EventSink>(
     method: &Method,
@@ -73,6 +106,15 @@ pub(crate) fn overwrite_file<S: EventSink>(
     Ok(())
 }
 
+/// Simulates the overwrite of the file at `path` without writing any data,
+/// forwarding the same events as [`overwrite_file`] to `sink`.
+///
+/// Only available when the `dry-run` feature is enabled.
+///
+/// # Errors
+///
+/// Returns an [`error_stack::Report`] wrapping [`Error`](crate::Error) if the
+/// execution context cannot be prepared.
 #[cfg(all(feature = "error-stack", feature = "dry-run"))]
 pub(crate) fn dry_overwrite_file<S: EventSink>(
     method: &Method,

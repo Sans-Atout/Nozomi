@@ -26,6 +26,10 @@ use std::{
 /// Secure Delete object : backbone of
 #[derive(Debug, Clone)]
 #[cfg_attr(test, derive(PartialEq, Eq))]
+#[deprecated(
+    since = "3.1.0",
+    note = "Use `DeleteRequestBuilder` instead. This API will be removed in `4.0.0`."
+)]
 pub struct SecureDelete {
     /// File/Folder path that you want to overwrite/delete
     pub(crate) path: String,
@@ -54,6 +58,10 @@ impl SecureDelete {
     ///
     /// ## Return
     /// * `&mut self` (SecureDelete) : The object itself that can be used to call an other function as buffer (by example)
+    #[deprecated(
+        since = "3.1.0",
+        note = "Use `DeleteRequestBuilder` instead. This API will be removed in `4.0.0`."
+    )]
     pub fn byte(&mut self, byte: &u8) -> &mut Self {
         #[cfg(feature = "log")]
         trace!("[{}]\tbyte [{:x}]\tpattern [None]", &self.path, byte);
@@ -73,6 +81,10 @@ impl SecureDelete {
     ///
     /// ## Return
     /// * `&mut self` (SecureDelete) : The object itself that can be used to call an other function as buffer (by example)
+    #[deprecated(
+        since = "3.1.0",
+        note = "Use `DeleteRequestBuilder` instead. This API will be removed in `4.0.0`."
+    )]
     pub fn pattern(&mut self, pattern: &[u8; 3]) -> &mut Self {
         #[cfg(feature = "log")]
         trace!(
@@ -97,6 +109,10 @@ impl SecureDelete {
     ///
     /// ## Return
     /// * `&mut self` (SecureDelete) : The object itself that can be used to call an other function as byte (by example)
+    #[deprecated(
+        since = "3.1.0",
+        note = "Use `DeleteRequestBuilder` instead. This API will be removed in `4.0.0`."
+    )]
     pub fn buffer(&mut self, new_buffer_size: usize) -> &mut Self {
         #[cfg(feature = "log")]
         trace!("[{}]\tbuffer size [{}]", &self.path, new_buffer_size);
@@ -139,21 +155,29 @@ impl SecureDelete {
     }
 
     #[cfg(feature = "dry-run")]
+    #[deprecated(
+        since = "3.1.0",
+        note = "Use `DeleteRequestBuilder` instead. This API will be removed in `4.0.0`."
+    )]
     pub fn dry_run(&mut self) -> &mut Self {
         self.dry_run = true;
         self
     }
 
     #[cfg(feature = "analyze")]
+    #[deprecated(
+        since = "3.1.0",
+        note = "Use `DeleteRequestBuilder` instead. This API will be removed in `4.0.0`."
+    )]
     pub fn get_pass_info(&self) -> PassInfo {
         if let Some(byte) = &self.byte {
             return PassInfo {
-                kind: PassKind::Pattern(byte.clone()),
+                kind: PassKind::Pattern(*byte),
             };
         }
         if let Some(bytes_pattern) = self.pattern {
             return PassInfo {
-                kind: PassKind::ThreeBytePattern(bytes_pattern.clone()),
+                kind: PassKind::ThreeBytePattern(bytes_pattern),
             };
         }
         PassInfo {
@@ -169,6 +193,10 @@ impl SecureDelete {
     ///
     /// ## Arguments
     /// * `path` (&str) : path that you want to overwrite/delete
+    #[deprecated(
+        since = "3.1.0",
+        note = "Use `DeleteRequestBuilder::build()` instead. This API will be removed in `4.0.0`."
+    )]
     pub fn new(path: &str) -> Result<Self> {
         if !Path::new(&path).exists() {
             return Err(Error::SystemProblem(FSProblem::NotFound, path.to_string()));
@@ -198,6 +226,10 @@ impl SecureDelete {
     ///
     /// ## Arguments
     /// * `&mut self` (SecureDelete) : The object itself that can be modified
+    #[deprecated(
+        since = "3.1.0",
+        note = "Use `DeleteRequestBuilder::build().run()` instead. This API will be removed in `4.0.0`."
+    )]
     pub fn delete(&mut self) -> Result<()> {
         #[cfg(feature = "dry-run")]
         if self.dry_run {
@@ -241,6 +273,10 @@ impl SecureDelete {
     /// ## Arguments
     /// * `&mut self` (SecureDelete) : The object itself that can be modified
     /// * `new_name` (&Path) : New file name as Path struct
+    #[deprecated(
+        since = "3.1.0",
+        note = "Use `DeleteRequestBuilder::build().run()` instead. This API will be removed in `4.0.0`."
+    )]
     pub fn rename(&mut self, new_name: &Path) -> Result<()> {
         #[cfg(feature = "dry-run")]
         if self.dry_run {
@@ -271,6 +307,10 @@ impl SecureDelete {
     ///
     /// ## Return
     /// * `&mut self` (SecureDelete) : The object itself that can be used to call an other function as delete (by example)
+    #[deprecated(
+        since = "3.1.0",
+        note = "Use `DeleteRequestBuilder::build().run()` instead. This API will be removed in `4.0.0`."
+    )]
     pub fn overwrite(&mut self) -> Result<&mut Self> {
         #[cfg(feature = "log")]
         trace!("[{}]\tBegging of overwriting phase", &self.path);
@@ -332,6 +372,10 @@ impl SecureDelete {
 
     #[cfg(feature = "verify")]
     pub fn verify(&self) -> Result<bool> {
+        #[cfg(feature = "dry-run")]
+        if self.dry_run {
+            return Ok(true);
+        }
         let mut sink = NoopSink {};
         if let Some(byte) = self.byte {
             let result = verify_last_pass(
@@ -576,6 +620,10 @@ impl SecureDelete {
     ///
     /// ## Arguments
     /// * `path` (&str) : path that you want to overwrite/delete
+    #[deprecated(
+        since = "3.1.0",
+        note = "Use `DeleteRequestBuilder::build()` instead. This API will be removed in `4.0.0`."
+    )]
     pub fn new(path: &str) -> Result<Self> {
         if !Path::new(&path).exists() {
             return Err(Report::new(Error::SystemProblem(
@@ -587,7 +635,7 @@ impl SecureDelete {
         #[cfg(feature = "log")]
         trace!("[{}]\tSecure deletion object creation", &path);
         #[cfg(feature = "secure_log")]
-        let computed_md5 = md5::compute(&path);
+        let computed_md5 = md5::compute(path);
         #[cfg(feature = "secure_log")]
         trace!("[{:x}]\tSecure deletion object creation", &computed_md5);
 
@@ -609,6 +657,10 @@ impl SecureDelete {
     ///
     /// ## Arguments
     /// * `&mut self` (SecureDelete) : The object itself that can be modified
+    #[deprecated(
+        since = "3.1.0",
+        note = "Use `DeleteRequestBuilder::build().run()` instead. This API will be removed in `4.0.0`."
+    )]
     pub fn delete(&mut self) -> Result<()> {
         #[cfg(feature = "dry-run")]
         if self.dry_run {
@@ -652,6 +704,10 @@ impl SecureDelete {
     /// ## Arguments
     /// * `&mut self` (SecureDelete) : The object itself that can be modified
     /// * `new_name` (&Path) : New file name as Path struct
+    #[deprecated(
+        since = "3.1.0",
+        note = "Use `DeleteRequestBuilder::build().run()` instead. This API will be removed in `4.0.0`."
+    )]
     pub fn rename(&mut self, new_name: &Path) -> Result<()> {
         #[cfg(feature = "dry-run")]
         if self.dry_run {
@@ -681,6 +737,10 @@ impl SecureDelete {
     ///
     /// ## Return
     /// * `&mut self` (SecureDelete) : The object itself that can be used to call an other function as delete (by example)
+    #[deprecated(
+        since = "3.1.0",
+        note = "Use `DeleteRequestBuilder::build().run()` instead. This API will be removed in `4.0.0`."
+    )]
     pub fn overwrite(&mut self) -> Result<&mut Self> {
         #[cfg(feature = "log")]
         trace!("[{}]\tBegging of overwriting phase", &self.path);
@@ -736,10 +796,14 @@ impl SecureDelete {
     }
 
     #[cfg(feature = "verify")]
+    #[deprecated(
+        since = "3.1.0",
+        note = "Use `DeleteRequestBuilder::build().run()` instead. This API will be removed in `4.0.0`."
+    )]
     pub fn verify(&self) -> Result<bool> {
         #[cfg(feature = "dry-run")]
         if self.dry_run {
-            return Ok(self);
+            return Ok(true);
         }
         let mut sink = NoopSink {};
         if let Some(byte) = self.byte {

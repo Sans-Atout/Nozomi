@@ -13,19 +13,21 @@ use crate::{Error, Result};
 use error_stack::ResultExt;
 
 use crate::engine::utils::emit_safe;
+#[cfg(all(feature = "verify", feature = "dry-run"))]
+use crate::engine::verify::dry_verify_last_pass;
 #[cfg(feature = "verify")]
 use crate::engine::verify::{LastPassInfo, verify_last_pass};
-#[cfg(feature = "log")]
-use log::info;
 
-/// Function that implement [HMGI S5 overwrite method](https://www.bitraser.com/knowledge-series/data-destruction-standards-and-guidelines.php)
-/// ! Please note that this method does not delete the given file.
+/// Overwrites the file at `path` using the
+/// [HMGI S5](https://www.bitraser.com/knowledge-series/data-destruction-standards-and-guidelines.php)
+/// sanitisation standard (2 passes, both with `0x00`).
 ///
-/// ## Argument :
-/// * `path` (&Path) : path that you want to erase using HMGI S5 overwrite method
+/// This function overwrites the file contents only; it does **not** delete
+/// the file. Deletion is handled by the executor after all passes complete.
 ///
-/// ## Return
-/// * `()`
+/// # Errors
+///
+/// Returns an error if any write pass fails or the file cannot be synced.
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     let (mut file, file_size, _, mut buffer) = prepare_overwrite(path)?;
@@ -61,6 +63,10 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     Ok(())
 }
 
+/// Simulates the HMGI S5 overwrite of `path` without writing any data.
+///
+/// Emits the same [`DeleteEvent::EntryOverwritePass`] events as [`overwrite_file`].
+/// Only available when the `dry-run` feature is enabled.
 #[cfg(all(not(feature = "error-stack"), feature = "dry-run"))]
 pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     for pattern in 0..2 {
@@ -79,14 +85,16 @@ pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Res
     Ok(())
 }
 
-/// Function that implement [HMGI S5 overwrite method](https://www.bitraser.com/knowledge-series/data-destruction-standards-and-guidelines.php)
-/// ! Please note that this method does not delete the given file.
+/// Overwrites the file at `path` using the
+/// [HMGI S5](https://www.bitraser.com/knowledge-series/data-destruction-standards-and-guidelines.php)
+/// sanitisation standard (2 passes, both with `0x00`).
 ///
-/// ## Argument :
-/// * `path` (&Path) : path that you want to erase using HMGI S5 overwrite method
+/// This function overwrites the file contents only; it does **not** delete
+/// the file. Deletion is handled by the executor after all passes complete.
 ///
-/// ## Return
-/// * `()`
+/// # Errors
+///
+/// Returns an error if any write pass fails or the file cannot be synced.
 #[cfg(feature = "error-stack")]
 pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     let (mut file, file_size, _, mut buffer) = prepare_overwrite(path)?;
@@ -123,6 +131,10 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     Ok(())
 }
 
+/// Simulates the HMGI S5 overwrite of `path` without writing any data.
+///
+/// Emits the same [`DeleteEvent::EntryOverwritePass`] events as [`overwrite_file`].
+/// Only available when the `dry-run` feature is enabled.
 #[cfg(all(feature = "error-stack", feature = "dry-run"))]
 pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     for pattern in 0..2 {
@@ -136,7 +148,7 @@ pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Res
         );
     }
     #[cfg(feature = "verify")]
-    dry_verify_last_pass(&path.to_path_buf(), LastPassInfo::Zero, sink)?;
+    dry_verify_last_pass(path, LastPassInfo::Zero, sink)?;
 
     Ok(())
 }
@@ -147,7 +159,6 @@ mod test {
     const METHOD_NAME: &str = "hmgi_S5";
     use crate::Method::HmgiS5 as EraseMethod;
 
-    use crate::error::FSProblem;
     use crate::tests::TestType;
 
     /// Module containing all the tests for the standard error handling method
@@ -155,8 +166,8 @@ mod test {
     mod standard {
         use super::*;
 
-        use crate::tests::standard::{create_test_file, get_bytes};
-        use crate::{Error, Result};
+        use crate::tests::standard::{create_test_file};
+        use crate:: Result;
 
         #[cfg(not(any(feature = "log", feature = "secure_log")))]
         mod no_log {
@@ -164,6 +175,9 @@ mod test {
             use crate::api::delete::request::NoopSink;
             use pretty_assertions::{assert_eq, assert_ne};
             use std::path::Path;
+            use crate::Error;
+            use crate::tests::standard::get_bytes;
+            use crate::error::FSProblem;
 
             /// Test if the overwrite method for this particular erase protocol work well or not.
             ///
@@ -326,8 +340,8 @@ mod test {
     mod enhanced {
         use super::*;
 
-        use crate::tests::enhanced::{create_test_file, get_bytes};
-        use crate::{Error, Result};
+        use crate::tests::enhanced::{create_test_file};
+        use crate::Result;
 
         #[cfg(not(any(feature = "log", feature = "secure_log")))]
         mod no_log {
@@ -337,6 +351,9 @@ mod test {
             use error_stack::ResultExt;
             use pretty_assertions::{assert_eq, assert_ne};
             use std::path::Path;
+            use crate::Error;
+            use crate::tests::enhanced::get_bytes;
+            use crate::error::FSProblem;
 
             /// Test if the overwrite method for this particular erase protocol work well or not.
             ///

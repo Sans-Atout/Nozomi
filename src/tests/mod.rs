@@ -40,24 +40,31 @@ fn validate_structure() {
 }
 
 /// Basic lorem ipsum text used to create file
+#[cfg(not(feature = "log"))]
 const LOREM_IPSUM: &str = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent congue diam risus, quis hendrerit nunc commodo id. Duis volutpat vitae leo at malesuada. Phasellus libero nisl, auctor sit amet dapibus eget, egestas eget velit. Curabitur fermentum, libero vel dictum hendrerit, metus leo pellentesque tortor, et vehicula nisl felis elementum purus. Etiam eu ex in odio tincidunt maximus. Ut luctus blandit ligula et dignissim. Duis id imperdiet urna. Sed porttitor nulla vitae sollicitudin sagittis. Donec ut justo ut risus pretium dignissim. Interdum et malesuada fames ac ante ipsum primis in faucibus. Donec eu rhoncus erat, sed sagittis elit. Proin dui nisl, varius nec volutpat sed, lobortis nec tellus. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.\n";
 
 /// Enum that describe all tests' type used to test global method
 #[derive(Debug, Clone, Copy)]
 pub enum TestType {
     /// Test deleting a 1KB file
+    #[cfg(not(feature = "log"))]
     SmallFile,
     /// Test deleting a 1MB file
+    #[cfg(not(feature = "log"))]
     MediumFile,
     /// Test deleting a 10MB file
+    #[cfg(not(feature = "log"))]
     LargeFile,
     /// Test deleting a read only file
+    #[cfg(not(feature = "log"))]
     WritingError,
     /// Test deleting a folder containing multiple files
+    #[cfg(not(feature = "log"))]
     Folder,
     /// Test the overwriting function
+    #[cfg(not(feature = "log"))]
     OverwriteOnly,
-    #[cfg(feature = "log")]
+    #[cfg(all(feature = "log",not(feature = "secure_log")))]
     /// Test deleting a 1KB file with log feature activated
     LogMini,
     #[cfg(feature = "secure_log")]
