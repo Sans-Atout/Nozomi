@@ -1,5 +1,8 @@
+
+#[cfg(not(feature = "log"))]
 use super::LOREM_IPSUM;
 use super::TestType;
+#[cfg(not(feature = "log"))]
 use crate::error::FSProblem;
 use crate::{Error, Result};
 use std::fs::create_dir_all;
@@ -38,6 +41,7 @@ pub fn create_test_file(test_type: &TestType, method_name: &str) -> Result<(Stri
         .to_str()
         .ok_or(Error::StringConversionError)?;
     match test_type {
+        #[cfg(not(feature = "log"))]
         TestType::SmallFile => {
             let file_name = format!("{test_folder}/{method_name}_small_file_test");
             let lorem = "Hello, world!".to_string();
@@ -46,6 +50,7 @@ pub fn create_test_file(test_type: &TestType, method_name: &str) -> Result<(Stri
                 .map_err(|e| Error::FileCreationError(e))?;
             return Ok((file_name, lorem));
         }
+        #[cfg(not(feature = "log"))]
         TestType::MediumFile => {
             let file_name = format!("{test_folder}/{method_name}_medium_file_test");
             let mut file = File::create(&file_name).map_err(|e| Error::FileCreationError(e))?;
@@ -55,6 +60,7 @@ pub fn create_test_file(test_type: &TestType, method_name: &str) -> Result<(Stri
             }
             return Ok((file_name, LOREM_IPSUM.to_string()));
         }
+        #[cfg(not(feature = "log"))]
         TestType::WritingError => {
             let permission_error_file = format!("{test_folder}/permission_error.txt");
             let mut file =
@@ -71,6 +77,7 @@ pub fn create_test_file(test_type: &TestType, method_name: &str) -> Result<(Stri
             })?;
             return Ok((permission_error_file, LOREM_IPSUM.to_string()));
         }
+        #[cfg(not(feature = "log"))]
         TestType::Folder => {
             let folder_to_delete = format!("{test_folder}/folder_to_delete/");
             if !Path::new(&folder_to_delete).exists() {
@@ -91,6 +98,7 @@ pub fn create_test_file(test_type: &TestType, method_name: &str) -> Result<(Stri
 
             return Ok((folder_to_delete.to_string(), LOREM_IPSUM.to_string()));
         }
+        #[cfg(not(feature = "log"))]
         TestType::OverwriteOnly => {
             let file_name = format!("{test_folder}/{method_name}_basic_over_write");
             let lorem = "Hello, world!".to_string();
@@ -99,6 +107,7 @@ pub fn create_test_file(test_type: &TestType, method_name: &str) -> Result<(Stri
                 .map_err(|e| Error::FileCreationError(e))?;
             return Ok((file_name, lorem));
         }
+        #[cfg(not(feature = "log"))]
         TestType::LargeFile => {
             let file_name = format!("{test_folder}/{method_name}_large_file_test");
             let mut file = File::create(&file_name).map_err(|e| Error::FileCreationError(e))?;
@@ -108,7 +117,7 @@ pub fn create_test_file(test_type: &TestType, method_name: &str) -> Result<(Stri
             }
             return Ok((file_name, LOREM_IPSUM.to_string()));
         }
-        #[cfg(feature = "log")]
+        #[cfg(all(feature = "log",not(feature = "secure_log")))]
         TestType::LogMini => {
             let file_name = format!("{test_folder}/{method_name}_log_mini.txt");
             let lorem = "Hello, world!".to_string();

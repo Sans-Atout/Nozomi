@@ -1,0 +1,64 @@
+name: Feature request
+description: Suggest an improvement or new capability for the library
+title: "[FEATURE]: "
+labels:
+  - enhancement
+body:
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Pre-flight checklist
+      options:
+        - label: I searched existing issues and this has not been requested before
+          required: true
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Type of request
+      options:
+        - New overwrite method / algorithm
+        - New Cargo feature flag
+        - API improvement (builder, events, report)
+        - Performance improvement
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+      description: What limitation or missing capability is this request addressing?
+      placeholder: "When I try to … I cannot … because …"
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the behavior or API you would like to see.
+      placeholder: |
+        Add a `Method::Xyz` variant that …
+
+        ```rust
+        // Proposed usage
+        DeleteRequest::builder("path/to/file")
+            .method(Method::Xyz)
+            .execute()?;
+        ```
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches you have thought about, and why they fall short.
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I am willing to open a pull request for this feature
