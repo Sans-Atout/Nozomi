@@ -75,10 +75,10 @@ later:
 
 ```toml
 # Before
-nozomi = { version = "3.1.0", features = ["error-stack"] }
+nozomi = { version = "3.1.1", features = ["error-stack"] }
 
 # After
-nozomi = { version = "3.1.0" }
+nozomi = { version = "3.1.1" }
 ```
 
 Adjust your error handling to use the standard `nozomi::Error` type directly.

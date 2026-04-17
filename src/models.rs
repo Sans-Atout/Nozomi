@@ -19,7 +19,6 @@ use crate::{PassInfo, PassKind};
 use std::{
     fs::{self, OpenOptions},
     io::{BufWriter, Write},
-    os::unix::fs::MetadataExt,
     path::Path,
 };
 
@@ -328,7 +327,7 @@ impl SecureDelete {
         let file_size = file_to_overwrite
             .metadata()
             .map_err(|_| Error::SystemProblem(FSProblem::Opening, self.path.clone()))?
-            .size();
+            .len();
         let mut overwrite_length: u64 = 0;
         let mut overwriting_buffer = BufWriter::new(file_to_overwrite);
 
@@ -753,7 +752,7 @@ impl SecureDelete {
         let file_size = file_to_overwrite
             .metadata()
             .change_context(Error::SystemProblem(FSProblem::Opening, self.path.clone()))?
-            .size();
+            .len();
         let mut overwrite_length: u64 = 0;
         let mut overwriting_buffer = BufWriter::new(file_to_overwrite);
 

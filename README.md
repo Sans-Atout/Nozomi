@@ -69,7 +69,7 @@ Enable features in `Cargo.toml`:
 
 ```toml
 [dependencies]
-nozomi = { version = "3.1.0", features = ["verify", "dry-run"] }
+nozomi = { version = "3.1.1", features = ["verify", "dry-run"] }
 ```
 
 ---

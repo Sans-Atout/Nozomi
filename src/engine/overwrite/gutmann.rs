@@ -100,6 +100,9 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
 
             file.write_all(&buffer[..write_size])
                 .map_err(|_| Error::OverwriteError(Method::Gutmann, pass as u32))?;
+            file.sync_all().map_err(|_| {
+                Error::SystemProblem(FSProblem::Write, format!("{}", path.to_string_lossy()))
+            })?;
             remaining -= write_size as u64;
         }
 
@@ -197,6 +200,10 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
         }
 
         file.flush().change_context(Error::SystemProblem(
+            FSProblem::Write,
+            format!("{}", path.to_string_lossy()),
+        ))?;
+        file.sync_all().change_context(Error::SystemProblem(
             FSProblem::Write,
             format!("{}", path.to_string_lossy()),
         ))?;

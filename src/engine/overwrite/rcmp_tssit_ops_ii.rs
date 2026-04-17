@@ -53,6 +53,9 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
         // flush after each pass (best-effort)
         file.flush()
             .map_err(|_| Error::OverwriteError(Method::RcmpTssitOpsII, &pattern + 1))?;
+        file.sync_all().map_err(|_| {
+            Error::SystemProblem(FSProblem::Write, format!("{}", path.to_string_lossy()))
+        })?;
         emit_safe(
             sink,
             DeleteEvent::EntryOverwritePass {
@@ -79,6 +82,9 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
 
     file.flush()
         .map_err(|_| Error::OverwriteError(Method::RcmpTssitOpsII, 7))?;
+    file.sync_all().map_err(|_| {
+        Error::SystemProblem(FSProblem::Write, format!("{}", path.to_string_lossy()))
+    })?;
     emit_safe(
         sink,
         DeleteEvent::EntryOverwritePass {
@@ -151,6 +157,10 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
         // flush after each pass (best-effort)
         file.flush()
             .change_context(Error::OverwriteError(Method::RcmpTssitOpsII, &pattern + 1))?;
+        file.sync_all().change_context(Error::SystemProblem(
+            FSProblem::Write,
+            format!("{}", path.to_string_lossy()),
+        ))?;
         emit_safe(
             sink,
             DeleteEvent::EntryOverwritePass {

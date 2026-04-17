@@ -1,5 +1,12 @@
 # Changelog
+## [v3.1.1](https://crates.io/crates/nozomi/3.1.1)
 
+```diff
+Bug fixes :
+- Fixes dispatch reversal bug between DOD 52022 MECE and DOD 52022 ME
+- Fixes bug where I forgot to sync_all after writes
+- Remove implicit dependancy to unix system
+```
 ## [v3.1.0](https://crates.io/crates/nozomi/3.1.0)
 
 ```diff
