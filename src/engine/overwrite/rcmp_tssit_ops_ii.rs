@@ -23,14 +23,16 @@ use crate::engine::verify::{LastPassInfo, verify_last_pass};
 
 const FIXED_PATTERNS: &[u8; 6] = &[0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF];
 
-/// Function that implement [RCMP TSSIT OPS II overwrite method](https://www.datadestroyers.eu/technology/rcmp_tssit_ops-2.html) using basic error handling method.
-/// ! Please note that this method does not delete the given file.
+/// Overwrites the file at `path` using the
+/// [RCMP TSSIT OPS-II](https://www.datadestroyers.eu/technology/rcmp_tssit_ops-2.html)
+/// sanitisation standard (7 passes: 6 alternating `0x00`/`0xFF` passes then 1 random pass).
 ///
-/// ## Argument :
-/// * `path` (&Path) : path that you want to erase using RCMP TSSIT OPS II overwrite method
+/// This function overwrites the file contents only; it does **not** delete
+/// the file. Deletion is handled by the executor after all passes complete.
 ///
-/// ## Return
-/// * `()
+/// # Errors
+///
+/// Returns an error if any write pass fails or the file cannot be synced.
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     let (mut file, file_size, _, mut buffer) = prepare_overwrite(path)?;
@@ -94,6 +96,10 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     Ok(())
 }
 
+/// Simulates the RCMP TSSIT OPS-II overwrite of `path` without writing any data.
+///
+/// Emits the same [`DeleteEvent::EntryOverwritePass`] events as [`overwrite_file`].
+/// Only available when the `dry-run` feature is enabled.
 #[cfg(all(not(feature = "error-stack"), feature = "dry-run"))]
 pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     #[cfg(feature = "verify")]
@@ -115,14 +121,16 @@ pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Res
     Ok(())
 }
 
-/// Function that implement [RCMP TSSIT OPS II overwrite method](https://www.datadestroyers.eu/technology/rcmp_tssit_ops-2.html) using basic error handling method.
-/// ! Please note that this method does not delete the given file.
+/// Overwrites the file at `path` using the
+/// [RCMP TSSIT OPS-II](https://www.datadestroyers.eu/technology/rcmp_tssit_ops-2.html)
+/// sanitisation standard (7 passes: 6 alternating `0x00`/`0xFF` passes then 1 random pass).
 ///
-/// ## Argument :
-/// * `path` (&Path) : path that you want to erase using RCMP TSSIT OPS II overwrite method
+/// This function overwrites the file contents only; it does **not** delete
+/// the file. Deletion is handled by the executor after all passes complete.
 ///
-/// ## Return
-/// * `()
+/// # Errors
+///
+/// Returns an error if any write pass fails or the file cannot be synced.
 #[cfg(feature = "error-stack")]
 pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     let (mut file, file_size, _, mut buffer) = prepare_overwrite(path)?;
@@ -186,6 +194,10 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     Ok(())
 }
 
+/// Simulates the RCMP TSSIT OPS-II overwrite of `path` without writing any data.
+///
+/// Emits the same [`DeleteEvent::EntryOverwritePass`] events as [`overwrite_file`].
+/// Only available when the `dry-run` feature is enabled.
 #[cfg(all(feature = "error-stack", feature = "dry-run"))]
 pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     #[cfg(feature = "verify")]

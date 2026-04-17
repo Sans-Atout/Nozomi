@@ -30,14 +30,16 @@ const FIXED_PATTERNS: &[Option<u8>] = &[Some(0x00), Some(0xFF), None];
 
 // -- Region : AFSSI 5020 overwriting method for basic error handling method
 
-/// Function that implement [AFSSI 5020 overwrite method](https://www.lifewire.com/data-sanitization-methods-2626133#toc-afssi-5020)
-/// ! Please note that this method does not delete the given file.
+/// Overwrites the file at `path` using the
+/// [AFSSI 5020](https://www.lifewire.com/data-sanitization-methods-2626133#toc-afssi-5020)
+/// sanitisation standard (3 passes: `0x00`, `0xFF`, random).
 ///
-/// ## Argument :
-/// * `path` (&Path) : path that you want to erase using AFSSI 5020 overwrite method
+/// This function overwrites the file contents only; it does **not** delete
+/// the file. Deletion is handled by the executor after all passes complete.
 ///
-/// ## Return
-/// * `()`
+/// # Errors
+///
+/// Returns an error if any write pass fails or the file cannot be synced.
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
@@ -93,6 +95,11 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     Ok(())
 }
 
+/// Simulates the AFSSI 5020 overwrite of `path` without writing any data.
+///
+/// Emits the same [`DeleteEvent::EntryOverwritePass`] events as
+/// [`overwrite_file`] so that event-driven code behaves identically in dry-run
+/// mode. Only available when the `dry-run` feature is enabled.
 #[cfg(all(not(feature = "error-stack"), feature = "dry-run"))]
 pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     #[cfg(feature = "verify")]
@@ -113,14 +120,16 @@ pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Res
     Ok(())
 }
 
-/// Function that implement [AFSSI 5020 overwrite method](https://www.lifewire.com/data-sanitization-methods-2626133#toc-afssi-5020)
-/// ! Please note that this method does not delete the given file.
+/// Overwrites the file at `path` using the
+/// [AFSSI 5020](https://www.lifewire.com/data-sanitization-methods-2626133#toc-afssi-5020)
+/// sanitisation standard (3 passes: `0x00`, `0xFF`, random).
 ///
-/// ## Argument :
-/// * `path` (&Path) : path that you want to erase using AFSSI 5020 overwrite method
+/// This function overwrites the file contents only; it does **not** delete
+/// the file. Deletion is handled by the executor after all passes complete.
 ///
-/// ## Return
-/// * `()`
+/// # Errors
+///
+/// Returns an error if any write pass fails or the file cannot be synced.
 #[cfg(feature = "error-stack")]
 pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
@@ -175,6 +184,11 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     Ok(())
 }
 
+/// Simulates the AFSSI 5020 overwrite of `path` without writing any data.
+///
+/// Emits the same [`DeleteEvent::EntryOverwritePass`] events as
+/// [`overwrite_file`] so that event-driven code behaves identically in dry-run
+/// mode. Only available when the `dry-run` feature is enabled.
 #[cfg(all(feature = "error-stack", feature = "dry-run"))]
 pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     #[cfg(feature = "verify")]

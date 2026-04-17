@@ -13,12 +13,30 @@ use error_stack::{Report, ResultExt};
 #[cfg(feature = "log")]
 use log::error;
 
+/// An ordered list of filesystem entries to process during a deletion run.
+///
+/// `files` are overwritten and removed first; `directories` are removed in
+/// reverse order afterwards so that children are always cleaned up before
+/// their parent.
 #[derive(Debug)]
 pub(crate) struct ExecutionPlan {
+    /// Regular files to overwrite and delete, in discovery order.
     pub files: Vec<PathBuf>,
+    /// Directories to remove after all files have been deleted, deepest first.
     pub directories: Vec<PathBuf>,
 }
 
+/// Walks the filesystem tree rooted at `root_path` and builds an
+/// [`ExecutionPlan`].
+///
+/// If `root_path` is a regular file, the plan contains only that file. If it
+/// is a directory, the function recurses into every subdirectory and collects
+/// all files.
+///
+/// # Errors
+///
+/// Returns an error if `root_path` does not exist or a directory entry cannot
+/// be read.
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn execution_plan(root_path: &Path) -> Result<ExecutionPlan> {
     let mut files = Vec::new();
@@ -84,6 +102,17 @@ fn visit(path: &Path, files: &mut Vec<PathBuf>, directories: &mut Vec<PathBuf>) 
     Ok(())
 }
 
+/// Walks the filesystem tree rooted at `root_path` and builds an
+/// [`ExecutionPlan`].
+///
+/// If `root_path` is a regular file, the plan contains only that file. If it
+/// is a directory, the function recurses into every subdirectory and collects
+/// all files.
+///
+/// # Errors
+///
+/// Returns an [`error_stack::Report`] wrapping [`Error`](crate::Error) if
+/// `root_path` does not exist or a directory entry cannot be read.
 #[cfg(feature = "error-stack")]
 pub(crate) fn execution_plan(root_path: &Path) -> Result<ExecutionPlan> {
     let mut files = Vec::new();

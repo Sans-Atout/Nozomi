@@ -16,6 +16,16 @@ use error_stack::ResultExt;
 
 use crate::engine::utils::generate_seed;
 
+/// Opens the file at `path` for reading and writing, queries its size, rewinds
+/// the cursor to the start, and returns a fresh CSPRNG seeded with random
+/// entropy alongside a zeroed 8 KiB write buffer.
+///
+/// This setup is shared by all overwrite method implementations.
+///
+/// # Errors
+///
+/// Returns an error if the file cannot be opened, its metadata cannot be read,
+/// or the cursor cannot be rewound.
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn prepare_overwrite(path: &Path) -> Result<(std::fs::File, u64, StdRng, [u8; 8192])> {
     let mut file = OpenOptions::new()
@@ -47,6 +57,17 @@ pub(crate) fn prepare_overwrite(path: &Path) -> Result<(std::fs::File, u64, StdR
     Ok((file, file_size, rng, buffer))
 }
 
+/// Opens the file at `path` for reading and writing, queries its size, rewinds
+/// the cursor to the start, and returns a fresh CSPRNG seeded with random
+/// entropy alongside a zeroed 8 KiB write buffer.
+///
+/// This setup is shared by all overwrite method implementations.
+///
+/// # Errors
+///
+/// Returns an [`error_stack::Report`] wrapping [`Error`](crate::Error) if the
+/// file cannot be opened, its metadata cannot be read, or the cursor cannot be
+/// rewound.
 #[cfg(feature = "error-stack")]
 pub(crate) fn prepare_overwrite(path: &Path) -> Result<(std::fs::File, u64, StdRng, [u8; 8192])> {
     let mut file = OpenOptions::new()

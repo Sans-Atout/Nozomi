@@ -1,29 +1,37 @@
+//! Standard error types (default, non-`error-stack` variant).
+
 use crate::error::FSProblem;
 use crate::{Method, models::SecureDelete};
 
-#[cfg(not(feature = "error-stack"))]
-/// Reexporting Result type
+/// A `Result` alias that fixes the error type to [`Error`].
 pub type Result<T> = core::result::Result<T, Error>;
 
-/// Enum used to represent errors in the library
+/// Errors that can be produced by the Nozomi library.
 #[derive(Debug)]
 pub enum Error {
-    /// Represent file problems with FSProblem and String
+    /// A filesystem operation failed. Contains the operation category and the
+    /// path that was being processed.
     SystemProblem(FSProblem, String),
-    /// Represent an error during a specific overwrite method with Method and step
+    /// An overwrite pass failed for the given [`Method`] at the indicated pass number.
     OverwriteError(Method, u32),
-    /// Represent the fact that we cannot found a file/folder name for a given path
+    /// The provided path has no filename component (e.g. it is a bare root or
+    /// ends in `..`).
     NoFileName(SecureDelete),
-    /// Error during path to string conversion
+    /// A [`Path`](std::path::Path) could not be converted to a valid UTF-8 string.
     StringConversionError,
-    /// Wrapper for std::io:Error to help during debug phase
-    #[cfg(test)]
-    FileCreationError(std::io::Error),
+    /// A required builder parameter was not set. The contained string names the
+    /// missing field.
     MissingParameter(&'static str),
+    /// A post-overwrite verification read back unexpected bytes at the given
+    /// byte offset. Only available with the `verify` feature.
     #[cfg(feature = "verify")]
     VerificationFailed {
+        /// Byte offset of the first mismatched byte within the file.
         offset: u64,
     },
+    /// Wraps a [`std::io::Error`] produced when creating temporary test files.
+    #[cfg(test)]
+    FileCreationError(std::io::Error),
 }
 
 /// Implementing display trait for Error enum

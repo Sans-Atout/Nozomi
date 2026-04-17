@@ -38,14 +38,16 @@ const FIXED_PATTERNS: &[Option<u8>] = &[
 
 // -- Region : DOD 522 022 MECE overwriting method for basic error handling method
 
-/// Function that implement [DOD 522022 MECE overwrite method](https://www.bitraser.com/article/DoD-5220-22-m-standard-for-drive-erasure.php)
-/// ! Please note that this method does not delete the given file.
+/// Overwrites the file at `path` using the
+/// [DoD 5220.22-M (ECE)](https://www.bitraser.com/article/DoD-5220-22-m-standard-for-drive-erasure.php)
+/// sanitisation standard (7 passes: `0x00`, `0xFF`, random, `0x00`, `0x00`, `0xFF`, random).
 ///
-/// ## Argument :
-/// * `path` (&Path) : path that you want to erase using DOD 522022 MECE overwrite method
+/// This function overwrites the file contents only; it does **not** delete
+/// the file. Deletion is handled by the executor after all passes complete.
 ///
-/// ## Return
-/// * `secure_deletion` (SecureDelete) : An SecureDelete object
+/// # Errors
+///
+/// Returns an error if any write pass fails or the file cannot be synced.
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
@@ -102,6 +104,10 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     Ok(())
 }
 
+/// Simulates the DoD 5220.22-M (ECE) overwrite of `path` without writing any data.
+///
+/// Emits the same [`DeleteEvent::EntryOverwritePass`] events as [`overwrite_file`].
+/// Only available when the `dry-run` feature is enabled.
 #[cfg(all(not(feature = "error-stack"), feature = "dry-run"))]
 pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     #[cfg(feature = "verify")]
@@ -122,14 +128,16 @@ pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Res
     Ok(())
 }
 
-/// Function that implement [DOD 522022 MECE overwrite method](https://www.bitraser.com/article/DoD-5220-22-m-standard-for-drive-erasure.php)
-/// ! Please note that this method does not delete the given file.
+/// Overwrites the file at `path` using the
+/// [DoD 5220.22-M (ECE)](https://www.bitraser.com/article/DoD-5220-22-m-standard-for-drive-erasure.php)
+/// sanitisation standard (7 passes: `0x00`, `0xFF`, random, `0x00`, `0x00`, `0xFF`, random).
 ///
-/// ## Argument :
-/// * `path` (&Path) : path that you want to erase using DOD 522022 MECE overwrite method
+/// This function overwrites the file contents only; it does **not** delete
+/// the file. Deletion is handled by the executor after all passes complete.
 ///
-/// ## Return
-/// * `secure_deletion` (SecureDelete) : An SecureDelete object
+/// # Errors
+///
+/// Returns an error if any write pass fails or the file cannot be synced.
 #[cfg(feature = "error-stack")]
 pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
@@ -186,6 +194,10 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     Ok(())
 }
 
+/// Simulates the DoD 5220.22-M (ECE) overwrite of `path` without writing any data.
+///
+/// Emits the same [`DeleteEvent::EntryOverwritePass`] events as [`overwrite_file`].
+/// Only available when the `dry-run` feature is enabled.
 #[cfg(all(feature = "error-stack", feature = "dry-run"))]
 pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     #[cfg(feature = "verify")]

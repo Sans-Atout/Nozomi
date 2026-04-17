@@ -56,14 +56,16 @@ const FIXED_PATTERNS: &[[u8; 3]] = &[
     [0xDB, 0x6D, 0xB6],
 ];
 
-/// Function that implement [Gutmann overwrite method](https://en.wikipedia.org/wiki/Gutmann_method)
-/// ! Please note that this method does not delete the given file.
+/// Overwrites the file at `path` using the
+/// [Gutmann](https://en.wikipedia.org/wiki/Gutmann_method) sanitisation
+/// standard (35 passes: 4 random, 27 fixed 3-byte patterns, 4 random).
 ///
-/// ## Argument :
-/// * `path` (&Path) : path that you want to erase using basic pseudo random method overwrite method
+/// This function overwrites the file contents only; it does **not** delete
+/// the file. Deletion is handled by the executor after all passes complete.
 ///
-/// ## Return
-/// * `()`
+/// # Errors
+///
+/// Returns an error if any write pass fails or the file cannot be synced.
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
@@ -127,6 +129,10 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     Ok(())
 }
 
+/// Simulates the Gutmann overwrite of `path` without writing any data.
+///
+/// Emits the same [`DeleteEvent::EntryOverwritePass`] events as [`overwrite_file`].
+/// Only available when the `dry-run` feature is enabled.
 #[cfg(all(not(feature = "error-stack"), feature = "dry-run"))]
 pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     #[cfg(feature = "verify")]
@@ -147,14 +153,16 @@ pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Res
     Ok(())
 }
 
-/// Function that implement [Gutmann overwrite method](https://en.wikipedia.org/wiki/Gutmann_method)
-/// ! Please note that this method does not delete the given file.
+/// Overwrites the file at `path` using the
+/// [Gutmann](https://en.wikipedia.org/wiki/Gutmann_method) sanitisation
+/// standard (35 passes: 4 random, 27 fixed 3-byte patterns, 4 random).
 ///
-/// ## Argument :
-/// * `path` (&Path) : path that you want to erase using basic pseudo random method overwrite method
+/// This function overwrites the file contents only; it does **not** delete
+/// the file. Deletion is handled by the executor after all passes complete.
 ///
-/// ## Return
-/// * `()`
+/// # Errors
+///
+/// Returns an error if any write pass fails or the file cannot be synced.
 #[cfg(feature = "error-stack")]
 pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     let (mut file, file_size, mut rng, mut buffer) = prepare_overwrite(path)?;
@@ -216,6 +224,10 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     Ok(())
 }
 
+/// Simulates the Gutmann overwrite of `path` without writing any data.
+///
+/// Emits the same [`DeleteEvent::EntryOverwritePass`] events as [`overwrite_file`].
+/// Only available when the `dry-run` feature is enabled.
 #[cfg(all(feature = "error-stack", feature = "dry-run"))]
 pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     #[cfg(feature = "verify")]

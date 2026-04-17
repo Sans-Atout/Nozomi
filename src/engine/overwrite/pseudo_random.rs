@@ -26,14 +26,15 @@ use crate::engine::verify::dry_verify_last_pass;
 #[cfg(feature = "verify")]
 use crate::engine::verify::{LastPassInfo, verify_last_pass};
 
-/// Function that implement a basic pseudo random method using basic error handling method.
-/// ! Please note that this method does not delete the given file.
+/// Overwrites the file at `path` with a single pass of cryptographically
+/// seeded pseudo-random data.
 ///
-/// ## Argument :
-/// * `path` (&Path) : path that you want to erase using basic pseudo random method overwrite method
+/// This is the fastest built-in method (1 pass). It does **not** delete the
+/// file; deletion is handled by the executor after the pass completes.
 ///
-/// ## Return
-/// * `()`
+/// # Errors
+///
+/// Returns an error if the write pass fails or the file cannot be synced.
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     #[cfg(feature = "secure_log")]
@@ -82,6 +83,10 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     Ok(())
 }
 
+/// Simulates the pseudo-random overwrite of `path` without writing any data.
+///
+/// Emits the same [`DeleteEvent::EntryOverwritePass`] event as [`overwrite_file`].
+/// Only available when the `dry-run` feature is enabled.
 #[cfg(all(not(feature = "error-stack"), feature = "dry-run"))]
 pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     #[cfg(feature = "verify")]
@@ -100,14 +105,15 @@ pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Res
     Ok(())
 }
 
-/// Function that implement a basic pseudo random method using basic error handling method.
-/// ! Please note that this method does not delete the given file.
+/// Overwrites the file at `path` with a single pass of cryptographically
+/// seeded pseudo-random data.
 ///
-/// ## Argument :
-/// * `path` (&Path) : path that you want to erase using basic pseudo random method overwrite method
+/// This is the fastest built-in method (1 pass). It does **not** delete the
+/// file; deletion is handled by the executor after the pass completes.
 ///
-/// ## Return
-/// * `()`
+/// # Errors
+///
+/// Returns an error if the write pass fails or the file cannot be synced.
 #[cfg(feature = "error-stack")]
 pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     #[cfg(feature = "secure_log")]
@@ -157,6 +163,10 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     Ok(())
 }
 
+/// Simulates the pseudo-random overwrite of `path` without writing any data.
+///
+/// Emits the same [`DeleteEvent::EntryOverwritePass`] event as [`overwrite_file`].
+/// Only available when the `dry-run` feature is enabled.
 #[cfg(all(feature = "error-stack", feature = "dry-run"))]
 pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     #[cfg(feature = "verify")]

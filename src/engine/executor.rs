@@ -11,6 +11,16 @@ use crate::Result;
 #[cfg(feature = "error-stack")]
 use crate::Result;
 
+/// Executes the full secure deletion pipeline for the entry at `path`.
+///
+/// The engine builds an [`ExecutionPlan`](super::planner::ExecutionPlan), overwrites
+/// every file in the plan using the chosen `method`, deletes each file, and
+/// finally removes empty directories in reverse order. Progress events are
+/// forwarded to `sink` throughout.
+///
+/// # Errors
+///
+/// Returns an error if any overwrite pass, file deletion, or directory removal fails.
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn run<S: EventSink>(method: &Method, path: &Path, sink: &mut S) -> Result<()> {
     emit_safe(
@@ -59,6 +69,18 @@ pub(crate) fn run<S: EventSink>(method: &Method, path: &Path, sink: &mut S) -> R
     result
 }
 
+/// Simulates the secure deletion pipeline without performing any write or
+/// delete operations on disk.
+///
+/// The engine builds an execution plan and emits the same events as [`run`],
+/// but no bytes are written and no files are removed. Useful for verifying
+/// configuration and observing expected event sequences.
+///
+/// Only available when the `dry-run` feature is enabled.
+///
+/// # Errors
+///
+/// Returns an error if the execution plan cannot be built (e.g. path not found).
 #[cfg(all(feature = "dry-run", not(feature = "error-stack")))]
 pub(crate) fn dry_run<S: EventSink>(method: &Method, path: &Path, sink: &mut S) -> Result<()> {
     emit_safe(
@@ -103,6 +125,17 @@ pub(crate) fn dry_run<S: EventSink>(method: &Method, path: &Path, sink: &mut S) 
     result
 }
 
+/// Executes the full secure deletion pipeline for the entry at `path`.
+///
+/// The engine builds an [`ExecutionPlan`](super::planner::ExecutionPlan), overwrites
+/// every file in the plan using the chosen `method`, deletes each file, and
+/// finally removes empty directories in reverse order. Progress events are
+/// forwarded to `sink` throughout.
+///
+/// # Errors
+///
+/// Returns an [`error_stack::Report`] wrapping [`Error`](crate::Error) if any
+/// overwrite pass, file deletion, or directory removal fails.
 #[cfg(feature = "error-stack")]
 pub(crate) fn run<S: EventSink>(method: &Method, path: &Path, sink: &mut S) -> Result<()> {
     emit_safe(
@@ -151,6 +184,19 @@ pub(crate) fn run<S: EventSink>(method: &Method, path: &Path, sink: &mut S) -> R
     result
 }
 
+/// Simulates the secure deletion pipeline without performing any write or
+/// delete operations on disk.
+///
+/// The engine builds an execution plan and emits the same events as [`run`],
+/// but no bytes are written and no files are removed. Useful for verifying
+/// configuration and observing expected event sequences.
+///
+/// Only available when the `dry-run` feature is enabled.
+///
+/// # Errors
+///
+/// Returns an [`error_stack::Report`] wrapping [`Error`](crate::Error) if the
+/// execution plan cannot be built (e.g. path not found).
 #[cfg(all(feature = "dry-run", feature = "error-stack"))]
 pub(crate) fn dry_run<S: EventSink>(method: &Method, path: &Path, sink: &mut S) -> Result<()> {
     emit_safe(

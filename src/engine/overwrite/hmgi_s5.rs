@@ -18,14 +18,16 @@ use crate::engine::verify::dry_verify_last_pass;
 #[cfg(feature = "verify")]
 use crate::engine::verify::{LastPassInfo, verify_last_pass};
 
-/// Function that implement [HMGI S5 overwrite method](https://www.bitraser.com/knowledge-series/data-destruction-standards-and-guidelines.php)
-/// ! Please note that this method does not delete the given file.
+/// Overwrites the file at `path` using the
+/// [HMGI S5](https://www.bitraser.com/knowledge-series/data-destruction-standards-and-guidelines.php)
+/// sanitisation standard (2 passes, both with `0x00`).
 ///
-/// ## Argument :
-/// * `path` (&Path) : path that you want to erase using HMGI S5 overwrite method
+/// This function overwrites the file contents only; it does **not** delete
+/// the file. Deletion is handled by the executor after all passes complete.
 ///
-/// ## Return
-/// * `()`
+/// # Errors
+///
+/// Returns an error if any write pass fails or the file cannot be synced.
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     let (mut file, file_size, _, mut buffer) = prepare_overwrite(path)?;
@@ -61,6 +63,10 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     Ok(())
 }
 
+/// Simulates the HMGI S5 overwrite of `path` without writing any data.
+///
+/// Emits the same [`DeleteEvent::EntryOverwritePass`] events as [`overwrite_file`].
+/// Only available when the `dry-run` feature is enabled.
 #[cfg(all(not(feature = "error-stack"), feature = "dry-run"))]
 pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     for pattern in 0..2 {
@@ -79,14 +85,16 @@ pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Res
     Ok(())
 }
 
-/// Function that implement [HMGI S5 overwrite method](https://www.bitraser.com/knowledge-series/data-destruction-standards-and-guidelines.php)
-/// ! Please note that this method does not delete the given file.
+/// Overwrites the file at `path` using the
+/// [HMGI S5](https://www.bitraser.com/knowledge-series/data-destruction-standards-and-guidelines.php)
+/// sanitisation standard (2 passes, both with `0x00`).
 ///
-/// ## Argument :
-/// * `path` (&Path) : path that you want to erase using HMGI S5 overwrite method
+/// This function overwrites the file contents only; it does **not** delete
+/// the file. Deletion is handled by the executor after all passes complete.
 ///
-/// ## Return
-/// * `()`
+/// # Errors
+///
+/// Returns an error if any write pass fails or the file cannot be synced.
 #[cfg(feature = "error-stack")]
 pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     let (mut file, file_size, _, mut buffer) = prepare_overwrite(path)?;
@@ -123,6 +131,10 @@ pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<
     Ok(())
 }
 
+/// Simulates the HMGI S5 overwrite of `path` without writing any data.
+///
+/// Emits the same [`DeleteEvent::EntryOverwritePass`] events as [`overwrite_file`].
+/// Only available when the `dry-run` feature is enabled.
 #[cfg(all(feature = "error-stack", feature = "dry-run"))]
 pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
     for pattern in 0..2 {

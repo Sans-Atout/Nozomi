@@ -18,14 +18,34 @@ use crate::{Error, Result};
 #[cfg(feature = "error-stack")]
 use error_stack::{Report, ResultExt};
 
+/// Describes the expected byte content of the last overwrite pass so that
+/// [`verify_last_pass`] can reconstruct and compare the expected data.
 #[derive(Debug, Clone)]
 pub(crate) enum LastPassInfo {
+    /// The last pass filled the file with `0x00` bytes.
     Zero,
+    /// The last pass repeated the given 3-byte pattern cyclically.
     ThreeBytesPattern([u8; 3]),
+    /// The last pass filled the file with a single repeated byte value.
     Pattern(u8),
-    Random { seed: [u8; 32] },
+    /// The last pass filled the file with pseudo-random data seeded by `seed`.
+    Random {
+        /// The seed used to initialise the PRNG for this pass.
+        seed: [u8; 32],
+    },
 }
 
+/// Reads back the file at `path` and verifies that every byte matches the
+/// pattern described by `info`.
+///
+/// Emits [`DeleteEvent::VerificationStarted`] before reading and either
+/// [`DeleteEvent::VerificationCompleted`] on success or
+/// [`DeleteEvent::VerificationFailed`] on mismatch.
+///
+/// # Errors
+///
+/// Returns [`Error::VerificationFailed`] if a byte mismatch is detected, or an
+/// I/O error if the file cannot be opened or read.
 #[cfg(not(feature = "error-stack"))]
 pub(crate) fn verify_last_pass<S: EventSink>(
     path: &PathBuf,
@@ -118,6 +138,11 @@ pub(crate) fn verify_last_pass<S: EventSink>(
     Ok(())
 }
 
+/// Simulates a last-pass verification by emitting the expected events without
+/// reading the file.
+///
+/// Used during dry-run executions to preserve the event sequence seen by
+/// [`EventSink`] implementations without performing actual I/O.
 #[cfg(all(not(feature = "error-stack"), feature = "dry-run"))]
 pub(crate) fn dry_verify_last_pass<S: EventSink>(
     path: &PathBuf,
@@ -322,6 +347,17 @@ mod tests {
     }
 }
 
+/// Reads back the file at `path` and verifies that every byte matches the
+/// pattern described by `info`.
+///
+/// Emits [`DeleteEvent::VerificationStarted`] before reading and either
+/// [`DeleteEvent::VerificationCompleted`] on success or
+/// [`DeleteEvent::VerificationFailed`] on mismatch.
+///
+/// # Errors
+///
+/// Returns an [`error_stack::Report`] wrapping [`Error::VerificationFailed`] if
+/// a byte mismatch is detected, or an I/O error if the file cannot be read.
 #[cfg(feature = "error-stack")]
 pub(crate) fn verify_last_pass<S: EventSink>(
     path: &PathBuf,
@@ -422,6 +458,11 @@ pub(crate) fn verify_last_pass<S: EventSink>(
     Ok(())
 }
 
+/// Simulates a last-pass verification by emitting the expected events without
+/// reading the file.
+///
+/// Used during dry-run executions to preserve the event sequence seen by
+/// [`EventSink`] implementations without performing actual I/O.
 #[cfg(all(feature = "error-stack", feature = "dry-run"))]
 pub(crate) fn dry_verify_last_pass<S: EventSink>(
     path: &Path,
