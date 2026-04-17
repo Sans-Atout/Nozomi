@@ -1,9 +1,10 @@
 [package]
 name = "nozomi"
-version = "3.0.3"
+version = "3.1.0"
 edition = "2024"
+rust-version = "1.85"
 
-authors = ["Sans-Atout <augustin.rousset-rouviere@isep.fr>"]
+authors = ["Sans-Atout <augustin@rousset-rouviere.fr>"]
 description = "Equivalent of the Linux shred command but in rust and library. Allows you to securely erase data from a hard drive."
 keywords = ["security", "erase", "eraser", "wiping", "wiper"]
 
@@ -11,12 +12,12 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/Sans-Atout/Nozomi/"
 
 [dependencies]
-error-stack = {version = "0.6.0",optional=true}
-rand = "0.10.0"
+error-stack = {version = "0.7.0",optional=true}
+rand = "0.10.1"
 md5 = { version = "0.8.0", optional=true}
 
 [dependencies.log]
-version = "0.4.27"
+version = "0.4.29"
 optional = true
 
 [lints.rust]
@@ -29,8 +30,6 @@ pretty_assertions = "1.4.1"
 maintenance = { status = "actively-developed" }
 
 [features]
-# No optional capability enabled by default.
-# The default build must remain minimal and predictable.
 default = []
 
 # Functional capabilities
