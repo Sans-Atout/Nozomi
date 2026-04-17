@@ -10,23 +10,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-      matrix:
-        features:
-          - ""                              # no default features
-          - "verify"
-          - "dry-run"
-          - "analyze"
-          - "error-stack"
-          - "log"
-          - "secure_log"
-          - "verify,error-stack"
-          - "verify,secure_log"
-          - "error-stack,log"
-          - "error-stack,secure_log"
-          - "all"
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -34,15 +17,19 @@ jobs:
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install nextest
-        run: cargo install cargo-nextest
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Run tests
-        run: |
-          if [ "${{ matrix.features }}" = "" ]; then
-            cargo nextest run --no-default-features
-          elif [ "${{ matrix.features }}" = "all" ]; then
-            cargo nextest run --all-features
-          else
-            cargo nextest run --no-default-features --features "${{ matrix.features }}"
-          fi
+      - name: Install cargo-hack
+        uses: taiki-e/install-action@cargo-hack
+
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@nextest
+
+      - name: Test all feature combinations
+        run: cargo hack nextest run --feature-powerset --test-threads 1

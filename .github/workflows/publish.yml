@@ -1,0 +1,231 @@
+name: Publish
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+      - '[0-9]+.x'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Job 1 — Prepare the release (runs automatically after Dependabot merge)
+  # Bumps the patch version, generates the CHANGELOG entry, and uploads the
+  # modified files as an artifact for the publish job to consume.
+  # ---------------------------------------------------------------------------
+  prepare:
+    runs-on: ubuntu-latest
+    if: |
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      contains(github.event.pull_request.labels.*.name, 'cargo')
+
+    outputs:
+      new_version:      ${{ steps.bump.outputs.new_version }}
+      current_major:    ${{ steps.bump.outputs.current_major }}
+      is_highest_major: ${{ steps.highest.outputs.is_highest_major }}
+      higher_branches:  ${{ steps.highest.outputs.higher_branches }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+
+      - name: Bump patch version
+        id: bump
+        run: |
+          python3 - <<'PYEOF'
+          import re, os
+          content = open('Cargo.toml').read()
+          m = re.search(r'^version = "(\d+)\.(\d+)\.(\d+)"', content, re.M)
+          major, minor, patch = int(m.group(1)), int(m.group(2)), int(m.group(3))
+          new_ver = f'{major}.{minor}.{patch + 1}'
+          open('Cargo.toml', 'w').write(content.replace(m.group(0), f'version = "{new_ver}"', 1))
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+              fh.write(f'new_version={new_ver}\n')
+              fh.write(f'current_major={major}\n')
+          PYEOF
+
+      # Determine which N.x branches exist and whether we are the highest.
+      # Result: is_highest_major = true/false
+      #         higher_branches  = comma-separated list of branches above us (may be empty)
+      - name: Detect highest major branch
+        id: highest
+        run: |
+          git fetch --all --quiet
+          CUR="${{ steps.bump.outputs.current_major }}"
+          HIGHEST=$(git branch -r | grep -oP '(?<=origin/)\d+(?=\.x$)' | sort -n | tail -1)
+          HIGHER=$(git branch -r \
+            | grep -oP '(?<=origin/)\d+(?=\.x$)' \
+            | awk -v c="$CUR" 'int($0) > int(c)' \
+            | sort -n \
+            | sed 's/$/.x/' \
+            | tr '\n' ',' \
+            | sed 's/,$//')
+          if [ -z "$HIGHEST" ] || [ "$CUR" = "$HIGHEST" ]; then
+            echo "is_highest_major=true"  >> "$GITHUB_OUTPUT"
+          else
+            echo "is_highest_major=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "higher_branches=$HIGHER" >> "$GITHUB_OUTPUT"
+
+      # Build the CHANGELOG entry with Python string concatenation so that no
+      # zero-indented lines appear inside the YAML block scalar (which would
+      # terminate it prematurely and break the workflow).
+      - name: Update CHANGELOG.md
+        env:
+          NEW_VERSION: ${{ steps.bump.outputs.new_version }}
+          DEP_NAME:    ${{ steps.metadata.outputs.dependency-names }}
+          DEP_FROM:    ${{ steps.metadata.outputs.previous-version }}
+          DEP_TO:      ${{ steps.metadata.outputs.new-version }}
+        run: |
+          python3 - <<'PYEOF'
+          import os
+          new_version = os.environ['NEW_VERSION']
+          dep_name    = os.environ['DEP_NAME']
+          dep_from    = os.environ['DEP_FROM']
+          dep_to      = os.environ['DEP_TO']
+          fence = '`' * 3
+          entry = (
+              f"## [v{new_version}](https://crates.io/crates/nozomi/{new_version})\n\n"
+              + fence + "diff\n"
+              + "Project change :\n"
+              + f"! {dep_name} : {dep_from} --> {dep_to}\n"
+              + fence + "\n\n"
+          )
+          content = open('CHANGELOG.md').read()
+          open('CHANGELOG.md', 'w').write(
+              content.replace('# Changelog\n\n', '# Changelog\n\n' + entry, 1)
+          )
+          open('release-entry.txt', 'w').write(entry)
+          PYEOF
+
+      - name: Write job summary
+        env:
+          NEW_VERSION: ${{ steps.bump.outputs.new_version }}
+          DEP_NAME:    ${{ steps.metadata.outputs.dependency-names }}
+          DEP_FROM:    ${{ steps.metadata.outputs.previous-version }}
+          DEP_TO:      ${{ steps.metadata.outputs.new-version }}
+        run: |
+          cat >> "$GITHUB_STEP_SUMMARY" <<EOF
+          ## Release v${NEW_VERSION} — pending approval
+
+          | | |
+          |---|---|
+          | **Version**    | \`${NEW_VERSION}\` |
+          | **Dependency** | \`${DEP_NAME}\`    |
+          | **Change**     | \`${DEP_FROM}\` → \`${DEP_TO}\` |
+          EOF
+
+      - name: Upload prepared files
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-files
+          path: |
+            Cargo.toml
+            CHANGELOG.md
+            release-entry.txt
+          retention-days: 1
+
+  # ---------------------------------------------------------------------------
+  # Job 2 — Publish (requires manual approval on the "release" environment)
+  # Commits the prepared files, pushes the tag, optionally updates main,
+  # propagates the changelog to higher branches, then publishes to crates.io.
+  #
+  # Setup required (one-time):
+  #   • Settings → Environments → create "release" → add yourself as reviewer
+  #   • Add CARGO_REGISTRY_TOKEN as a secret of that environment
+  #   • If the release branch is protected: allow "github-actions[bot]" to bypass
+  # ---------------------------------------------------------------------------
+  publish:
+    needs: prepare
+    runs-on: ubuntu-latest
+    environment: release
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.event.pull_request.base.ref }}
+          fetch-depth: 0
+
+      - name: Download prepared files
+        uses: actions/download-artifact@v4
+        with:
+          name: release-files
+          path: .
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Configure git identity
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit, tag and push to release branch
+        run: |
+          TARGET="${{ github.event.pull_request.base.ref }}"
+          git add Cargo.toml CHANGELOG.md
+          git commit -m "chore: release v${{ needs.prepare.outputs.new_version }} [skip ci]"
+          git tag "v${{ needs.prepare.outputs.new_version }}"
+          git push origin "$TARGET" --follow-tags
+
+      # Only the branch that carries the highest major version mirrors main.
+      - name: Push to main (highest major only)
+        if: needs.prepare.outputs.is_highest_major == 'true'
+        run: |
+          git push origin HEAD:main
+
+      # For every N.x branch whose major is higher than ours, prepend the same
+      # CHANGELOG entry so that users of higher versions can see lower-branch
+      # dependency history without switching branches.
+      - name: Propagate changelog entry to higher branches
+        if: needs.prepare.outputs.higher_branches != ''
+        env:
+          HIGHER_BRANCHES: ${{ needs.prepare.outputs.higher_branches }}
+          NEW_VERSION:     ${{ needs.prepare.outputs.new_version }}
+        run: |
+          IFS=',' read -ra BRANCHES <<< "$HIGHER_BRANCHES"
+          for branch in "${BRANCHES[@]}"; do
+            echo "Propagating v${NEW_VERSION} changelog to ${branch}"
+            git fetch origin "${branch}"
+            git worktree add "/tmp/propagate-${branch}" "origin/${branch}"
+            BRANCH="${branch}" python3 - <<'PYEOF'
+          import os
+          branch  = os.environ['BRANCH']
+          entry   = open('release-entry.txt').read()
+          path    = f'/tmp/propagate-{branch}/CHANGELOG.md'
+          content = open(path).read()
+          open(path, 'w').write(
+              content.replace('# Changelog\n\n', '# Changelog\n\n' + entry, 1)
+          )
+          PYEOF
+            git -C "/tmp/propagate-${branch}" add CHANGELOG.md
+            git -C "/tmp/propagate-${branch}" commit \
+              -m "chore: propagate v${NEW_VERSION} changelog from lower branch [skip ci]"
+            git -C "/tmp/propagate-${branch}" push origin "HEAD:${branch}"
+            git worktree remove "/tmp/propagate-${branch}"
+          done
+
+      - name: Publish to crates.io
+        run: cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+      - name: Create GitHub release
+        run: |
+          gh release create "v${{ needs.prepare.outputs.new_version }}" \
+            --title "v${{ needs.prepare.outputs.new_version }}" \
+            --notes "Automated patch release — see [CHANGELOG.md](CHANGELOG.md) for details."
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
