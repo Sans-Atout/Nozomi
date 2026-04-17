@@ -84,4 +84,4 @@ impl core::fmt::Display for Error {
     }
 }
 
-impl Context for Error {}
+impl std::error::Error for Error {}

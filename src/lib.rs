@@ -47,6 +47,7 @@
 mod analyze;
 #[allow(deprecated)]
 mod error;
+#[allow(deprecated)]
 mod methods;
 #[allow(deprecated)]
 mod models;
