@@ -1,5 +1,29 @@
 # Changelog
 
+## [v3.1.0](https://crates.io/crates/nozomi/3.1.0)
+
+```diff
+Project change :
+! log : 0.4.27 --> 0.4.29
+! rand : 0.9.1 --> 0.10.1
+! error-stack : 0.5.0 --> 0.6.1
+
+New features :
++ Add `dry-run` feature : simulate a deletion run without writing to disk
++ Add `verify` feature : read back the last overwrite pass to confirm correctness
++ Add `analyze` feature : inspect the pass schedule of a method before running it
+
+API :
++ Add `DeleteRequest` builder API as the new primary entry point
++ Add `DeleteEvent` and `EventSink` for progress tracking during deletion
++ Add `DeleteReport` as the return type for a completed deletion
+- Mark `SecureDelete` API as deprecated (will be removed in 4.0.0)
+
+Internal :
+! Refactor engine into a dedicated module (overwrite, planner, executor, verify)
+! Apply feature gating across the entire engine
+```
+
 ## [v3.0.3](https://crates.io/crates/nozomi/3.0.3)
 
 ```diff

@@ -1,11 +1,8 @@
+#[cfg(feature = "verify")]
+use crate::api::delete::request::NoopSink;
+#[cfg(feature = "verify")]
+use crate::engine::verify::{LastPassInfo, verify_last_pass};
 use crate::error::FSProblem;
-use std::{
-    fs::{self, OpenOptions},
-    io::{BufWriter, Write},
-    os::unix::fs::MetadataExt,
-    path::Path,
-};
-
 #[cfg(not(feature = "error-stack"))]
 use crate::{Error, Result};
 #[cfg(feature = "error-stack")]
@@ -14,22 +11,41 @@ use crate::{Error, Result};
 use error_stack::{Report, ResultExt};
 #[cfg(feature = "log")]
 use log::trace;
+#[cfg(feature = "verify")]
+use std::path::PathBuf;
+
+#[cfg(feature = "analyze")]
+use crate::{PassInfo, PassKind};
+use std::{
+    fs::{self, OpenOptions},
+    io::{BufWriter, Write},
+    os::unix::fs::MetadataExt,
+    path::Path,
+};
 
 /// Secure Delete object : backbone of
 #[derive(Debug, Clone)]
 #[cfg_attr(test, derive(PartialEq, Eq))]
+#[deprecated(
+    since = "3.1.0",
+    note = "Use `DeleteRequestBuilder` instead. This API will be removed in `4.0.0`."
+)]
 pub struct SecureDelete {
     /// File/Folder path that you want to overwrite/delete
-    path: String,
+    pub(crate) path: String,
     /// Array of 3 Bytes that can be used to overwrite a file. Is none if byte is something
     pattern: Option<[u8; 3]>,
     /// A byte that will be used to overwrite a file. Is none if pattern is something
     byte: Option<u8>,
     /// Used to redefine the size of the buffer that will be rewritten each time.
     buffer_size: usize,
+    #[cfg(feature = "verify")]
+    seed: Option<[u8; 32]>,
     /// Result of the md5 hash of the path of the file/folder you want to delete (only if feature "secure log" is activated)
     #[cfg(feature = "secure_log")]
     pub md5: md5::Digest,
+    #[cfg(feature = "dry-run")]
+    dry_run: bool,
 }
 
 // -- Implementation of functions that cannot return errors
@@ -42,6 +58,10 @@ impl SecureDelete {
     ///
     /// ## Return
     /// * `&mut self` (SecureDelete) : The object itself that can be used to call an other function as buffer (by example)
+    #[deprecated(
+        since = "3.1.0",
+        note = "Use `DeleteRequestBuilder` instead. This API will be removed in `4.0.0`."
+    )]
     pub fn byte(&mut self, byte: &u8) -> &mut Self {
         #[cfg(feature = "log")]
         trace!("[{}]\tbyte [{:x}]\tpattern [None]", &self.path, byte);
@@ -61,6 +81,10 @@ impl SecureDelete {
     ///
     /// ## Return
     /// * `&mut self` (SecureDelete) : The object itself that can be used to call an other function as buffer (by example)
+    #[deprecated(
+        since = "3.1.0",
+        note = "Use `DeleteRequestBuilder` instead. This API will be removed in `4.0.0`."
+    )]
     pub fn pattern(&mut self, pattern: &[u8; 3]) -> &mut Self {
         #[cfg(feature = "log")]
         trace!(
@@ -85,6 +109,10 @@ impl SecureDelete {
     ///
     /// ## Return
     /// * `&mut self` (SecureDelete) : The object itself that can be used to call an other function as byte (by example)
+    #[deprecated(
+        since = "3.1.0",
+        note = "Use `DeleteRequestBuilder` instead. This API will be removed in `4.0.0`."
+    )]
     pub fn buffer(&mut self, new_buffer_size: usize) -> &mut Self {
         #[cfg(feature = "log")]
         trace!("[{}]\tbuffer size [{}]", &self.path, new_buffer_size);
@@ -106,15 +134,13 @@ impl SecureDelete {
     /// * `buffer` (Vec \<u8\>) : a buffer of hexadecimal data
     fn get_buffer(&self, size: usize) -> Vec<u8> {
         let mut buffer = Vec::<u8>::new();
-        if self.byte.is_some() {
-            let byte = &self.byte.unwrap();
+        if let Some(byte) = &self.byte {
             for _ in 0..size {
                 buffer.push(*byte);
             }
             return buffer;
         }
-        if self.pattern.is_some() {
-            let bytes_pattern = &self.pattern.unwrap();
+        if let Some(bytes_pattern) = self.pattern {
             for i in 0..size {
                 let pattern_index = i % 3;
                 buffer.push(bytes_pattern[pattern_index]);
@@ -127,6 +153,37 @@ impl SecureDelete {
         }
         buffer
     }
+
+    #[cfg(feature = "dry-run")]
+    #[deprecated(
+        since = "3.1.0",
+        note = "Use `DeleteRequestBuilder` instead. This API will be removed in `4.0.0`."
+    )]
+    pub fn dry_run(&mut self) -> &mut Self {
+        self.dry_run = true;
+        self
+    }
+
+    #[cfg(feature = "analyze")]
+    #[deprecated(
+        since = "3.1.0",
+        note = "Use `DeleteRequestBuilder` instead. This API will be removed in `4.0.0`."
+    )]
+    pub fn get_pass_info(&self) -> PassInfo {
+        if let Some(byte) = &self.byte {
+            return PassInfo {
+                kind: PassKind::Pattern(*byte),
+            };
+        }
+        if let Some(bytes_pattern) = self.pattern {
+            return PassInfo {
+                kind: PassKind::ThreeBytePattern(bytes_pattern),
+            };
+        }
+        PassInfo {
+            kind: PassKind::Random,
+        }
+    }
 }
 
 #[cfg(not(feature = "error-stack"))]
@@ -136,6 +193,10 @@ impl SecureDelete {
     ///
     /// ## Arguments
     /// * `path` (&str) : path that you want to overwrite/delete
+    #[deprecated(
+        since = "3.1.0",
+        note = "Use `DeleteRequestBuilder::build()` instead. This API will be removed in `4.0.0`."
+    )]
     pub fn new(path: &str) -> Result<Self> {
         if !Path::new(&path).exists() {
             return Err(Error::SystemProblem(FSProblem::NotFound, path.to_string()));
@@ -152,8 +213,12 @@ impl SecureDelete {
             pattern: None,
             byte: None,
             buffer_size: 4096,
+            #[cfg(feature = "verify")]
+            seed: None,
             #[cfg(feature = "secure_log")]
             md5: computed_md5.clone(),
+            #[cfg(feature = "dry-run")]
+            dry_run: false,
         })
     }
 
@@ -161,7 +226,15 @@ impl SecureDelete {
     ///
     /// ## Arguments
     /// * `&mut self` (SecureDelete) : The object itself that can be modified
+    #[deprecated(
+        since = "3.1.0",
+        note = "Use `DeleteRequestBuilder::build().run()` instead. This API will be removed in `4.0.0`."
+    )]
     pub fn delete(&mut self) -> Result<()> {
+        #[cfg(feature = "dry-run")]
+        if self.dry_run {
+            return Ok(());
+        }
         let zero_name = self.zero_name()?;
         #[cfg(feature = "log")]
         trace!("[{}]\tBeginning of deletion", &self.path);
@@ -200,7 +273,15 @@ impl SecureDelete {
     /// ## Arguments
     /// * `&mut self` (SecureDelete) : The object itself that can be modified
     /// * `new_name` (&Path) : New file name as Path struct
+    #[deprecated(
+        since = "3.1.0",
+        note = "Use `DeleteRequestBuilder::build().run()` instead. This API will be removed in `4.0.0`."
+    )]
     pub fn rename(&mut self, new_name: &Path) -> Result<()> {
+        #[cfg(feature = "dry-run")]
+        if self.dry_run {
+            return Ok(());
+        }
         fs::rename(&self.path, new_name)
             .map_err(|_| Error::SystemProblem(FSProblem::Rename, self.path.clone()))?;
         self.path = new_name
@@ -226,11 +307,19 @@ impl SecureDelete {
     ///
     /// ## Return
     /// * `&mut self` (SecureDelete) : The object itself that can be used to call an other function as delete (by example)
+    #[deprecated(
+        since = "3.1.0",
+        note = "Use `DeleteRequestBuilder::build().run()` instead. This API will be removed in `4.0.0`."
+    )]
     pub fn overwrite(&mut self) -> Result<&mut Self> {
         #[cfg(feature = "log")]
         trace!("[{}]\tBegging of overwriting phase", &self.path);
         #[cfg(feature = "secure_log")]
         trace!("[{:x}]\tBegging of overwriting phase", &self.md5);
+        #[cfg(feature = "dry-run")]
+        if self.dry_run {
+            return Ok(self);
+        }
 
         let file_to_overwrite = OpenOptions::new()
             .write(true)
@@ -280,6 +369,43 @@ impl SecureDelete {
         let new_name = (0..name.len()).map(|_| "0").collect::<String>();
         Ok(new_name)
     }
+
+    #[cfg(feature = "verify")]
+    pub fn verify(&self) -> Result<bool> {
+        #[cfg(feature = "dry-run")]
+        if self.dry_run {
+            return Ok(true);
+        }
+        let mut sink = NoopSink {};
+        if let Some(byte) = self.byte {
+            let result = verify_last_pass(
+                &PathBuf::from(&self.path),
+                LastPassInfo::Pattern(byte),
+                &mut sink,
+            )
+            .is_ok();
+            return Ok(result);
+        }
+        if let Some(bytes_pattern) = self.pattern {
+            let result = verify_last_pass(
+                &PathBuf::from(&self.path),
+                LastPassInfo::ThreeBytesPattern(bytes_pattern),
+                &mut sink,
+            )
+            .is_ok();
+            return Ok(result);
+        }
+        if let Some(seed) = self.seed {
+            let result = verify_last_pass(
+                &PathBuf::from(&self.path),
+                LastPassInfo::Random { seed },
+                &mut sink,
+            )
+            .is_ok();
+            return Ok(result);
+        }
+        Ok(false)
+    }
 }
 
 #[cfg(test)]
@@ -309,6 +435,10 @@ mod std_test {
                 byte: None,
                 pattern: None,
                 buffer_size: 4096,
+                #[cfg(feature = "verify")]
+                seed: None,
+                #[cfg(feature = "dry-run")]
+                dry_run: false,
             }
         );
         basic_creation.pattern(&[0x00_u8, 0x00_u8, 0x00_u8]);
@@ -319,6 +449,10 @@ mod std_test {
                 byte: None,
                 pattern: Some([0x00_u8, 0x00_u8, 0x00_u8]),
                 buffer_size: 4096,
+                #[cfg(feature = "verify")]
+                seed: None,
+                #[cfg(feature = "dry-run")]
+                dry_run: false,
             }
         );
         basic_creation.byte(&0x00_u8);
@@ -329,6 +463,10 @@ mod std_test {
                 byte: Some(0x00_u8),
                 pattern: None,
                 buffer_size: 4096,
+                #[cfg(feature = "verify")]
+                seed: None,
+                #[cfg(feature = "dry-run")]
+                dry_run: false,
             }
         );
         Ok(())
@@ -385,6 +523,10 @@ mod std_test {
                 pattern: None,
                 byte: None,
                 buffer_size: 4096,
+                #[cfg(feature = "verify")]
+                seed: None,
+                #[cfg(feature = "dry-run")]
+                dry_run: false,
             }
         );
         secure_delete.delete()?;
@@ -422,6 +564,10 @@ mod std_test {
                 pattern: None,
                 byte: None,
                 buffer_size: 4096,
+                #[cfg(feature = "verify")]
+                seed: None,
+                #[cfg(feature = "dry-run")]
+                dry_run: false,
             }
         );
         assert!(!file_to_rename_path.exists());
@@ -443,6 +589,10 @@ mod std_test {
                 byte: None,
                 pattern: None,
                 buffer_size: 4096,
+                #[cfg(feature = "verify")]
+                seed: None,
+                #[cfg(feature = "dry-run")]
+                dry_run: false,
             }
         );
         basic_creation.buffer(1024);
@@ -453,6 +603,10 @@ mod std_test {
                 byte: None,
                 pattern: None,
                 buffer_size: 1024,
+                #[cfg(feature = "verify")]
+                seed: None,
+                #[cfg(feature = "dry-run")]
+                dry_run: false,
             }
         );
         Ok(())
@@ -466,6 +620,10 @@ impl SecureDelete {
     ///
     /// ## Arguments
     /// * `path` (&str) : path that you want to overwrite/delete
+    #[deprecated(
+        since = "3.1.0",
+        note = "Use `DeleteRequestBuilder::build()` instead. This API will be removed in `4.0.0`."
+    )]
     pub fn new(path: &str) -> Result<Self> {
         if !Path::new(&path).exists() {
             return Err(Report::new(Error::SystemProblem(
@@ -477,7 +635,7 @@ impl SecureDelete {
         #[cfg(feature = "log")]
         trace!("[{}]\tSecure deletion object creation", &path);
         #[cfg(feature = "secure_log")]
-        let computed_md5 = md5::compute(&path);
+        let computed_md5 = md5::compute(path);
         #[cfg(feature = "secure_log")]
         trace!("[{:x}]\tSecure deletion object creation", &computed_md5);
 
@@ -488,6 +646,10 @@ impl SecureDelete {
             buffer_size: 4096,
             #[cfg(feature = "secure_log")]
             md5: computed_md5,
+            #[cfg(feature = "verify")]
+            seed: None,
+            #[cfg(feature = "dry-run")]
+            dry_run: false,
         })
     }
 
@@ -495,7 +657,15 @@ impl SecureDelete {
     ///
     /// ## Arguments
     /// * `&mut self` (SecureDelete) : The object itself that can be modified
+    #[deprecated(
+        since = "3.1.0",
+        note = "Use `DeleteRequestBuilder::build().run()` instead. This API will be removed in `4.0.0`."
+    )]
     pub fn delete(&mut self) -> Result<()> {
+        #[cfg(feature = "dry-run")]
+        if self.dry_run {
+            return Ok(());
+        }
         let zero_name = self.zero_name()?;
 
         #[cfg(feature = "log")]
@@ -534,7 +704,15 @@ impl SecureDelete {
     /// ## Arguments
     /// * `&mut self` (SecureDelete) : The object itself that can be modified
     /// * `new_name` (&Path) : New file name as Path struct
+    #[deprecated(
+        since = "3.1.0",
+        note = "Use `DeleteRequestBuilder::build().run()` instead. This API will be removed in `4.0.0`."
+    )]
     pub fn rename(&mut self, new_name: &Path) -> Result<()> {
+        #[cfg(feature = "dry-run")]
+        if self.dry_run {
+            return Ok(());
+        }
         fs::rename(&self.path, new_name)
             .change_context(Error::SystemProblem(FSProblem::Rename, self.path.clone()))?;
         self.path = new_name
@@ -559,6 +737,10 @@ impl SecureDelete {
     ///
     /// ## Return
     /// * `&mut self` (SecureDelete) : The object itself that can be used to call an other function as delete (by example)
+    #[deprecated(
+        since = "3.1.0",
+        note = "Use `DeleteRequestBuilder::build().run()` instead. This API will be removed in `4.0.0`."
+    )]
     pub fn overwrite(&mut self) -> Result<&mut Self> {
         #[cfg(feature = "log")]
         trace!("[{}]\tBegging of overwriting phase", &self.path);
@@ -612,6 +794,47 @@ impl SecureDelete {
         let new_name = (0..name.len()).map(|_| "0").collect::<String>();
         Ok(new_name)
     }
+
+    #[cfg(feature = "verify")]
+    #[deprecated(
+        since = "3.1.0",
+        note = "Use `DeleteRequestBuilder::build().run()` instead. This API will be removed in `4.0.0`."
+    )]
+    pub fn verify(&self) -> Result<bool> {
+        #[cfg(feature = "dry-run")]
+        if self.dry_run {
+            return Ok(true);
+        }
+        let mut sink = NoopSink {};
+        if let Some(byte) = self.byte {
+            let result = verify_last_pass(
+                &PathBuf::from(&self.path),
+                LastPassInfo::Pattern(byte),
+                &mut sink,
+            )
+            .is_ok();
+            return Ok(result);
+        }
+        if let Some(bytes_pattern) = self.pattern {
+            let result = verify_last_pass(
+                &PathBuf::from(&self.path),
+                LastPassInfo::ThreeBytesPattern(bytes_pattern),
+                &mut sink,
+            )
+            .is_ok();
+            return Ok(result);
+        }
+        if let Some(seed) = self.seed {
+            let result = verify_last_pass(
+                &PathBuf::from(&self.path),
+                LastPassInfo::Random { seed },
+                &mut sink,
+            )
+            .is_ok();
+            return Ok(result);
+        }
+        Ok(false)
+    }
 }
 
 #[cfg(all(
@@ -645,6 +868,10 @@ mod enhanced_test {
                 byte: None,
                 pattern: None,
                 buffer_size: 4096,
+                #[cfg(feature = "verify")]
+                seed: None,
+                #[cfg(feature = "dry-run")]
+                dry_run: false,
             }
         );
         basic_creation.pattern(&[0x00_u8, 0x00_u8, 0x00_u8]);
@@ -655,6 +882,10 @@ mod enhanced_test {
                 byte: None,
                 pattern: Some([0x00_u8, 0x00_u8, 0x00_u8]),
                 buffer_size: 4096,
+                #[cfg(feature = "verify")]
+                seed: None,
+                #[cfg(feature = "dry-run")]
+                dry_run: false,
             }
         );
         basic_creation.byte(&0x00_u8);
@@ -665,6 +896,10 @@ mod enhanced_test {
                 byte: Some(0x00_u8),
                 pattern: None,
                 buffer_size: 4096,
+                #[cfg(feature = "verify")]
+                seed: None,
+                #[cfg(feature = "dry-run")]
+                dry_run: false,
             }
         );
         Ok(())
@@ -721,6 +956,10 @@ mod enhanced_test {
                 pattern: None,
                 byte: None,
                 buffer_size: 4096,
+                #[cfg(feature = "verify")]
+                seed: None,
+                #[cfg(feature = "dry-run")]
+                dry_run: false,
             }
         );
         secure_delete.delete()?;
@@ -758,6 +997,10 @@ mod enhanced_test {
                 pattern: None,
                 byte: None,
                 buffer_size: 4096,
+                #[cfg(feature = "verify")]
+                seed: None,
+                #[cfg(feature = "dry-run")]
+                dry_run: false,
             }
         );
         assert!(!file_to_rename_path.exists());
@@ -779,6 +1022,10 @@ mod enhanced_test {
                 byte: None,
                 pattern: None,
                 buffer_size: 4096,
+                #[cfg(feature = "verify")]
+                seed: None,
+                #[cfg(feature = "dry-run")]
+                dry_run: false,
             }
         );
         basic_creation.buffer(1024);
@@ -789,6 +1036,10 @@ mod enhanced_test {
                 byte: None,
                 pattern: None,
                 buffer_size: 1024,
+                #[cfg(feature = "verify")]
+                seed: None,
+                #[cfg(feature = "dry-run")]
+                dry_run: false,
             }
         );
         Ok(())

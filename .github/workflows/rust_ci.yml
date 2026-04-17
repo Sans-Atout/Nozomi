@@ -2,24 +2,59 @@ name: Rust CI
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    branches:
-      - main 
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    steps:
-      - name: Install Rust
-        uses: actions/checkout@v2
-      - name: Install rust auditing tools
-        run: cargo install cargo-audit
-      - name : Build
-        run: cargo build --verbose
-      - name : Clippy
-        run: cargo clippy --verbose -- -D warnings
-      - name: Audit
-        run: cargo audit
 
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Install MSRV (1.85)
+        uses: dtolnay/rust-toolchain@1.85
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      # --- Build on stable ---
+      - name: Build (no default features)
+        run: cargo +stable build --no-default-features
+
+      - name: Build (all features)
+        run: cargo +stable build --all-features
+
+      # --- Verify MSRV ---
+      - name: Build MSRV (no default features)
+        run: cargo +1.85 build --no-default-features
+
+      - name: Build MSRV (all features)
+        run: cargo +1.85 build --all-features
+
+      # --- Clippy strict (stable) ---
+      - name: Clippy (all features, deny warnings)
+        run: cargo +stable clippy --all-targets --all-features -- -D warnings
+
+      # --- Format check (stable) ---
+      - name: Rustfmt check
+        run: cargo +stable fmt --all -- --check
+
+      # --- Security audit ---
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+
+      - name: Security audit
+        run: cargo audit

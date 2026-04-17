@@ -1,104 +1,230 @@
-use crate::Method;
-use crate::models::SecureDelete;
+use crate::engine::overwrite::common::prepare_overwrite;
+use crate::{DeleteEvent, EventSink, Method};
+use rand::Rng;
+use rand::SeedableRng;
+use rand::rngs::StdRng;
+use std::io::{Seek, SeekFrom, Write};
+use std::path::Path;
 
-// -- Region : feature import
+use crate::error::FSProblem;
 #[cfg(not(feature = "error-stack"))]
 use crate::{Error, Result};
-
-#[cfg(feature = "log")]
-use log::info;
 
 #[cfg(feature = "error-stack")]
 use crate::{Error, Result};
 #[cfg(feature = "error-stack")]
 use error_stack::ResultExt;
 
-// -- Region : DOD 522 022 ME overwriting method for basic error handling method
+use crate::engine::utils::{emit_safe, generate_seed};
+#[cfg(all(feature = "verify", feature = "dry-run"))]
+use crate::engine::verify::dry_verify_last_pass;
+#[cfg(feature = "verify")]
+use crate::engine::verify::{LastPassInfo, verify_last_pass};
 
-/// Function that implement [DOD 522022 ME overwrite method](https://www.bitraser.com/article/DoD-5220-22-m-standard-for-drive-erasure.php)
-/// ! Please note that this method does not delete the given file.
+const FIXED_PATTERNS: &[u8; 6] = &[0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF];
+
+/// Overwrites the file at `path` using the
+/// [RCMP TSSIT OPS-II](https://www.datadestroyers.eu/technology/rcmp_tssit_ops-2.html)
+/// sanitisation standard (7 passes: 6 alternating `0x00`/`0xFF` passes then 1 random pass).
 ///
-/// ## Argument :
-/// * `path` (&str) : path that you want to erase using DOD 522 022 ME overwrite method
+/// This function overwrites the file contents only; it does **not** delete
+/// the file. Deletion is handled by the executor after all passes complete.
 ///
-/// ## Return
-/// * `secure_deletion` (SecureDelete) : An SecureDelete object
+/// # Errors
+///
+/// Returns an error if any write pass fails or the file cannot be synced.
 #[cfg(not(feature = "error-stack"))]
-pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
-    let mut secure_deletion = SecureDelete::new(path)?;
-    secure_deletion
-        .byte(&0x00_u8)
-        .overwrite()
-        .map_err(|_| Error::OverwriteError(Method::Dod522022ME, 1))?;
-    #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t1/3", Method::Dod522022ME);
-    #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t1/3", Method::Dod522022ME, &secure_deletion.md5);
-    secure_deletion
-        .byte(&0xFF_u8)
-        .overwrite()
-        .map_err(|_| Error::OverwriteError(Method::Dod522022ME, 2))?;
-    #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t2/3", Method::Dod522022ME);
-    #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t2/3", Method::Dod522022ME, &secure_deletion.md5);
-    secure_deletion
-        .overwrite()
-        .map_err(|_| Error::OverwriteError(Method::Dod522022ME, 3))?;
-    #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t3/3", Method::Dod522022ME);
-    #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t3/3", Method::Dod522022ME, &secure_deletion.md5);
-    Ok(secure_deletion)
+pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
+    let (mut file, file_size, _, mut buffer) = prepare_overwrite(path)?;
+    for pattern in 0..6 {
+        // rewind start of file
+        file.seek(SeekFrom::Start(0))
+            .map_err(|_| Error::OverwriteError(Method::RcmpTssitOpsII, &pattern + 1))?;
+
+        let mut remaining = file_size;
+        while remaining > 0 {
+            let write_size = std::cmp::min(remaining, buffer.len() as u64) as usize;
+            buffer[..write_size].fill(FIXED_PATTERNS[pattern as usize]);
+            file.write_all(&buffer[..write_size])
+                .map_err(|_| Error::OverwriteError(Method::RcmpTssitOpsII, &pattern + 1))?;
+            remaining -= write_size as u64;
+        }
+
+        // flush after each pass (best-effort)
+        file.flush()
+            .map_err(|_| Error::OverwriteError(Method::RcmpTssitOpsII, &pattern + 1))?;
+        emit_safe(
+            sink,
+            DeleteEvent::EntryOverwritePass {
+                path: path.to_path_buf(),
+                pass: &pattern + 1,
+                total_passes: 7,
+            },
+        );
+    }
+    let mut remaining = file_size;
+    file.seek(SeekFrom::Start(0))
+        .map_err(|_| Error::OverwriteError(Method::RcmpTssitOpsII, 7))?;
+
+    let seed = generate_seed();
+    let mut rng = StdRng::from_seed(seed);
+
+    while remaining > 0 {
+        rng.fill_bytes(&mut buffer);
+        let write_size = std::cmp::min(remaining, buffer.len() as u64) as usize;
+        file.write_all(&buffer[..write_size])
+            .map_err(|_| Error::OverwriteError(Method::RcmpTssitOpsII, 7))?;
+        remaining -= write_size as u64;
+    }
+
+    file.flush()
+        .map_err(|_| Error::OverwriteError(Method::RcmpTssitOpsII, 7))?;
+    emit_safe(
+        sink,
+        DeleteEvent::EntryOverwritePass {
+            path: path.to_path_buf(),
+            pass: 7,
+            total_passes: 7,
+        },
+    );
+    file.sync_all().map_err(|_| {
+        Error::SystemProblem(FSProblem::Write, format!("{}", path.to_string_lossy()))
+    })?;
+    #[cfg(feature = "verify")]
+    verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
+
+    Ok(())
 }
 
-// -- Region : DOD 522 022 ME overwriting method for error-stack error handling method
+/// Simulates the RCMP TSSIT OPS-II overwrite of `path` without writing any data.
+///
+/// Emits the same [`DeleteEvent::EntryOverwritePass`] events as [`overwrite_file`].
+/// Only available when the `dry-run` feature is enabled.
+#[cfg(all(not(feature = "error-stack"), feature = "dry-run"))]
+pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
+    #[cfg(feature = "verify")]
+    let seed = [0u8; 32];
+    for pass in 0..7 {
+        emit_safe(
+            sink,
+            DeleteEvent::EntryOverwritePass {
+                path: path.to_path_buf(),
+                pass: pass + 1,
+                total_passes: 7,
+            },
+        );
+    }
 
-/// Function that implement [DOD 522022 ME overwrite method](https://www.bitraser.com/article/DoD-5220-22-m-standard-for-drive-erasure.php)
-/// ! Please note that this method does not delete the given file.
+    #[cfg(feature = "verify")]
+    dry_verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
+
+    Ok(())
+}
+
+/// Overwrites the file at `path` using the
+/// [RCMP TSSIT OPS-II](https://www.datadestroyers.eu/technology/rcmp_tssit_ops-2.html)
+/// sanitisation standard (7 passes: 6 alternating `0x00`/`0xFF` passes then 1 random pass).
 ///
-/// ## Argument :
-/// * `path` (&str) : path that you want to erase using DOD 522 022 ME overwrite method
+/// This function overwrites the file contents only; it does **not** delete
+/// the file. Deletion is handled by the executor after all passes complete.
 ///
-/// ## Return
-/// * `secure_deletion` (SecureDelete) : An SecureDelete object
+/// # Errors
+///
+/// Returns an error if any write pass fails or the file cannot be synced.
 #[cfg(feature = "error-stack")]
-pub fn overwrite_file(path: &str) -> Result<SecureDelete> {
-    let mut secure_deletion = SecureDelete::new(path)?;
-    secure_deletion
-        .byte(&0x00_u8)
-        .overwrite()
-        .change_context(Error::OverwriteError(Method::Dod522022ME, 1))?;
-    #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t1/3", Method::Dod522022ME);
-    #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t1/3", Method::Dod522022ME, &secure_deletion.md5);
-    secure_deletion
-        .byte(&0xFF_u8)
-        .overwrite()
-        .change_context(Error::OverwriteError(Method::Dod522022ME, 2))?;
-    #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t2/3", Method::Dod522022ME);
-    #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t2/3", Method::Dod522022ME, &secure_deletion.md5);
-    secure_deletion
-        .overwrite()
-        .change_context(Error::OverwriteError(Method::Dod522022ME, 3))?;
-    #[cfg(all(feature = "log", not(feature = "secure_log")))]
-    info!("[{}][{path}]\t3/3", Method::Dod522022ME);
-    #[cfg(all(feature = "log", feature = "secure_log"))]
-    info!("[{}][{:x}]\t3/3", Method::Dod522022ME, &secure_deletion.md5);
-    Ok(secure_deletion)
+pub(crate) fn overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
+    let (mut file, file_size, _, mut buffer) = prepare_overwrite(path)?;
+    for pattern in 0..6 {
+        // rewind start of filels
+        file.seek(SeekFrom::Start(0))
+            .change_context(Error::OverwriteError(Method::RcmpTssitOpsII, &pattern + 1))?;
+
+        let mut remaining = file_size;
+        while remaining > 0 {
+            let write_size = std::cmp::min(remaining, buffer.len() as u64) as usize;
+            buffer[..write_size].fill(FIXED_PATTERNS[pattern as usize]);
+            file.write_all(&buffer[..write_size])
+                .change_context(Error::OverwriteError(Method::RcmpTssitOpsII, &pattern + 1))?;
+            remaining -= write_size as u64;
+        }
+
+        // flush after each pass (best-effort)
+        file.flush()
+            .change_context(Error::OverwriteError(Method::RcmpTssitOpsII, &pattern + 1))?;
+        emit_safe(
+            sink,
+            DeleteEvent::EntryOverwritePass {
+                path: path.to_path_buf(),
+                pass: &pattern + 1,
+                total_passes: 7,
+            },
+        );
+    }
+    let mut remaining = file_size;
+    file.seek(SeekFrom::Start(0))
+        .change_context(Error::OverwriteError(Method::RcmpTssitOpsII, 7))?;
+
+    let seed = generate_seed();
+    let mut rng = StdRng::from_seed(seed);
+    while remaining > 0 {
+        rng.fill_bytes(&mut buffer);
+        let write_size = std::cmp::min(remaining, buffer.len() as u64) as usize;
+        file.write_all(&buffer[..write_size])
+            .change_context(Error::OverwriteError(Method::RcmpTssitOpsII, 7))?;
+        remaining -= write_size as u64;
+    }
+
+    file.flush()
+        .change_context(Error::OverwriteError(Method::RcmpTssitOpsII, 7))?;
+    emit_safe(
+        sink,
+        DeleteEvent::EntryOverwritePass {
+            path: path.to_path_buf(),
+            pass: 7,
+            total_passes: 7,
+        },
+    );
+    file.sync_all().change_context(Error::SystemProblem(
+        FSProblem::Write,
+        format!("{}", path.to_string_lossy()),
+    ))?;
+
+    #[cfg(feature = "verify")]
+    verify_last_pass(&path.to_path_buf(), LastPassInfo::Random { seed }, sink)?;
+    Ok(())
+}
+
+/// Simulates the RCMP TSSIT OPS-II overwrite of `path` without writing any data.
+///
+/// Emits the same [`DeleteEvent::EntryOverwritePass`] events as [`overwrite_file`].
+/// Only available when the `dry-run` feature is enabled.
+#[cfg(all(feature = "error-stack", feature = "dry-run"))]
+pub(crate) fn dry_overwrite_file<S: EventSink>(path: &Path, sink: &mut S) -> Result<()> {
+    #[cfg(feature = "verify")]
+    let seed = [0u8; 32];
+    for pass in 0..7 {
+        emit_safe(
+            sink,
+            DeleteEvent::EntryOverwritePass {
+                path: path.to_path_buf(),
+                pass: pass + 1,
+                total_passes: 7,
+            },
+        );
+    }
+
+    #[cfg(feature = "verify")]
+    dry_verify_last_pass(path, LastPassInfo::Random { seed }, sink)?;
+
+    Ok(())
 }
 
 // -- Region : Tests
 #[cfg(test)]
 mod test {
-    use crate::Method::Dod522022ME as EraseMethod;
-    const METHOD_NAME: &str = "dod_522022_me";
+    const METHOD_NAME: &str = "rcmp_tssit_ops_ii";
+    use crate::Method::RcmpTssitOpsII as EraseMethod;
 
-    use super::overwrite_file;
-    use crate::error::FSProblem;
     use crate::tests::TestType;
 
     /// Module containing all the tests for the standard error handling method
@@ -106,15 +232,18 @@ mod test {
     mod standard {
         use super::*;
 
-        use crate::tests::standard::{create_test_file, get_bytes};
-        use crate::{Error, Result};
+        use crate::Result;
+        use crate::tests::standard::create_test_file;
 
         #[cfg(not(any(feature = "log", feature = "secure_log")))]
         mod no_log {
+            use super::*;
+            use crate::Error;
+            use crate::api::delete::request::NoopSink;
+            use crate::error::FSProblem;
+            use crate::tests::standard::get_bytes;
             use pretty_assertions::{assert_eq, assert_ne};
             use std::path::Path;
-
-            use super::*;
 
             /// Test if the overwrite method for this particular erase protocol work well or not.
             ///
@@ -129,7 +258,11 @@ mod test {
                     create_test_file(&TestType::OverwriteOnly, &METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
-                overwrite_file(&string_path)?;
+                let mut sink = NoopSink;
+                crate::engine::overwrite::dod_522022_me::overwrite_file(
+                    &path.to_path_buf(),
+                    &mut sink,
+                )?;
                 let bytes = get_bytes(&path)?;
                 assert_eq!(bytes.len(), lorem.as_bytes().len());
                 assert_ne!(bytes, lorem.as_bytes());
@@ -246,19 +379,19 @@ mod test {
             }
         }
 
-        /// The test ensures that the feature secure_log functions correctly for basic error handling.
-        ///
-        /// Test success is all conditions are met :
-        /// * A specific file is created
-        /// * The file is deleted without any error
         #[cfg(feature = "secure_log")]
         mod secure_log {
             use super::*;
             use std::path::Path;
 
+            /// The test ensures that the feature secure_log functions correctly for basic error handling.
+            ///
+            /// Test success is all conditions are met :
+            /// * A specific file is created
+            /// * The file is deleted without any error
             #[test]
             fn test() -> Result<()> {
-                let (string_path, _) = create_test_file(&TestType::SecureLog, &METHOD_NAME)?;
+                let (string_path, _) = create_test_file(&TestType::SecureLog, METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
                 EraseMethod.delete(&string_path)?;
@@ -273,16 +406,20 @@ mod test {
     mod enhanced {
         use super::*;
 
-        use crate::tests::enhanced::{create_test_file, get_bytes};
-        use crate::{Error, Result};
+        use crate::Result;
+        use crate::tests::enhanced::create_test_file;
 
         #[cfg(not(any(feature = "log", feature = "secure_log")))]
         mod no_log {
+            use super::*;
+            use crate::Error;
+            use crate::api::delete::request::NoopSink;
+            use crate::engine::overwrite::dod_522022_me::overwrite_file;
+            use crate::error::FSProblem;
+            use crate::tests::enhanced::get_bytes;
             use error_stack::ResultExt;
             use pretty_assertions::{assert_eq, assert_ne};
             use std::path::Path;
-
-            use super::*;
 
             /// Test if the overwrite method for this particular erase protocol work well or not.
             ///
@@ -297,7 +434,8 @@ mod test {
                     create_test_file(&TestType::OverwriteOnly, &METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
-                overwrite_file(&string_path)?;
+                let mut sink = NoopSink;
+                overwrite_file(&path.to_path_buf(), &mut sink)?;
                 let bytes = get_bytes(&path)?;
                 assert_eq!(bytes.len(), lorem.as_bytes().len());
                 assert_ne!(bytes, lorem.as_bytes());
@@ -427,7 +565,7 @@ mod test {
             /// * The file is deleted without any error
             #[test]
             fn test() -> Result<()> {
-                let (string_path, _) = create_test_file(&TestType::SecureLog, &METHOD_NAME)?;
+                let (string_path, _) = create_test_file(&TestType::SecureLog, METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
                 EraseMethod.delete(&string_path)?;
