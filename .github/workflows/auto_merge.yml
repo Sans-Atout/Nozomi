@@ -7,12 +7,13 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  workflows: write
 
 jobs:
   auto-merge:
     runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]'
+    if: |
+      github.actor == 'dependabot[bot]' &&
+      contains(github.event.pull_request.labels.*.name, 'cargo')
 
     steps:
       - name: Fetch Dependabot metadata
