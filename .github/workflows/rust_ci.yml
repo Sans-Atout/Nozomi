@@ -32,11 +32,11 @@ jobs:
 
       # --- Build minimal ---
       - name: Build (no default features)
-        run: cargo build --no-default-features --locked
+        run: cargo build --no-default-features
 
       # --- Build all features ---
       - name: Build (all features)
-        run: cargo build --all-features --locked
+        run: cargo build --all-features
 
       # --- Clippy strict ---
       - name: Clippy (all features, deny warnings)
