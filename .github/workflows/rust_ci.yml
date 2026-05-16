@@ -20,7 +20,7 @@ jobs:
           components: rustfmt, clippy
 
       - name: Install MSRV (1.85)
-        uses: dtolnay/rust-toolchain@1.85
+        uses: dtolnay/rust-toolchain@1.100
 
       - name: Cache cargo registry
         uses: actions/cache@v4
