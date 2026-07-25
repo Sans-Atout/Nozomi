@@ -54,7 +54,7 @@ jobs:
 
       # --- Security audit ---
       - name: Install cargo-audit
-        run: cargo install cargo-audit --locked
+        run: cargo +stable install cargo-audit --locked
 
       - name: Security audit
-        run: cargo audit
+        run: cargo +stable audit
