@@ -55,7 +55,7 @@ pub(crate) fn delete_file(path: &Path) -> Result<()> {
     #[cfg(feature = "secure_log")]
     let md5_value = md5::compute(&path.to_string_lossy().to_string());
     #[cfg(feature = "log")]
-    trace!("[{}]\tBeginning of deletion", &path.to_string_lossy());
+    trace!("[{}]\tBeginning of deletion", path.to_string_lossy());
     #[cfg(feature = "secure_log")]
     trace!("[{:x}]\tBeginning of deletion", &md5_value);
     let zero_name = zero_name(path)?;
@@ -67,7 +67,7 @@ pub(crate) fn delete_file(path: &Path) -> Result<()> {
     })?;
     old_path.set_file_name(&zero_name);
     #[cfg(feature = "log")]
-    trace!("[{}]\tRenaming", &path.to_string_lossy());
+    trace!("[{}]\tRenaming", path.to_string_lossy());
     #[cfg(feature = "secure_log")]
     trace!(
         "[{:x}]\tRenaming to {:x}",
@@ -85,7 +85,7 @@ pub(crate) fn delete_file(path: &Path) -> Result<()> {
         })?;
         old_path.set_file_name(&new_file_name);
         #[cfg(feature = "log")]
-        trace!("[{}]\tRenaming", &path.to_string_lossy());
+        trace!("[{}]\tRenaming", path.to_string_lossy());
         #[cfg(feature = "secure_log")]
         trace!(
             "[{:x}]\tRenaming to {:x}",
@@ -94,10 +94,7 @@ pub(crate) fn delete_file(path: &Path) -> Result<()> {
         );
     }
     fs::remove_file(&new_path).map_err(|_| {
-        Error::SystemProblem(
-            FSProblem::Delete,
-            format!("{}", &new_path.to_string_lossy()),
-        )
+        Error::SystemProblem(FSProblem::Delete, format!("{}", new_path.to_string_lossy()))
     })
 }
 
@@ -125,7 +122,7 @@ pub(crate) fn delete_dir(path: &Path) -> Result<()> {
     #[cfg(feature = "secure_log")]
     let md5_value = md5::compute(&path.to_string_lossy().to_string());
     #[cfg(feature = "log")]
-    trace!("[{}]\tBeginning of deletion", &path.to_string_lossy());
+    trace!("[{}]\tBeginning of deletion", path.to_string_lossy());
     #[cfg(feature = "secure_log")]
     trace!("[{:x}]\tBeginning of deletion", &md5_value);
     let zero_name = zero_name(path)?;
@@ -137,7 +134,7 @@ pub(crate) fn delete_dir(path: &Path) -> Result<()> {
     })?;
     old_path.set_file_name(&zero_name);
     #[cfg(feature = "log")]
-    trace!("[{}]\tRenaming", &path.to_string_lossy());
+    trace!("[{}]\tRenaming", path.to_string_lossy());
     #[cfg(feature = "secure_log")]
     trace!(
         "[{:x}]\tRenaming to {:x}",
@@ -155,7 +152,7 @@ pub(crate) fn delete_dir(path: &Path) -> Result<()> {
         })?;
         old_path.set_file_name(&new_file_name);
         #[cfg(feature = "log")]
-        trace!("[{}]\tRenaming", &path.to_string_lossy());
+        trace!("[{}]\tRenaming", path.to_string_lossy());
         #[cfg(feature = "secure_log")]
         trace!(
             "[{:x}]\tRenaming to {:x}",
@@ -164,10 +161,7 @@ pub(crate) fn delete_dir(path: &Path) -> Result<()> {
         );
     }
     fs::remove_dir(&new_path).map_err(|_| {
-        Error::SystemProblem(
-            FSProblem::Delete,
-            format!("{}", &new_path.to_string_lossy()),
-        )
+        Error::SystemProblem(FSProblem::Delete, format!("{}", new_path.to_string_lossy()))
     })
 }
 
@@ -195,7 +189,7 @@ pub(crate) fn delete_file(path: &Path) -> Result<()> {
     #[cfg(feature = "secure_log")]
     let md5_value = md5::compute(path.to_string_lossy().to_string());
     #[cfg(feature = "log")]
-    trace!("[{}]\tBeginning of deletion", &path.to_string_lossy());
+    trace!("[{}]\tBeginning of deletion", path.to_string_lossy());
     #[cfg(feature = "secure_log")]
     trace!("[{:x}]\tBeginning of deletion", &md5_value);
     let zero_name = zero_name(path)?;
@@ -208,7 +202,7 @@ pub(crate) fn delete_file(path: &Path) -> Result<()> {
     ))?;
     old_path.set_file_name(&zero_name);
     #[cfg(feature = "log")]
-    trace!("[{}]\tRenaming", &path.to_string_lossy());
+    trace!("[{}]\tRenaming", path.to_string_lossy());
     #[cfg(feature = "secure_log")]
     trace!(
         "[{:x}]\tRenaming to {:x}",
@@ -227,7 +221,7 @@ pub(crate) fn delete_file(path: &Path) -> Result<()> {
         ))?;
         old_path.set_file_name(&new_file_name);
         #[cfg(feature = "log")]
-        trace!("[{}]\tRenaming", &path.to_string_lossy());
+        trace!("[{}]\tRenaming", path.to_string_lossy());
         #[cfg(feature = "secure_log")]
         trace!(
             "[{:x}]\tRenaming to {:x}",
@@ -237,7 +231,7 @@ pub(crate) fn delete_file(path: &Path) -> Result<()> {
     }
     fs::remove_file(&new_path).change_context(Error::SystemProblem(
         FSProblem::Delete,
-        format!("{}", &new_path.to_string_lossy()),
+        format!("{}", new_path.to_string_lossy()),
     ))
 }
 
@@ -257,7 +251,7 @@ pub(crate) fn delete_dir(path: &Path) -> Result<()> {
     #[cfg(feature = "secure_log")]
     let md5_value = md5::compute(path.to_string_lossy().to_string());
     #[cfg(feature = "log")]
-    trace!("[{}]\tBeginning of deletion", &path.to_string_lossy());
+    trace!("[{}]\tBeginning of deletion", path.to_string_lossy());
     #[cfg(feature = "secure_log")]
     trace!("[{:x}]\tBeginning of deletion", &md5_value);
     let zero_name = zero_name(path)?;
@@ -270,7 +264,7 @@ pub(crate) fn delete_dir(path: &Path) -> Result<()> {
     ))?;
     old_path.set_file_name(&zero_name);
     #[cfg(feature = "log")]
-    trace!("[{}]\tRenaming", &path.to_string_lossy());
+    trace!("[{}]\tRenaming", path.to_string_lossy());
     #[cfg(feature = "secure_log")]
     trace!(
         "[{:x}]\tRenaming to {:x}",
@@ -289,7 +283,7 @@ pub(crate) fn delete_dir(path: &Path) -> Result<()> {
         ))?;
         old_path.set_file_name(&new_file_name);
         #[cfg(feature = "log")]
-        trace!("[{}]\tRenaming", &path.to_string_lossy());
+        trace!("[{}]\tRenaming", path.to_string_lossy());
         #[cfg(feature = "secure_log")]
         trace!(
             "[{:x}]\tRenaming to {:x}",
@@ -299,7 +293,7 @@ pub(crate) fn delete_dir(path: &Path) -> Result<()> {
     }
     fs::remove_dir(&new_path).change_context(Error::SystemProblem(
         FSProblem::Delete,
-        format!("{}", &new_path.to_string_lossy()),
+        format!("{}", new_path.to_string_lossy()),
     ))
 }
 
