@@ -37,17 +37,6 @@ mod analyze_enabled {
 }
 
 //
-// ERROR-STACK FEATURE
-//
-
-#[cfg(feature = "error-stack")]
-mod error_stack_enabled {
-
-    #[test]
-    fn error_stack_feature_compiles() {}
-}
-
-//
 // LOG FEATURE
 //
 

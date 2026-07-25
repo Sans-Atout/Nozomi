@@ -6,8 +6,20 @@ Breaking changes :
 - Remove the deprecated `SecureDelete` struct (`src/models.rs`)
 - Remove `Method::delete()`, the deprecated single-argument deletion entry point
 - Remove `src/api/delete/legacy.rs`, the `From<SecureDelete>` migration bridge
-! `Error::NoFileName` now carries the offending path as a `String` instead of a `SecureDelete`
+- Remove the `error-stack` feature and dependency entirely
 ! `DeleteRequestBuilder` is now the only entry point for deletions
+! Redesign `Error` into a structured hierarchy : `Error::{Planning,Execution,Io}`
+    wrapping new `PlanningError`, `ExecutionError`, and `IoError` enums
+! `Error::SystemProblem` -> `Error::Io(IoError::Filesystem(..))`
+! `Error::OverwriteError` -> `Error::Execution(ExecutionError::OverwritePass{..})`
+! `Error::NoFileName` -> `Error::Io(IoError::NoFileName(String))` (path, not `SecureDelete`)
+! `Error::StringConversionError` -> `Error::Planning(PlanningError::StringConversion)`
+! `Error::MissingParameter` -> `Error::Planning(PlanningError::MissingParameter(..))`
+! `Error::VerificationFailed` -> `Error::Execution(ExecutionError::VerificationFailed{..})`
+
+Internal :
+! Collapse every `#[cfg(feature = "error-stack")]` duplicate function into a
+    single implementation across the engine, api, and test-helper modules
 ```
 
 ## [v3.1.1](https://crates.io/crates/nozomi/3.1.1)

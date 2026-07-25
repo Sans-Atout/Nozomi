@@ -13,10 +13,6 @@ fn dry_run_does_not_require_other_features() {}
 #[test]
 fn analyze_does_not_require_other_features() {}
 
-#[cfg(all(feature = "verify", feature = "error-stack"))]
-#[test]
-fn verify_and_error_stack_compile_together() {}
-
 #[cfg(all(feature = "secure_log", feature = "verify"))]
 #[test]
 fn secure_log_and_verify_compile_together() {}
