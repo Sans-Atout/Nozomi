@@ -25,8 +25,16 @@ pub(crate) enum LastPassInfo {
     /// The last pass filled the file with `0x00` bytes.
     Zero,
     /// The last pass repeated the given 3-byte pattern cyclically.
+    ///
+    /// No built-in `Method` currently ends on a pattern pass, so this is
+    /// unused until user-defined overwrite methods land (see `OverwriteMethod` trait).
+    #[allow(dead_code)]
     ThreeBytesPattern([u8; 3]),
     /// The last pass filled the file with a single repeated byte value.
+    ///
+    /// No built-in `Method` currently ends on a single-byte pass, so this is
+    /// unused until user-defined overwrite methods land (see `OverwriteMethod` trait).
+    #[allow(dead_code)]
     Pattern(u8),
     /// The last pass filled the file with pseudo-random data seeded by `seed`.
     Random {

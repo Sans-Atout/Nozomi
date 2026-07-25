@@ -47,10 +47,7 @@
 mod analyze;
 #[allow(deprecated)]
 mod error;
-#[allow(deprecated)]
 mod methods;
-#[allow(deprecated)]
-mod models;
 #[cfg(test)]
 #[allow(deprecated)]
 mod tests;
@@ -71,8 +68,6 @@ pub use engine::events::{DeleteEvent, EventSink};
 
 // -- Export object
 pub use crate::methods::Method;
-#[allow(deprecated)]
-pub use crate::models::SecureDelete;
 
 // -- Export Error and Result type
 #[cfg(feature = "error-stack")]

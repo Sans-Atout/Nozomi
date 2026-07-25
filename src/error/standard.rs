@@ -1,7 +1,7 @@
 //! Standard error types (default, non-`error-stack` variant).
 
+use crate::Method;
 use crate::error::FSProblem;
-use crate::{Method, models::SecureDelete};
 
 /// A `Result` alias that fixes the error type to [`Error`].
 pub type Result<T> = core::result::Result<T, Error>;
@@ -16,7 +16,7 @@ pub enum Error {
     OverwriteError(Method, u32),
     /// The provided path has no filename component (e.g. it is a bare root or
     /// ends in `..`).
-    NoFileName(SecureDelete),
+    NoFileName(String),
     /// A [`Path`](std::path::Path) could not be converted to a valid UTF-8 string.
     StringConversionError,
     /// A required builder parameter was not set. The contained string names the

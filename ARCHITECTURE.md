@@ -29,7 +29,6 @@ execution. Events are informational only and never influence control flow.
 src/
 ├── lib.rs                        # Crate root — re-exports public surface
 ├── methods.rs                    # Method enum (7 built-in sanitisation standards)
-├── models.rs                     # SecureDelete (deprecated since 3.1.0)
 ├── analyze.rs                    # PassKind, PassInfo, AnalysisReport  [feature: analyze]
 │
 ├── error/
@@ -42,8 +41,7 @@ src/
 │       ├── mod.rs                # Module doc and re-exports
 │       ├── builder.rs            # DeleteRequestBuilder — fluent configuration
 │       ├── request.rs            # DeleteRequest, DeleteMethod, NoopSink
-│       ├── report.rs             # DeleteReport — result of a completed deletion
-│       └── legacy.rs             # From<SecureDelete> migration bridge
+│       └── report.rs             # DeleteReport — result of a completed deletion
 │
 └── engine/                       # Private — not part of the public API
     ├── mod.rs                    # Engine entry point
@@ -196,21 +194,14 @@ eliminated when the feature is removed in v4.0.0.
 
 ---
 
-## Legacy API  (`src/models.rs`, `src/api/delete/legacy.rs`)
-
-`SecureDelete` was the primary API before v3.1.0. It is now deprecated
-and will be **removed in v4.0.0**. A `From<SecureDelete>` impl in
-`legacy.rs` provides a migration bridge to `DeleteRequestBuilder`.
-
-Contributors must not introduce new dependencies on any legacy type.
-
----
-
 ## Evolution Towards v4.x
 
 The following architectural changes are planned for v4.0.0 (see open issues):
 
-- **Remove `error-stack` feature and legacy API** — eliminates all code duplication.
+- ~~**Remove the legacy `SecureDelete` API**~~ — done. `SecureDelete`,
+  `Method::delete()`, and the `api/delete/legacy.rs` migration bridge have
+  been removed. `DeleteRequestBuilder` is now the only entry point.
+- **Remove `error-stack` feature** — eliminates the remaining code duplication.
 - **Redesign the error model** — split the flat `Error` enum into
   `PlanningError`, `ExecutionError`, and `IoError`.
 - **`OverwriteMethod` trait** — replaces the hardcoded dispatcher with a
