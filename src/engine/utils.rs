@@ -10,7 +10,7 @@ use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::path::Path;
 
 use crate::error::FSProblem;
-use crate::{DeleteEvent, EventSink, SecureDelete};
+use crate::{DeleteEvent, EventSink};
 #[cfg(feature = "error-stack")]
 use crate::{Error, Result};
 #[cfg(feature = "error-stack")]
@@ -173,9 +173,9 @@ pub(crate) fn delete_dir(path: &Path) -> Result<()> {
 
 #[cfg(not(feature = "error-stack"))]
 fn zero_name(path: &Path) -> Result<String> {
-    let name = path.file_name().ok_or(Error::NoFileName(SecureDelete::new(
-        path.to_str().unwrap(),
-    )?))?;
+    let name = path
+        .file_name()
+        .ok_or_else(|| Error::NoFileName(path.to_string_lossy().to_string()))?;
     let new_name = (0..name.len()).map(|_| "0").collect::<String>();
     Ok(new_name)
 }
@@ -305,9 +305,9 @@ pub(crate) fn delete_dir(path: &Path) -> Result<()> {
 
 #[cfg(feature = "error-stack")]
 fn zero_name(path: &Path) -> Result<String> {
-    let name = path.file_name().ok_or(Error::NoFileName(SecureDelete::new(
-        path.to_str().unwrap(),
-    )?))?;
+    let name = path
+        .file_name()
+        .ok_or_else(|| Error::NoFileName(path.to_string_lossy().to_string()))?;
     let new_name = (0..name.len()).map(|_| "0").collect::<String>();
     Ok(new_name)
 }

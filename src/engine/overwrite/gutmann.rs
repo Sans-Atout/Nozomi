@@ -313,7 +313,7 @@ mod test {
                 let (string_path, _) = create_test_file(&TestType::SmallFile, &METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
-                EraseMethod.delete(&string_path)?;
+                crate::engine::run(&EraseMethod, path, &mut NoopSink)?;
                 assert!(!path.exists());
                 Ok(())
             }
@@ -328,7 +328,7 @@ mod test {
                 let (string_path, _) = create_test_file(&TestType::MediumFile, &METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
-                EraseMethod.delete(&string_path)?;
+                crate::engine::run(&EraseMethod, path, &mut NoopSink)?;
                 assert!(!Path::new(&string_path).exists());
                 Ok(())
             }
@@ -344,7 +344,7 @@ mod test {
                 let (string_path, _) = create_test_file(&TestType::LargeFile, &METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
-                EraseMethod.delete(&string_path)?;
+                crate::engine::run(&EraseMethod, path, &mut NoopSink)?;
                 assert!(!path.exists());
                 Ok(())
             }
@@ -360,7 +360,7 @@ mod test {
                 let (string_path, _) = create_test_file(&TestType::Folder, &METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
-                EraseMethod.delete(&string_path)?;
+                crate::engine::run(&EraseMethod, path, &mut NoopSink)?;
                 assert!(!path.exists());
                 Ok(())
             }
@@ -375,7 +375,7 @@ mod test {
                 let (string_path, _) = create_test_file(&TestType::WritingError, &METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
-                let result = EraseMethod.delete(&string_path);
+                let result = crate::engine::run(&EraseMethod, path, &mut NoopSink);
                 println!("{:?}", result);
                 assert!(result.is_err());
                 let mut perms = path.metadata().unwrap().permissions();
@@ -383,7 +383,7 @@ mod test {
                 std::fs::set_permissions(&string_path, perms).map_err(|_| {
                     Error::SystemProblem(FSProblem::Permissions, string_path.clone())
                 })?;
-                EraseMethod.delete(&string_path)?;
+                crate::engine::run(&EraseMethod, path, &mut NoopSink)?;
                 assert!(!path.exists());
                 Ok(())
             }
@@ -392,6 +392,7 @@ mod test {
         #[cfg(all(feature = "log", not(feature = "secure_log")))]
         mod log {
             use super::*;
+            use crate::api::delete::request::NoopSink;
             use std::path::Path;
 
             /// The test ensures that the feature log functions correctly for basic error handling.
@@ -404,7 +405,7 @@ mod test {
                 let (string_path, _) = create_test_file(&TestType::LogMini, &METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
-                EraseMethod.delete(&string_path)?;
+                crate::engine::run(&EraseMethod, path, &mut NoopSink)?;
                 assert!(!path.exists());
                 Ok(())
             }
@@ -413,6 +414,7 @@ mod test {
         #[cfg(feature = "secure_log")]
         mod secure_log {
             use super::*;
+            use crate::api::delete::request::NoopSink;
             use std::path::Path;
 
             /// The test ensures that the feature secure_log functions correctly for basic error handling.
@@ -425,7 +427,7 @@ mod test {
                 let (string_path, _) = create_test_file(&TestType::SecureLog, METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
-                EraseMethod.delete(&string_path)?;
+                crate::engine::run(&EraseMethod, path, &mut NoopSink)?;
                 assert!(!path.exists());
                 Ok(())
             }
@@ -487,7 +489,7 @@ mod test {
                 let (string_path, _) = create_test_file(&TestType::SmallFile, &METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
-                EraseMethod.delete(&string_path)?;
+                crate::engine::run(&EraseMethod, path, &mut NoopSink)?;
                 assert!(!path.exists());
                 Ok(())
             }
@@ -502,7 +504,7 @@ mod test {
                 let (string_path, _) = create_test_file(&TestType::MediumFile, &METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
-                EraseMethod.delete(&string_path)?;
+                crate::engine::run(&EraseMethod, path, &mut NoopSink)?;
                 assert!(!Path::new(&string_path).exists());
                 Ok(())
             }
@@ -518,7 +520,7 @@ mod test {
                 let (string_path, _) = create_test_file(&TestType::LargeFile, &METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
-                EraseMethod.delete(&string_path)?;
+                crate::engine::run(&EraseMethod, path, &mut NoopSink)?;
                 assert!(!path.exists());
                 Ok(())
             }
@@ -533,7 +535,7 @@ mod test {
                 let (string_path, _) = create_test_file(&TestType::Folder, &METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
-                EraseMethod.delete(&string_path)?;
+                crate::engine::run(&EraseMethod, path, &mut NoopSink)?;
                 assert!(!path.exists());
                 Ok(())
             }
@@ -549,7 +551,7 @@ mod test {
                 let (string_path, _) = create_test_file(&TestType::WritingError, &METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
-                let result = EraseMethod.delete(&string_path);
+                let result = crate::engine::run(&EraseMethod, path, &mut NoopSink);
                 println!("{:?}", result);
                 assert!(result.is_err());
                 let mut perms = path.metadata().unwrap().permissions();
@@ -557,7 +559,7 @@ mod test {
                 std::fs::set_permissions(&string_path, perms).change_context(
                     Error::SystemProblem(FSProblem::Permissions, string_path.clone()),
                 )?;
-                EraseMethod.delete(&string_path)?;
+                crate::engine::run(&EraseMethod, path, &mut NoopSink)?;
                 assert!(!path.exists());
                 Ok(())
             }
@@ -566,6 +568,7 @@ mod test {
         #[cfg(all(feature = "log", not(feature = "secure_log")))]
         mod log {
             use super::*;
+            use crate::api::delete::request::NoopSink;
             use std::path::Path;
 
             /// The test ensures that the feature log functions correctly
@@ -578,7 +581,7 @@ mod test {
                 let (string_path, _) = create_test_file(&TestType::LogMini, &METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
-                EraseMethod.delete(&string_path)?;
+                crate::engine::run(&EraseMethod, path, &mut NoopSink)?;
                 assert!(!path.exists());
                 Ok(())
             }
@@ -587,6 +590,7 @@ mod test {
         #[cfg(feature = "secure_log")]
         mod secure_log {
             use super::*;
+            use crate::api::delete::request::NoopSink;
             use std::path::Path;
 
             /// The test ensures that the feature secure_log functions correctly.
@@ -599,7 +603,7 @@ mod test {
                 let (string_path, _) = create_test_file(&TestType::SecureLog, METHOD_NAME)?;
                 let path = Path::new(&string_path);
                 assert!(path.exists());
-                EraseMethod.delete(&string_path)?;
+                crate::engine::run(&EraseMethod, path, &mut NoopSink)?;
                 assert!(!path.exists());
                 Ok(())
             }

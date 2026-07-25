@@ -1,20 +1,9 @@
-// -- Region : Extern library import
-use std::path::Path;
-
 // -- Region : feature import
-#[cfg(not(feature = "error-stack"))]
-use crate::Result;
-use crate::api::delete::request::NoopSink;
-
 #[cfg(feature = "analyze")]
 use crate::AnalysisReport;
-#[cfg(feature = "error-stack")]
-#[allow(deprecated)]
-use crate::Result;
 #[cfg(feature = "analyze")]
 use crate::{PassInfo, PassKind};
 
-use crate::engine::run;
 // -- Region : Method logic
 
 /// Identifies the overwrite algorithm to use when securely deleting a file.
@@ -43,49 +32,6 @@ pub enum Method {
     /// Single-pass pseudo-random overwrite. Fast and suitable for modern storage. Default method.
     #[default]
     PseudoRandom,
-}
-
-// -- Region : Implement logic for basic error handling.
-#[cfg(not(feature = "error-stack"))]
-impl Method {
-    /// Securely overwrites and deletes the file or directory at `path` using
-    /// this method's algorithm.
-    ///
-    /// This is the high-level convenience entry point for the deprecated
-    /// single-argument API. Prefer [`DeleteRequest::builder`](crate::DeleteRequest::builder)
-    /// for new code as it provides event observation and dry-run support.
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`Error`](crate::Error) if the path does not exist, cannot be
-    /// overwritten, or cannot be removed.
-    pub fn delete(&self, path: &str) -> Result<()> {
-        let path_to_delete = Path::new(path);
-        let mut sink = NoopSink;
-        run(self, path_to_delete, &mut sink)
-    }
-}
-
-// -- Region : Implement logic for error-stack's error handling.
-#[cfg(feature = "error-stack")]
-#[allow(deprecated)]
-impl Method {
-    /// Securely overwrites and deletes the file or directory at `path` using
-    /// this method's algorithm.
-    ///
-    /// This is the high-level convenience entry point for the deprecated
-    /// single-argument API. Prefer [`DeleteRequest::builder`](crate::DeleteRequest::builder)
-    /// for new code as it provides event observation and dry-run support.
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`error_stack::Report`] wrapping [`Error`](crate::Error) if
-    /// the path does not exist, cannot be overwritten, or cannot be removed.
-    pub fn delete(&self, path: &str) -> Result<()> {
-        let path_to_delete = Path::new(path);
-        let mut sink = NoopSink;
-        run(self, path_to_delete, &mut sink)
-    }
 }
 
 // -- Region : Implement display trait for Method enum.

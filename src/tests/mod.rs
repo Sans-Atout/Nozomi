@@ -4,7 +4,7 @@ pub mod enhanced;
 #[cfg(not(feature = "error-stack"))]
 pub mod standard;
 
-use crate::{Method, error::FSProblem, models::SecureDelete};
+use crate::{Method, error::FSProblem};
 use std::fmt::Debug;
 
 /// Function to test if an type (struct/enum) as send and sync trait
@@ -17,9 +17,6 @@ fn has_needed<T: Clone + Debug>() {}
 /// This test is used to check whether enums and structures have the various basic traits.
 /// If this test fails, the library cannot be compiled
 fn validate_structure() {
-    // -- Secure Delete struct
-    has_needed::<SecureDelete>();
-    has_send_sync::<SecureDelete>();
     // -- Test Type enum
     has_send_sync::<TestType>();
     has_needed::<TestType>();

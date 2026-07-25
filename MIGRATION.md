@@ -92,8 +92,9 @@ Adjust your error handling to use the standard `nozomi::Error` type directly.
 
 ### Legacy API removed
 
-`SecureDelete`, `Method::delete()`, and all associated types will be removed.
-The builder-based `DeleteRequest` API becomes the only entry point.
+`SecureDelete`, `Method::delete()`, and all associated types (including the
+`From<SecureDelete>` bridge in `api/delete/legacy.rs`) have been removed.
+The builder-based `DeleteRequest` API is now the only entry point.
 
 If you followed the migration steps above for 3.1.0, no further changes will
 be needed for this part of the migration.

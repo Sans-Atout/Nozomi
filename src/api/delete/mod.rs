@@ -27,10 +27,8 @@
 //! | [`builder`] | Fluent builder for [`DeleteRequest`] |
 //! | [`report`]  | Result type returned after a successful deletion |
 //! | [`request`] | Core request type and deletion method selector |
-//! | [`legacy`]  | Compatibility bridges for the deprecated [`SecureDelete`](crate::SecureDelete) API |
 
 pub mod builder;
-pub mod legacy;
 pub mod report;
 pub mod request;
 

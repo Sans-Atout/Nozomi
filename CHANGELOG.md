@@ -1,4 +1,15 @@
 # Changelog
+## [Unreleased]
+
+```diff
+Breaking changes :
+- Remove the deprecated `SecureDelete` struct (`src/models.rs`)
+- Remove `Method::delete()`, the deprecated single-argument deletion entry point
+- Remove `src/api/delete/legacy.rs`, the `From<SecureDelete>` migration bridge
+! `Error::NoFileName` now carries the offending path as a `String` instead of a `SecureDelete`
+! `DeleteRequestBuilder` is now the only entry point for deletions
+```
+
 ## [v3.1.1](https://crates.io/crates/nozomi/3.1.1)
 
 ```diff

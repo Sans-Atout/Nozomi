@@ -7,8 +7,8 @@
 //! **Deprecated since `3.1.0`.** Use the default error system instead.
 //! This module will be removed in `4.0.0`.
 
+use crate::Method;
 use crate::error::FSProblem;
-use crate::{Method, models::SecureDelete};
 /// A `Result` alias backed by [`error_stack::Report`] for richer error context.
 ///
 /// **Deprecated since `3.1.0`.**
@@ -34,7 +34,7 @@ pub enum Error {
     /// indicated pass number.
     OverwriteError(Method, u32),
     /// The provided path has no filename component.
-    NoFileName(SecureDelete),
+    NoFileName(String),
     /// A [`Path`](std::path::Path) could not be converted to a valid UTF-8 string.
     StringConversionError,
     /// A required builder parameter was not set. The contained string names the
