@@ -38,7 +38,6 @@ body:
         - label: "`analyze`"
         - label: "`log`"
         - label: "`secure_log`"
-        - label: "`error-stack`"
         - label: None (default build)
 
   - type: dropdown

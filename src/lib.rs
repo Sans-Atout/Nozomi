@@ -39,24 +39,19 @@
 //! | `dry-run` | Simulate deletions without writing to disk |
 //! | `verify` | Read back the last overwrite pass to confirm correctness |
 //! | `analyze` | Inspect the pass schedule of a [`Method`] before running it |
-//! | `error-stack` | Use [`error_stack`](https://docs.rs/error-stack) for richer error context (deprecated, will be removed in `4.0.0`) |
 //! | `log` | Emit trace-level log entries via the `log` facade |
 
 // -- Libraries use in this library
 #[cfg(feature = "analyze")]
 mod analyze;
-#[allow(deprecated)]
 mod error;
 mod methods;
 #[cfg(test)]
-#[allow(deprecated)]
 mod tests;
 #[cfg(feature = "analyze")]
 pub use analyze::{AnalysisReport, PassInfo, PassKind};
 
-#[allow(deprecated)]
 pub mod api;
-#[allow(deprecated)]
 mod engine;
 
 pub use api::delete::DeleteMethod;
@@ -70,8 +65,4 @@ pub use engine::events::{DeleteEvent, EventSink};
 pub use crate::methods::Method;
 
 // -- Export Error and Result type
-#[cfg(feature = "error-stack")]
-#[allow(deprecated)]
-pub use crate::error::enhanced::{Error, Result};
-#[cfg(not(feature = "error-stack"))]
-pub use crate::error::standard::{Error, Result};
+pub use crate::error::{Error, ExecutionError, IoError, PlanningError, Result};

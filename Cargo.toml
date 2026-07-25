@@ -12,7 +12,6 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/Sans-Atout/Nozomi/"
 
 [dependencies]
-error-stack = {version = "0.7.0",optional=true}
 rand = "0.10.1"
 md5 = { version = "0.8.0", optional=true}
 
@@ -36,9 +35,6 @@ default = []
 verify = []
 dry-run = []
 analyze = []
-
-# Error handling
-error-stack = ["dep:error-stack"]
 
 # Logging
 log = ["dep:log"]

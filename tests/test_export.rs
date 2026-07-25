@@ -4,14 +4,11 @@ use std::path::Path;
 mod events;
 
 #[cfg(test)]
-#[cfg_attr(test, allow(unused_imports, deprecated, path_statements))]
+#[cfg_attr(test, allow(unused_imports, path_statements))]
 #[test]
 fn api_export() {
     use nozomi::Error;
     use nozomi::Method;
-
-    #[cfg(feature = "error-stack")]
-    use nozomi::DeleteRequest;
 
     Method::Dod522022ME;
     Method::Afssi5020;

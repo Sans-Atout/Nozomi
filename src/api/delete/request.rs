@@ -1,6 +1,3 @@
-#[cfg(not(feature = "error-stack"))]
-use crate::Result;
-#[cfg(feature = "error-stack")]
 use crate::Result;
 use crate::api::delete::{DeleteReport, DeleteRequestBuilder};
 use crate::engine;
@@ -47,7 +44,6 @@ impl DeleteRequest {
     }
 }
 
-#[cfg(not(feature = "error-stack"))]
 impl DeleteRequest {
     /// Executes the secure deletion pipeline and returns a [`DeleteReport`] on success.
     ///
@@ -80,77 +76,6 @@ impl DeleteRequest {
     ///
     /// Returns an [`Error`] if the target path cannot be opened, overwritten,
     /// or removed.
-    pub fn run_with<S: EventSink>(&self, sink: &mut S) -> Result<DeleteReport> {
-        #[cfg(feature = "dry-run")]
-        if self.dry_run {
-            emit_safe(
-                sink,
-                DeleteEvent::DryRunStarted {
-                    path: self.path.to_path_buf(),
-                },
-            );
-            match &self.method {
-                DeleteMethod::BuiltIn(method) => {
-                    engine::dry_run(method, &self.path, sink)?;
-                    emit_safe(
-                        sink,
-                        DeleteEvent::DryRunCompleted {
-                            path: self.path.to_path_buf(),
-                        },
-                    );
-                    return Ok(DeleteReport {
-                        path: self.path.clone(),
-                        method: *method,
-                    });
-                }
-            }
-        }
-
-        match &self.method {
-            DeleteMethod::BuiltIn(method) => {
-                engine::run(method, &self.path, sink)?;
-                Ok(DeleteReport {
-                    path: self.path.clone(),
-                    method: *method,
-                })
-            }
-        }
-    }
-}
-
-#[cfg(feature = "error-stack")]
-impl DeleteRequest {
-    /// Executes the secure deletion pipeline and returns a [`DeleteReport`] on success.
-    ///
-    /// This is the zero-overhead convenience wrapper around [`run_with`]. It discards
-    /// all progress events. Use [`run_with`] instead if you need to observe or log
-    /// individual deletion steps.
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`error_stack::Report`] wrapping [`Error`] if the target path
-    /// cannot be opened, overwritten, or removed.
-    ///
-    /// [`run_with`]: DeleteRequest::run_with
-    pub fn run(&self) -> Result<DeleteReport> {
-        let mut sink = NoopSink;
-        self.run_with(&mut sink)
-    }
-
-    /// Executes the secure deletion pipeline, forwarding structured events to `sink`.
-    ///
-    /// Each step of the overwrite process emits a [`DeleteEvent`] through the
-    /// provided [`EventSink`], enabling progress tracking, audit logging, or
-    /// integration with external monitoring systems.
-    ///
-    /// When the `dry-run` feature is enabled and [`dry_run`](super::builder::DeleteRequestBuilder::dry_run)
-    /// is set to `true`, the pipeline is simulated: events are emitted but no
-    /// data is written to disk.
-    ///
-    /// # Errors
-    ///
-    /// Returns an [`error_stack::Report`] wrapping [`Error`] if the target path
-    /// cannot be opened, overwritten, or removed.
     pub fn run_with<S: EventSink>(&self, sink: &mut S) -> Result<DeleteReport> {
         #[cfg(feature = "dry-run")]
         if self.dry_run {

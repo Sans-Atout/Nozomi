@@ -32,9 +32,7 @@ src/
 ├── analyze.rs                    # PassKind, PassInfo, AnalysisReport  [feature: analyze]
 │
 ├── error/
-│   ├── mod.rs                    # FSProblem enum (low-level I/O problem codes)
-│   ├── standard.rs               # Error, Result  (default)
-│   └── enhanced.rs               # Error, Result  [feature: error-stack, deprecated]
+│   └── mod.rs                    # Error, Result, PlanningError, ExecutionError, IoError, FSProblem
 │
 ├── api/
 │   └── delete/
@@ -102,6 +100,31 @@ pub enum DeleteMethod {
 
 Additional variants (user-defined strategies) are planned for v4.x via
 the `OverwriteMethod` trait.
+
+### `Error`  (`src/error/mod.rs`)
+
+A structured hierarchy mirroring the phases of a deletion, instead of a
+single flat enum:
+
+```rust
+pub enum Error {
+    Planning(PlanningError),     // invalid input, before any destructive operation
+    Execution(ExecutionError),   // failure during overwrite/verification passes
+    Io(IoError),                 // raw filesystem operation failure
+}
+```
+
+| Variant                                | Raised when                                                        |
+|-----------------------------------------|---------------------------------------------------------------------|
+| `PlanningError::MissingParameter`       | `DeleteRequestBuilder::build()` called without `path` or `method`   |
+| `PlanningError::StringConversion`       | A path is not valid UTF-8                                          |
+| `ExecutionError::OverwritePass`         | An overwrite pass failed for a given `Method` and pass number       |
+| `ExecutionError::VerificationFailed`    | A post-overwrite read-back mismatch (`verify` feature)              |
+| `IoError::Filesystem`                   | A filesystem syscall failed (open/read/write/rename/delete/…)       |
+| `IoError::NoFileName`                   | A path has no filename component (e.g. bare root, ends in `..`)     |
+
+Each sub-error implements `From<T> for Error`, so call sites can propagate
+with `?` without manually wrapping in `Error::Planning`/`Execution`/`Io`.
 
 ### `Method`  (`src/methods.rs`)
 
@@ -185,12 +208,6 @@ Consumers who need events call `run_with(sink)` instead.
 | `analyze`     | Exposes `Method::analyze()` → `AnalysisReport` with the full pass schedule     |
 | `log`         | Emits `trace!` entries via the `log` façade at key engine steps                |
 | `secure_log`  | Like `log`, but replaces file paths with their MD5 hash                        |
-| `error-stack` | *(Deprecated — removed in 4.0.0)* Wraps errors in `error_stack::Report<Error>` |
-
-Every public function that can return an error is compiled twice when
-`error-stack` is active: once under `#[cfg(not(feature = "error-stack"))]`
-and once under `#[cfg(feature = "error-stack")]`. This duplication is
-eliminated when the feature is removed in v4.0.0.
 
 ---
 
@@ -201,9 +218,12 @@ The following architectural changes are planned for v4.0.0 (see open issues):
 - ~~**Remove the legacy `SecureDelete` API**~~ — done. `SecureDelete`,
   `Method::delete()`, and the `api/delete/legacy.rs` migration bridge have
   been removed. `DeleteRequestBuilder` is now the only entry point.
-- **Remove `error-stack` feature** — eliminates the remaining code duplication.
-- **Redesign the error model** — split the flat `Error` enum into
-  `PlanningError`, `ExecutionError`, and `IoError`.
+- ~~**Remove `error-stack` feature**~~ — done. The `error-stack` dependency
+  and every `#[cfg(feature = "error-stack")]` duplicate implementation have
+  been removed.
+- ~~**Redesign the error model**~~ — done. The flat `Error` enum is now a
+  structured hierarchy of `PlanningError`, `ExecutionError`, and `IoError`
+  (see [`Error`](#error--srcerrormodrs) above).
 - **`OverwriteMethod` trait** — replaces the hardcoded dispatcher with a
   trait-based extension point, enabling user-defined overwrite strategies.
 - **Deletion policies** — high-level aliases (NIST 800-88, DoD) above

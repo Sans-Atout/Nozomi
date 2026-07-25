@@ -87,8 +87,8 @@ Adjust your error handling to use the standard `nozomi::Error` type directly.
 
 ## Migrating from 3.x to 4.0.0  *(upcoming)*
 
-> This section will be completed when v4.0.0 is released.
-> The changes below reflect the current roadmap.
+> This section will be finalized when v4.0.0 is released.
+> The changes below are implemented on the `v4` development branch.
 
 ### Legacy API removed
 
@@ -101,23 +101,42 @@ be needed for this part of the migration.
 
 ### Error model redesigned
 
-The flat `Error` enum will be replaced by a structured hierarchy:
+The flat `Error` enum has been replaced by a structured hierarchy that
+mirrors the phases of a deletion:
 
 ```rust
-// Planned (4.0.0)
 pub enum Error {
-    Planning(PlanningError),
-    Execution(ExecutionError),
-    Io(IoError),
+    Planning(PlanningError),     // invalid input, before any destructive operation
+    Execution(ExecutionError),   // failure during the overwrite/verification passes
+    Io(IoError),                 // a raw filesystem operation failed
 }
 ```
 
-Update your `match` arms accordingly when 4.0.0 is released.
+Update `match` arms that relied on the old flat variants:
+
+| Before (≤ 3.1.x)                  | After (4.0.0)                                                    |
+|------------------------------------|-------------------------------------------------------------------|
+| `Error::SystemProblem(kind, path)` | `Error::Io(IoError::Filesystem(kind, path))`                       |
+| `Error::OverwriteError(m, pass)`   | `Error::Execution(ExecutionError::OverwritePass { method: m, pass })` |
+| `Error::NoFileName(path)`          | `Error::Io(IoError::NoFileName(path))`                              |
+| `Error::StringConversionError`     | `Error::Planning(PlanningError::StringConversion)`                  |
+| `Error::MissingParameter(field)`   | `Error::Planning(PlanningError::MissingParameter(field))`           |
+| `Error::VerificationFailed{offset}`| `Error::Execution(ExecutionError::VerificationFailed { offset })`   |
 
 ### `error-stack` feature removed
 
-The `error-stack` feature is removed entirely. Any code still using it must
-be updated to the standard error type before upgrading to 4.0.0.
+The `error-stack` feature and dependency have been removed entirely, along
+with every `#[cfg(feature = "error-stack")]` duplicate code path. If your
+project enabled it, drop the feature flag and switch to the standard
+`nozomi::Error` type (see the table above for the variant mapping):
+
+```toml
+# Before
+nozomi = { version = "3.1.1", features = ["error-stack"] }
+
+# After
+nozomi = { version = "4.0.0" }
+```
 
 ### Custom overwrite strategies
 

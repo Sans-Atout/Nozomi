@@ -63,7 +63,6 @@ See [ERASE_METHOD.md](ERASE_METHOD.md) for a detailed description of each pass s
 | `analyze`     | Inspect the pass schedule of a method before running it                                                 |
 | `log`         | Emit trace-level log entries via the [`log`](https://docs.rs/log) façade                                |
 | `secure_log`  | Like `log`, but replaces file paths with their MD5 hash to avoid leaking names                          |
-| `error-stack` | *(Deprecated — removed in 4.0.0)* Richer error context via [`error-stack`](https://docs.rs/error-stack) |
 
 Enable features in `Cargo.toml`:
 
